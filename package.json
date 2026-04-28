@@ -1,6 +1,6 @@
 {
   "name": "recourse-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Know what you can't undo before you terraform apply",
   "main": "dist/index.js",
   "bin": {
