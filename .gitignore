@@ -3,3 +3,10 @@ dist/
 *.log
 .DS_Store
 recourseOS_idea.md
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.bin
+.terraform.lock.hcl
