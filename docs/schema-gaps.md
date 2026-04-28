@@ -2,7 +2,28 @@
 
 ## Summary
 
-Testing the classifier against edge-case resource types revealed **3 fundamental gaps** in the current feature schema. These gaps cause systematic misclassification of entire categories of resources.
+Testing the classifier against edge-case resource types revealed gaps in the feature schema and rule handlers. This validation found **6 fixable bugs** and **4 documented limits**.
+
+### What Was Fixed (v0.1)
+
+| Fix | Category | Description |
+|-----|----------|-------------|
+| IAM attachment handler | Rule bug | Handler returned `recoverable-with-effort` for attachment resources; now `reversible` |
+| Config-only detection | Schema addition | Resources ending in `_policy`, `_config`, `_rule` etc. now detected as `reversible` |
+| Attachment detection | Schema addition | Resources ending in `_attachment`, `_membership` now detected as `reversible` |
+| snapshot_retention_limit | Training gap | Added to backup attribute recognition (ElastiCache) |
+| recovery_window_in_days | Training gap | Added to retention/window detection (Secrets Manager) |
+| Secrets Manager window | Rule bug | recovery_window now detected via existing feature infrastructure |
+
+### What Remains as Known Limits
+
+| Limit | Why It's Hard | Mitigation |
+|-------|---------------|------------|
+| Route53 record classification | Recoverability depends on out-of-band state (zone backups, IP ownership) | Document as limit; future: ask user for context |
+| Multi-cloud suffix detection | AWS naming conventions don't transfer to GCP/Azure | Document; future: structural detection |
+| Classifier confidence on unknown types | 72-100% confidence but sometimes wrong | Dual-verdict surfaces disagreements |
+
+---
 
 ## Test Results
 
@@ -117,7 +138,40 @@ How to determine these features:
 2. **Medium fix**: Add name-based heuristics for config/attachment resources (1 hour)
 3. **Proper fix**: Build resource metadata lookup from provider schemas (half day)
 
+## Known Limits
+
+### Route53 Record Classification
+
+The classifier returns `unrecoverable` for Route53 record deletions at 72.7% confidence. This is arguably wrong — you can recreate a DNS record if you know the values — but the *actual* recoverability depends on factors outside the plan:
+
+- Do you have a zone backup or the record values documented?
+- For A records: is the IP address still assigned to you?
+- For ALIAS records: does the target resource still exist?
+
+We've chosen to leave this as a documented limit rather than force a verdict. Future versions may ask the user for context.
+
+### Multi-Cloud Suffix Detection
+
+The current `is_config_only` and `is_attachment` detection uses AWS Terraform naming conventions:
+
+```
+_policy, _config, _rule, _setting      → config-only
+_attachment, _membership, _association → attachment
+```
+
+These suffixes are reliable for AWS but won't transfer to other clouds:
+
+- **GCP**: `google_project_iam_binding`, `google_compute_instance_group_membership`
+- **Azure**: `azurerm_role_assignment`, `azurerm_subnet_network_security_group_association`
+
+For multi-cloud support, suffix detection needs to be either:
+1. Rebuilt per cloud with cloud-specific patterns, or
+2. Replaced with structural detection (does this resource type represent a relationship between two other resources, vs. owning data of its own)
+
+The abstract features (`is_config_only`, `is_attachment`) are the right concepts. The suffix-based implementation is an AWS-specific heuristic that works for v0.1.
+
 ## Files
 
 - Test file: `tests/schema-validation.test.ts`
 - Feature extractor: `src/classifier/feature-extractor.ts`
+- Dual-verdict (config/attachment detection): `src/classifier/dual-verdict.ts`
