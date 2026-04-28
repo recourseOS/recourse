@@ -297,6 +297,106 @@ describe('Edge Case: aws_neptune_cluster', () => {
   });
 });
 
+describe('Multi-cloud: GCP resource patterns', () => {
+  it('should classify google_project_iam_binding delete as reversible', () => {
+    const change = makeChange('google_project_iam_binding', 'delete', {
+      project: 'my-project',
+      role: 'roles/viewer',
+      members: ['user:foo@example.com']
+    });
+
+    const result = getRecoverabilityDual(change, null);
+    console.log('\n=== google_project_iam_binding ===');
+    console.log('Result:', result.label, result.reasoning);
+
+    expect(result.label).toBe('reversible');
+  });
+
+  it('should classify google_project_iam_member delete as reversible', () => {
+    const change = makeChange('google_project_iam_member', 'delete', {
+      project: 'my-project',
+      role: 'roles/editor',
+      member: 'user:bar@example.com'
+    });
+
+    const result = getRecoverabilityDual(change, null);
+    expect(result.label).toBe('reversible');
+  });
+
+  it('should classify google_project_service delete as reversible', () => {
+    const change = makeChange('google_project_service', 'delete', {
+      project: 'my-project',
+      service: 'compute.googleapis.com'
+    });
+
+    const result = getRecoverabilityDual(change, null);
+    expect(result.label).toBe('reversible');
+  });
+
+  it('should classify google_sql_database_instance with deletion_protection as reversible', () => {
+    const change = makeChange('google_sql_database_instance', 'delete', {
+      name: 'my-db',
+      deletion_protection: true
+    });
+
+    const features = extractFeatures(change, null);
+    const result = classifyFromFeatures(features);
+
+    console.log('\n=== google_sql_database_instance (protected) ===');
+    console.log('Features:', features);
+    console.log('Classification:', result);
+
+    // Should detect deletion_protection via abstract feature
+    expect(result.tier).toBe('reversible');
+  });
+});
+
+describe('Multi-cloud: Azure resource patterns', () => {
+  it('should classify azurerm_role_assignment delete as reversible', () => {
+    const change = makeChange('azurerm_role_assignment', 'delete', {
+      scope: '/subscriptions/xxx',
+      role_definition_name: 'Reader',
+      principal_id: 'yyy'
+    });
+
+    const result = getRecoverabilityDual(change, null);
+    console.log('\n=== azurerm_role_assignment ===');
+    console.log('Result:', result.label, result.reasoning);
+
+    expect(result.label).toBe('reversible');
+  });
+
+  it('should classify azurerm_dns_a_record delete as reversible', () => {
+    const change = makeChange('azurerm_dns_a_record', 'delete', {
+      name: 'www',
+      zone_name: 'example.com',
+      resource_group_name: 'my-rg',
+      records: ['1.2.3.4']
+    });
+
+    const result = getRecoverabilityDual(change, null);
+    expect(result.label).toBe('reversible');
+  });
+
+  it('should classify azurerm_mssql_database with deletion_protection via classifier', () => {
+    // Azure SQL doesn't have deletion_protection, but if it did...
+    const change = makeChange('azurerm_mssql_database', 'delete', {
+      name: 'my-db',
+      // Azure uses short_term_retention_policy for backups
+    });
+
+    const features = extractFeatures(change, null);
+    const result = classifyFromFeatures(features);
+
+    console.log('\n=== azurerm_mssql_database ===');
+    console.log('Features:', features);
+    console.log('Classification:', result);
+
+    // Without specific safety attributes, classifier makes best guess
+    // This documents current behavior, not necessarily correct behavior
+  });
+});
+
 describe('Feature Schema Gap Analysis', () => {
   it('should document what features are missing for edge cases', () => {
     console.log('\n=== SCHEMA GAP ANALYSIS ===\n');
