@@ -13,10 +13,17 @@ export const RecoverabilityLabels: Record<RecoverabilityTier, string> = {
   [RecoverabilityTier.UNRECOVERABLE]: 'unrecoverable',
 };
 
+// Verdict source - where the classification came from
+export type VerdictSource = 'rules' | 'classifier' | 'default';
+
 export interface RecoverabilityResult {
   tier: RecoverabilityTier;
   label: string;
   reasoning: string;
+  // New fields for dual-verdict architecture
+  source?: VerdictSource;       // 'rules' = hardcoded handler, 'classifier' = ML model
+  confidence?: number;          // 0-1, always 1.0 for rules
+  classifierAgreement?: boolean; // If rules fired, did classifier agree?
 }
 
 // Terraform plan action types

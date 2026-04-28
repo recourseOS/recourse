@@ -1,6 +1,9 @@
 import chalk from 'chalk';
-import type { BlastRadiusReport, BlastRadiusChange } from '../resources/types.js';
+import type { BlastRadiusReport, BlastRadiusChange, VerdictSource } from '../resources/types.js';
 import { RecoverabilityTier } from '../resources/types.js';
+
+// Marker for classifier-derived verdicts (not from rules)
+const CLASSIFIER_MARKER = chalk.dim('~');
 
 const TIER_COLORS: Record<RecoverabilityTier, (text: string) => string> = {
   [RecoverabilityTier.REVERSIBLE]: chalk.green,
@@ -60,8 +63,19 @@ function formatChange(change: BlastRadiusChange): string {
   const actionColor = resource.actions.includes('delete') ? chalk.red : chalk.cyan;
   lines.push(`  ${actionColor(symbol)} ${actionColor(action)} ${chalk.bold(resource.address)}`);
 
-  // Recoverability
-  lines.push(`    Recoverability: ${color(recoverability.label)} (${recoverability.reasoning})`);
+  // Recoverability with classifier marker if applicable
+  const isClassifier = recoverability.source === 'classifier';
+  const marker = isClassifier ? CLASSIFIER_MARKER + ' ' : '';
+  const confidenceNote = isClassifier && recoverability.confidence !== undefined
+    ? chalk.dim(` [${Math.round(recoverability.confidence * 100)}% confidence]`)
+    : '';
+
+  lines.push(`    Recoverability: ${marker}${color(recoverability.label)}${confidenceNote} (${recoverability.reasoning})`);
+
+  // Show classifier agreement/disagreement for rule-based verdicts
+  if (recoverability.source === 'rules' && recoverability.classifierAgreement === false) {
+    lines.push(chalk.dim(`    Note: Classifier would classify as ${(recoverability as any).classifierVerdict?.label || 'different'}`));
+  }
 
   // Cascade impact
   if (cascadeImpact.length > 0) {

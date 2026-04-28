@@ -24,11 +24,13 @@ program
   .option('-f, --format <format>', 'Output format: human or json', 'human')
   .option('--fail-on <tier>', 'Exit with code 1 if any change reaches this tier: unrecoverable, backup, effort, reversible', 'unrecoverable')
   .option('--no-cascade', 'Skip cascade impact analysis')
+  .option('--classifier', 'Use ML classifier for unknown resource types (experimental)')
   .action(async (planFile: string, options: {
     state?: string;
     format: string;
     failOn: string;
     cascade: boolean;
+    classifier: boolean;
   }) => {
     try {
       // Validate plan file exists
@@ -51,7 +53,9 @@ program
       }
 
       // Analyze
-      const report = analyzeBlastRadius(plan, state);
+      const report = analyzeBlastRadius(plan, state, {
+        useClassifier: options.classifier,
+      });
 
       // Output
       if (options.format === 'json') {

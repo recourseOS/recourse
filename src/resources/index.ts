@@ -108,6 +108,9 @@ export function isResourceTypeSupported(type: string): boolean {
   return handlerMap.has(type);
 }
 
+// Alias for clarity in dual-verdict architecture
+export const hasHandler = isResourceTypeSupported;
+
 export function getRecoverabilityTraced(
   change: ResourceChange,
   state: TerraformState | null

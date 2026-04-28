@@ -6,14 +6,17 @@ import type {
   BlastRadiusChange,
   BlastRadiusSummary,
   CascadeImpact,
+  RecoverabilityResult,
 } from '../resources/types.js';
 import { RecoverabilityTier } from '../resources/types.js';
 import { getRecoverability } from '../resources/index.js';
+import { getRecoverabilityDual } from '../classifier/dual-verdict.js';
 import { buildDependencyGraph, findDependents } from './dependencies.js';
 import { filterAllChanges } from '../parsers/plan.js';
 
 export interface AnalyzeOptions {
   includeNonDestructive?: boolean;  // Include creates and updates, not just deletes
+  useClassifier?: boolean;          // Use dual-verdict system with ML classifier
 }
 
 export function analyzeBlastRadius(
@@ -21,7 +24,7 @@ export function analyzeBlastRadius(
   state: TerraformState | null,
   options: AnalyzeOptions = {}
 ): BlastRadiusReport {
-  const { includeNonDestructive = true } = options;
+  const { includeNonDestructive = true, useClassifier = false } = options;
 
   // Get changes to analyze
   let changes: ResourceChange[];
@@ -40,9 +43,15 @@ export function analyzeBlastRadius(
   // Build dependency graph from state
   const graph = effectiveState ? buildDependencyGraph(effectiveState) : null;
 
+  // Choose recoverability function based on classifier flag
+  const getRecoverabilityFn = useClassifier
+    ? (change: ResourceChange, state: TerraformState | null): RecoverabilityResult =>
+        getRecoverabilityDual(change, state)
+    : getRecoverability;
+
   // Analyze each change
   const analyzedChanges: BlastRadiusChange[] = changes.map(change => {
-    const recoverability = getRecoverability(change, effectiveState);
+    const recoverability = getRecoverabilityFn(change, effectiveState);
 
     // Find cascade impact for destructive changes
     let cascadeImpact: CascadeImpact[] = [];

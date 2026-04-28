@@ -1,0 +1,705 @@
+[
+  {
+    "resource_type": "aws_s3_bucket",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "Bucket configuration update can be reverted"
+  },
+  {
+    "resource_type": "aws_s3_bucket",
+    "action": "delete",
+    "attributes": {
+      "object_count": 0
+    },
+    "tier": "recoverable-with-effort",
+    "reasoning": "Empty bucket can be recreated"
+  },
+  {
+    "resource_type": "aws_s3_bucket",
+    "action": "delete",
+    "attributes": {
+      "object_count": 100
+    },
+    "tier": "unrecoverable",
+    "reasoning": "Bucket deletion is permanent; all objects lost"
+  },
+  {
+    "resource_type": "aws_s3_bucket",
+    "action": "delete",
+    "attributes": {
+      "object_count": 1
+    },
+    "tier": "unrecoverable",
+    "reasoning": "Bucket deletion is permanent; all objects lost"
+  },
+  {
+    "resource_type": "aws_s3_bucket",
+    "action": "delete",
+    "attributes": {
+      "object_count": null
+    },
+    "tier": "unrecoverable",
+    "reasoning": "Bucket deletion is permanent; object count unknown"
+  },
+  {
+    "resource_type": "aws_s3_object",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "Object update can be reverted"
+  },
+  {
+    "resource_type": "aws_s3_object",
+    "action": "delete",
+    "attributes": {
+      "bucket_versioning": true
+    },
+    "tier": "recoverable-from-backup",
+    "reasoning": "Versioned bucket preserves previous versions"
+  },
+  {
+    "resource_type": "aws_s3_object",
+    "action": "delete",
+    "attributes": {
+      "bucket_versioning": "Enabled"
+    },
+    "tier": "recoverable-from-backup",
+    "reasoning": "Versioned bucket preserves previous versions"
+  },
+  {
+    "resource_type": "aws_s3_object",
+    "action": "delete",
+    "attributes": {
+      "bucket_versioning": false
+    },
+    "tier": "unrecoverable",
+    "reasoning": "No versioning; object deletion is permanent"
+  },
+  {
+    "resource_type": "aws_s3_object",
+    "action": "delete",
+    "attributes": {
+      "bucket_versioning": null
+    },
+    "tier": "unrecoverable",
+    "reasoning": "No versioning; object deletion is permanent"
+  },
+  {
+    "resource_type": "aws_s3_object",
+    "action": "delete",
+    "attributes": {
+      "bucket_versioning": "Disabled"
+    },
+    "tier": "unrecoverable",
+    "reasoning": "No versioning; object deletion is permanent"
+  },
+  {
+    "resource_type": "aws_db_instance",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "RDS configuration update can be reverted"
+  },
+  {
+    "resource_type": "aws_db_instance",
+    "action": "delete",
+    "attributes": {
+      "deletion_protection": true
+    },
+    "tier": "reversible",
+    "reasoning": "Deletion protection enabled; delete will be blocked"
+  },
+  {
+    "resource_type": "aws_db_instance",
+    "action": "delete",
+    "attributes": {
+      "deletion_protection": false,
+      "skip_final_snapshot": false
+    },
+    "tier": "recoverable-from-backup",
+    "reasoning": "Final snapshot will be created"
+  },
+  {
+    "resource_type": "aws_db_instance",
+    "action": "delete",
+    "attributes": {
+      "deletion_protection": false,
+      "skip_final_snapshot": false,
+      "backup_retention_period": 7
+    },
+    "tier": "recoverable-from-backup",
+    "reasoning": "Automated backups exist"
+  },
+  {
+    "resource_type": "aws_db_instance",
+    "action": "delete",
+    "attributes": {
+      "deletion_protection": false,
+      "skip_final_snapshot": true,
+      "backup_retention_period": 7
+    },
+    "tier": "recoverable-from-backup",
+    "reasoning": "Automated backups exist even though final snapshot skipped"
+  },
+  {
+    "resource_type": "aws_db_instance",
+    "action": "delete",
+    "attributes": {
+      "deletion_protection": false,
+      "skip_final_snapshot": true,
+      "backup_retention_period": 0
+    },
+    "tier": "unrecoverable",
+    "reasoning": "No final snapshot and no automated backups"
+  },
+  {
+    "resource_type": "aws_db_instance",
+    "action": "delete",
+    "attributes": {
+      "deletion_protection": false,
+      "skip_final_snapshot": true,
+      "backup_retention_period": null
+    },
+    "tier": "unrecoverable",
+    "reasoning": "No final snapshot and backup retention unknown"
+  },
+  {
+    "resource_type": "aws_rds_cluster",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "RDS cluster configuration update can be reverted"
+  },
+  {
+    "resource_type": "aws_rds_cluster",
+    "action": "delete",
+    "attributes": {
+      "deletion_protection": true
+    },
+    "tier": "reversible",
+    "reasoning": "Deletion protection enabled"
+  },
+  {
+    "resource_type": "aws_rds_cluster",
+    "action": "delete",
+    "attributes": {
+      "deletion_protection": false,
+      "skip_final_snapshot": false
+    },
+    "tier": "recoverable-from-backup",
+    "reasoning": "Final snapshot will be created"
+  },
+  {
+    "resource_type": "aws_rds_cluster",
+    "action": "delete",
+    "attributes": {
+      "deletion_protection": false,
+      "skip_final_snapshot": true,
+      "backup_retention_period": 0
+    },
+    "tier": "unrecoverable",
+    "reasoning": "No final snapshot and no automated backups"
+  },
+  {
+    "resource_type": "aws_dynamodb_table",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "DynamoDB table update can be reverted"
+  },
+  {
+    "resource_type": "aws_dynamodb_table",
+    "action": "delete",
+    "attributes": {
+      "deletion_protection_enabled": true
+    },
+    "tier": "reversible",
+    "reasoning": "Deletion protection enabled"
+  },
+  {
+    "resource_type": "aws_dynamodb_table",
+    "action": "delete",
+    "attributes": {
+      "deletion_protection_enabled": false,
+      "point_in_time_recovery": {
+        "enabled": true
+      }
+    },
+    "tier": "recoverable-from-backup",
+    "reasoning": "PITR enabled"
+  },
+  {
+    "resource_type": "aws_dynamodb_table",
+    "action": "delete",
+    "attributes": {
+      "deletion_protection_enabled": false,
+      "point_in_time_recovery": {
+        "enabled": false
+      }
+    },
+    "tier": "unrecoverable",
+    "reasoning": "No deletion protection and no PITR"
+  },
+  {
+    "resource_type": "aws_dynamodb_table",
+    "action": "delete",
+    "attributes": {
+      "deletion_protection_enabled": false,
+      "point_in_time_recovery": null
+    },
+    "tier": "unrecoverable",
+    "reasoning": "No deletion protection and PITR status unknown"
+  },
+  {
+    "resource_type": "aws_kms_key",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "KMS key configuration update can be reverted"
+  },
+  {
+    "resource_type": "aws_kms_key",
+    "action": "delete",
+    "attributes": {
+      "deletion_window_in_days": 30
+    },
+    "tier": "recoverable-with-effort",
+    "reasoning": "30-day deletion window; can be cancelled"
+  },
+  {
+    "resource_type": "aws_kms_key",
+    "action": "delete",
+    "attributes": {
+      "deletion_window_in_days": 7
+    },
+    "tier": "recoverable-with-effort",
+    "reasoning": "7-day deletion window; can be cancelled"
+  },
+  {
+    "resource_type": "aws_kms_key",
+    "action": "delete",
+    "attributes": {
+      "deletion_window_in_days": null
+    },
+    "tier": "recoverable-with-effort",
+    "reasoning": "Default deletion window applies"
+  },
+  {
+    "resource_type": "aws_cloudwatch_log_group",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "Log group configuration update can be reverted"
+  },
+  {
+    "resource_type": "aws_cloudwatch_log_group",
+    "action": "delete",
+    "attributes": {},
+    "tier": "unrecoverable",
+    "reasoning": "Log data is permanently deleted"
+  },
+  {
+    "resource_type": "aws_cloudwatch_log_group",
+    "action": "delete",
+    "attributes": {
+      "retention_in_days": 30
+    },
+    "tier": "unrecoverable",
+    "reasoning": "Log data is permanently deleted"
+  },
+  {
+    "resource_type": "aws_cloudwatch_log_group",
+    "action": "delete",
+    "attributes": {
+      "retention_in_days": null
+    },
+    "tier": "unrecoverable",
+    "reasoning": "Log data is permanently deleted"
+  },
+  {
+    "resource_type": "aws_instance",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "Instance configuration update can be reverted"
+  },
+  {
+    "resource_type": "aws_instance",
+    "action": "delete",
+    "attributes": {
+      "ami": "ami-12345"
+    },
+    "tier": "recoverable-with-effort",
+    "reasoning": "Can recreate from AMI"
+  },
+  {
+    "resource_type": "aws_instance",
+    "action": "delete",
+    "attributes": {
+      "ami": null
+    },
+    "tier": "recoverable-with-effort",
+    "reasoning": "Instance can be recreated"
+  },
+  {
+    "resource_type": "aws_instance",
+    "action": "delete",
+    "attributes": {
+      "ami": "ami-12345",
+      "root_block_device": [
+        {
+          "delete_on_termination": true
+        }
+      ]
+    },
+    "tier": "recoverable-with-effort",
+    "reasoning": "Instance can be recreated from AMI; root volume will be deleted"
+  },
+  {
+    "resource_type": "aws_ebs_volume",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "EBS volume configuration update can be reverted"
+  },
+  {
+    "resource_type": "aws_ebs_volume",
+    "action": "delete",
+    "attributes": {
+      "snapshot_id": "snap-12345"
+    },
+    "tier": "recoverable-from-backup",
+    "reasoning": "Volume was created from snapshot"
+  },
+  {
+    "resource_type": "aws_ebs_volume",
+    "action": "delete",
+    "attributes": {
+      "snapshot_id": null
+    },
+    "tier": "unrecoverable",
+    "reasoning": "No snapshot; data is permanently lost"
+  },
+  {
+    "resource_type": "aws_ebs_volume",
+    "action": "delete",
+    "attributes": {},
+    "tier": "unrecoverable",
+    "reasoning": "No snapshot; data is permanently lost"
+  },
+  {
+    "resource_type": "aws_ebs_snapshot",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "Snapshot metadata update can be reverted"
+  },
+  {
+    "resource_type": "aws_ebs_snapshot",
+    "action": "delete",
+    "attributes": {},
+    "tier": "unrecoverable",
+    "reasoning": "Snapshot deletion is permanent"
+  },
+  {
+    "resource_type": "aws_iam_role",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "IAM role update can be reverted"
+  },
+  {
+    "resource_type": "aws_iam_role",
+    "action": "delete",
+    "attributes": {},
+    "tier": "recoverable-with-effort",
+    "reasoning": "Role can be recreated from configuration"
+  },
+  {
+    "resource_type": "aws_iam_role",
+    "action": "create",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "Role creation can be undone"
+  },
+  {
+    "resource_type": "aws_iam_policy",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "IAM policy update can be reverted"
+  },
+  {
+    "resource_type": "aws_iam_policy",
+    "action": "delete",
+    "attributes": {},
+    "tier": "recoverable-with-effort",
+    "reasoning": "Policy can be recreated from configuration"
+  },
+  {
+    "resource_type": "aws_iam_user",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "IAM user update can be reverted"
+  },
+  {
+    "resource_type": "aws_iam_user",
+    "action": "delete",
+    "attributes": {},
+    "tier": "recoverable-with-effort",
+    "reasoning": "User can be recreated; access keys will be different"
+  },
+  {
+    "resource_type": "aws_lambda_function",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "Lambda configuration update can be reverted"
+  },
+  {
+    "resource_type": "aws_lambda_function",
+    "action": "delete",
+    "attributes": {
+      "s3_bucket": "my-bucket",
+      "s3_key": "code.zip"
+    },
+    "tier": "recoverable-with-effort",
+    "reasoning": "Code stored in S3; can redeploy"
+  },
+  {
+    "resource_type": "aws_lambda_function",
+    "action": "delete",
+    "attributes": {
+      "image_uri": "ecr-uri"
+    },
+    "tier": "recoverable-with-effort",
+    "reasoning": "Code in container registry; can redeploy"
+  },
+  {
+    "resource_type": "aws_lambda_function",
+    "action": "delete",
+    "attributes": {
+      "filename": "local.zip"
+    },
+    "tier": "recoverable-with-effort",
+    "reasoning": "Assuming local code is in version control"
+  },
+  {
+    "resource_type": "aws_lambda_function",
+    "action": "delete",
+    "attributes": {},
+    "tier": "recoverable-with-effort",
+    "reasoning": "Function can be redeployed from source"
+  },
+  {
+    "resource_type": "aws_vpc",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "VPC configuration update can be reverted"
+  },
+  {
+    "resource_type": "aws_vpc",
+    "action": "delete",
+    "attributes": {},
+    "tier": "recoverable-with-effort",
+    "reasoning": "VPC can be recreated; dependent resources affected"
+  },
+  {
+    "resource_type": "aws_vpc",
+    "action": "create",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "VPC creation can be undone"
+  },
+  {
+    "resource_type": "aws_subnet",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "Subnet configuration update can be reverted"
+  },
+  {
+    "resource_type": "aws_subnet",
+    "action": "delete",
+    "attributes": {},
+    "tier": "recoverable-with-effort",
+    "reasoning": "Subnet can be recreated"
+  },
+  {
+    "resource_type": "aws_security_group",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "Security group update can be reverted"
+  },
+  {
+    "resource_type": "aws_security_group",
+    "action": "delete",
+    "attributes": {},
+    "tier": "recoverable-with-effort",
+    "reasoning": "Security group can be recreated; attachments need reconfiguration"
+  },
+  {
+    "resource_type": "aws_lb",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "Load balancer configuration update can be reverted"
+  },
+  {
+    "resource_type": "aws_lb",
+    "action": "delete",
+    "attributes": {},
+    "tier": "recoverable-with-effort",
+    "reasoning": "Load balancer can be recreated; DNS name will change"
+  },
+  {
+    "resource_type": "aws_alb",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "ALB configuration update can be reverted"
+  },
+  {
+    "resource_type": "aws_alb",
+    "action": "delete",
+    "attributes": {},
+    "tier": "recoverable-with-effort",
+    "reasoning": "ALB can be recreated; DNS name will change"
+  },
+  {
+    "resource_type": "aws_route53_zone",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "Hosted zone update can be reverted"
+  },
+  {
+    "resource_type": "aws_route53_zone",
+    "action": "delete",
+    "attributes": {},
+    "tier": "unrecoverable",
+    "reasoning": "Zone deletion removes all records; NS delegation lost"
+  },
+  {
+    "resource_type": "aws_route53_record",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "DNS record update can be reverted"
+  },
+  {
+    "resource_type": "aws_route53_record",
+    "action": "delete",
+    "attributes": {},
+    "tier": "recoverable-with-effort",
+    "reasoning": "DNS record can be recreated"
+  },
+  {
+    "resource_type": "aws_sns_topic",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "SNS topic update can be reverted"
+  },
+  {
+    "resource_type": "aws_sns_topic",
+    "action": "delete",
+    "attributes": {},
+    "tier": "recoverable-with-effort",
+    "reasoning": "Topic can be recreated; subscriptions lost"
+  },
+  {
+    "resource_type": "aws_sns_topic_subscription",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "Subscription update can be reverted"
+  },
+  {
+    "resource_type": "aws_sns_topic_subscription",
+    "action": "delete",
+    "attributes": {},
+    "tier": "recoverable-with-effort",
+    "reasoning": "Subscription can be recreated"
+  },
+  {
+    "resource_type": "aws_sqs_queue",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "SQS queue update can be reverted"
+  },
+  {
+    "resource_type": "aws_sqs_queue",
+    "action": "delete",
+    "attributes": {
+      "message_count": 0
+    },
+    "tier": "recoverable-with-effort",
+    "reasoning": "Empty queue can be recreated"
+  },
+  {
+    "resource_type": "aws_sqs_queue",
+    "action": "delete",
+    "attributes": {
+      "message_count": 100
+    },
+    "tier": "unrecoverable",
+    "reasoning": "Messages in queue will be lost"
+  },
+  {
+    "resource_type": "aws_sqs_queue",
+    "action": "delete",
+    "attributes": {
+      "message_count": null
+    },
+    "tier": "recoverable-with-effort",
+    "reasoning": "Queue can be recreated; any messages will be lost"
+  },
+  {
+    "resource_type": "aws_eip",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "EIP configuration update can be reverted"
+  },
+  {
+    "resource_type": "aws_eip",
+    "action": "delete",
+    "attributes": {},
+    "tier": "unrecoverable",
+    "reasoning": "IP address is released permanently"
+  },
+  {
+    "resource_type": "aws_nat_gateway",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "NAT gateway update can be reverted"
+  },
+  {
+    "resource_type": "aws_nat_gateway",
+    "action": "delete",
+    "attributes": {},
+    "tier": "recoverable-with-effort",
+    "reasoning": "NAT gateway can be recreated"
+  },
+  {
+    "resource_type": "aws_internet_gateway",
+    "action": "update",
+    "attributes": {},
+    "tier": "reversible",
+    "reasoning": "Internet gateway update can be reverted"
+  },
+  {
+    "resource_type": "aws_internet_gateway",
+    "action": "delete",
+    "attributes": {},
+    "tier": "recoverable-with-effort",
+    "reasoning": "Internet gateway can be recreated"
+  }
+]
