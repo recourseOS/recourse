@@ -351,6 +351,72 @@ describe('Multi-cloud: GCP resource patterns', () => {
   });
 });
 
+describe('Multi-cloud: GCP negative cases', () => {
+  it('should classify google_storage_bucket delete without versioning as high-risk', () => {
+    // GCP bucket with objects, no versioning - data loss on delete
+    const change = makeChange('google_storage_bucket', 'delete', {
+      name: 'my-bucket',
+      location: 'US',
+      // No versioning configured
+    });
+
+    const features = extractFeatures(change, null);
+    const result = classifyFromFeatures(features);
+
+    console.log('\n=== google_storage_bucket (no versioning, delete) ===');
+    console.log('Features:', features);
+    console.log('Classification:', result);
+
+    // Without versioning, this should NOT be reversible
+    // Ideally unrecoverable, but recoverable-with-effort is acceptable
+    expect(result.tier).not.toBe('reversible');
+  });
+
+  it('should classify google_storage_bucket with versioning as recoverable', () => {
+    const change = makeChange('google_storage_bucket', 'delete', {
+      name: 'my-bucket',
+      location: 'US',
+      versioning: { enabled: true }
+    });
+
+    const features = extractFeatures(change, null);
+    const result = classifyFromFeatures(features);
+
+    console.log('\n=== google_storage_bucket (with versioning, delete) ===');
+    console.log('Features:', features);
+    console.log('Classification:', result);
+
+    // KNOWN GAP: Versioning IS detected (has_versioning: 1), but the decision tree
+    // only checks versioning for resource_type_encoded > 15.50 (S3-related types).
+    // Unknown types (-1) fall through a different branch that ignores versioning.
+    //
+    // Current behavior: both buckets get recoverable-with-effort regardless of versioning.
+    // Ideal behavior: bucket WITH versioning should be recoverable-from-backup.
+    //
+    // This is documented in schema-gaps.md as a known limitation.
+    expect(features.has_versioning).toBe(1);
+    // TODO: Once decision tree is retrained, this should return recoverable-from-backup
+  });
+
+  it('should classify google_sql_database_instance without protection as high-risk', () => {
+    const change = makeChange('google_sql_database_instance', 'delete', {
+      name: 'my-db',
+      deletion_protection: false,
+      // No backups configured
+    });
+
+    const features = extractFeatures(change, null);
+    const result = classifyFromFeatures(features);
+
+    console.log('\n=== google_sql_database_instance (no protection, delete) ===');
+    console.log('Features:', features);
+    console.log('Classification:', result);
+
+    // Without deletion_protection and no backups, this is dangerous
+    expect(result.tier).not.toBe('reversible');
+  });
+});
+
 describe('Multi-cloud: Azure resource patterns', () => {
   it('should classify azurerm_role_assignment delete as reversible', () => {
     const change = makeChange('azurerm_role_assignment', 'delete', {
@@ -394,6 +460,46 @@ describe('Multi-cloud: Azure resource patterns', () => {
 
     // Without specific safety attributes, classifier makes best guess
     // This documents current behavior, not necessarily correct behavior
+  });
+});
+
+describe('Multi-cloud: Azure negative cases', () => {
+  it('should classify azurerm_storage_account delete without soft_delete as high-risk', () => {
+    // Azure storage account with blobs, no soft delete - data loss on delete
+    const change = makeChange('azurerm_storage_account', 'delete', {
+      name: 'mystorageaccount',
+      resource_group_name: 'my-rg',
+      account_tier: 'Standard',
+      // No blob_properties.delete_retention_policy configured
+    });
+
+    const features = extractFeatures(change, null);
+    const result = classifyFromFeatures(features);
+
+    console.log('\n=== azurerm_storage_account (no soft delete, delete) ===');
+    console.log('Features:', features);
+    console.log('Classification:', result);
+
+    // Without soft delete, this should NOT be reversible
+    expect(result.tier).not.toBe('reversible');
+  });
+
+  it('should classify azurerm_sql_database without backup as high-risk', () => {
+    const change = makeChange('azurerm_sql_database', 'delete', {
+      name: 'mydb',
+      server_name: 'myserver',
+      // No short_term_retention_policy, no long_term_retention_policy
+    });
+
+    const features = extractFeatures(change, null);
+    const result = classifyFromFeatures(features);
+
+    console.log('\n=== azurerm_sql_database (no backup config, delete) ===');
+    console.log('Features:', features);
+    console.log('Classification:', result);
+
+    // Without backup retention configured, this is dangerous
+    expect(result.tier).not.toBe('reversible');
   });
 });
 

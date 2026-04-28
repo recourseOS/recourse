@@ -150,25 +150,56 @@ The classifier returns `unrecoverable` for Route53 record deletions at 72.7% con
 
 We've chosen to leave this as a documented limit rather than force a verdict. Future versions may ask the user for context.
 
-### Multi-Cloud Suffix Detection
+### Multi-Cloud Suffix Detection (Updated v0.1.2)
 
-The current `is_config_only` and `is_attachment` detection uses AWS Terraform naming conventions:
+Cloud-specific suffix patterns have been added:
+
+| Cloud | Config-only Suffixes | Attachment Suffixes |
+|-------|---------------------|---------------------|
+| AWS | `_policy`, `_config`, `_rule`, `_setting`, `_endpoint` | `_attachment`, `_membership`, `_association` |
+| GCP | `_iam_policy`, `_iam_binding`, `_iam_member`, `_access_level` | `_binding`, `_member` |
+| Azure | `_diagnostic_setting` | `_assignment` |
+
+**What's working:**
+- `google_project_iam_binding` → reversible (suffix detection)
+- `google_project_iam_member` → reversible (suffix detection)
+- `azurerm_role_assignment` → reversible (suffix detection)
+
+**What's not yet working:**
+The patterns are still heuristics. For true multi-cloud support, suffix detection needs to be replaced with structural detection (does this resource type represent a relationship between two other resources, vs. owning data of its own).
+
+### Abstract Feature Transfer
+
+**Validated (v0.1.2):**
+
+| Resource | Feature | Result |
+|----------|---------|--------|
+| `google_sql_database_instance` | `deletion_protection: true` | `reversible` ✓ |
+| `google_storage_bucket` | `versioning: { enabled: true }` | Feature detected (`has_versioning: 1`) |
+
+The `google_sql_database_instance` test is significant: no GCP-specific code was written. The classifier recognized `deletion_protection` as an abstract safety pattern and applied it correctly.
+
+### Decision Tree Gap: Versioning for Unknown Types
+
+**Problem discovered in v0.1.2 testing:**
+
+The decision tree only checks `has_versioning` for resource types 16-20 (S3-related). Unknown types (`resource_type_encoded = -1`) fall through a different branch that ignores versioning entirely.
 
 ```
-_policy, _config, _rule, _setting      → config-only
-_attachment, _membership, _association → attachment
+google_storage_bucket with versioning: { enabled: true }
+  → Feature extracted: has_versioning = 1
+  → Decision tree path: resource_type_encoded = -1 < 6.5 → early branch
+  → Result: recoverable-with-effort (versioning ignored)
+  → Expected: recoverable-from-backup
 ```
 
-These suffixes are reliable for AWS but won't transfer to other clouds:
+Both GCP buckets (with and without versioning) currently get `recoverable-with-effort` because the tree was trained only on known AWS types. The feature is detected but not used.
 
-- **GCP**: `google_project_iam_binding`, `google_compute_instance_group_membership`
-- **Azure**: `azurerm_role_assignment`, `azurerm_subnet_network_security_group_association`
+**Impact:** The classifier cannot distinguish dangerous from safe unknown storage resources based on versioning.
 
-For multi-cloud support, suffix detection needs to be either:
-1. Rebuilt per cloud with cloud-specific patterns, or
-2. Replaced with structural detection (does this resource type represent a relationship between two other resources, vs. owning data of its own)
-
-The abstract features (`is_config_only`, `is_attachment`) are the right concepts. The suffix-based implementation is an AWS-specific heuristic that works for v0.1.
+**Fix:** Retrain the decision tree with:
+1. `resource_type_encoded = -1` as a valid training category
+2. Versioning checks that fire for any resource type, not just S3
 
 ## Files
 
