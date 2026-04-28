@@ -1,0 +1,60 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.0",
+  "planned_values": {
+    "root_module": {
+      "resources": []
+    }
+  },
+  "resource_changes": [
+    {
+      "address": "aws_lambda_function.api",
+      "mode": "managed",
+      "type": "aws_lambda_function",
+      "name": "api",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "id": "api-handler",
+          "function_name": "api-handler",
+          "arn": "arn:aws:lambda:us-east-1:123456789012:function:api-handler",
+          "runtime": "nodejs18.x",
+          "handler": "index.handler",
+          "role": "arn:aws:iam::123456789012:role/lambda-exec-role",
+          "s3_bucket": "my-deployment-bucket",
+          "s3_key": "lambda/api-handler.zip",
+          "source_code_hash": "abc123",
+          "environment": {
+            "variables": {
+              "DB_HOST": "mydb.cluster-xyz.us-east-1.rds.amazonaws.com"
+            }
+          }
+        },
+        "after": null
+      }
+    }
+  ],
+  "prior_state": {
+    "format_version": "1.0",
+    "values": {
+      "root_module": {
+        "resources": [
+          {
+            "address": "aws_lambda_function.api",
+            "mode": "managed",
+            "type": "aws_lambda_function",
+            "name": "api",
+            "values": {
+              "id": "api-handler",
+              "function_name": "api-handler",
+              "arn": "arn:aws:lambda:us-east-1:123456789012:function:api-handler",
+              "s3_bucket": "my-deployment-bucket",
+              "s3_key": "lambda/api-handler.zip"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

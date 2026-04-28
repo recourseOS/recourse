@@ -1,0 +1,76 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.0",
+  "planned_values": {
+    "root_module": {
+      "resources": []
+    }
+  },
+  "resource_changes": [
+    {
+      "address": "aws_iam_role.lambda_exec",
+      "mode": "managed",
+      "type": "aws_iam_role",
+      "name": "lambda_exec",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "id": "lambda-exec-role",
+          "name": "lambda-exec-role",
+          "arn": "arn:aws:iam::123456789012:role/lambda-exec-role",
+          "assume_role_policy": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+        },
+        "after": null
+      }
+    },
+    {
+      "address": "aws_iam_policy.lambda_logging",
+      "mode": "managed",
+      "type": "aws_iam_policy",
+      "name": "lambda_logging",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "id": "arn:aws:iam::123456789012:policy/lambda-logging",
+          "name": "lambda-logging",
+          "arn": "arn:aws:iam::123456789012:policy/lambda-logging",
+          "policy": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"logs:CreateLogGroup\",\"logs:CreateLogStream\",\"logs:PutLogEvents\"],\"Resource\":\"*\"}]}"
+        },
+        "after": null
+      }
+    }
+  ],
+  "prior_state": {
+    "format_version": "1.0",
+    "values": {
+      "root_module": {
+        "resources": [
+          {
+            "address": "aws_iam_role.lambda_exec",
+            "mode": "managed",
+            "type": "aws_iam_role",
+            "name": "lambda_exec",
+            "values": {
+              "id": "lambda-exec-role",
+              "name": "lambda-exec-role",
+              "arn": "arn:aws:iam::123456789012:role/lambda-exec-role"
+            }
+          },
+          {
+            "address": "aws_iam_policy.lambda_logging",
+            "mode": "managed",
+            "type": "aws_iam_policy",
+            "name": "lambda_logging",
+            "values": {
+              "id": "arn:aws:iam::123456789012:policy/lambda-logging",
+              "name": "lambda-logging",
+              "arn": "arn:aws:iam::123456789012:policy/lambda-logging"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
