@@ -51,14 +51,17 @@
     align-items: baseline;
   }
   .logo {
-    display: flex;
-    align-items: center;
-    color: var(--ink);
     text-decoration: none;
+    color: var(--ink);
   }
-  .logo svg {
-    height: 36px;
-    width: auto;
+  .wordmark {
+    font-weight: 600;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+  }
+  .wordmark .os {
+    color: var(--accent);
+    font-weight: 500;
   }
   nav .links { font-family: "JetBrains Mono", monospace; font-size: 13px; }
   nav .links a {
@@ -350,14 +353,7 @@
 
 <nav class="container">
   <a href="/" class="logo" aria-label="RecourseOS home">
-    <svg width="140" height="32" viewBox="0 0 140 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <!-- Undo arrow icon -->
-      <path d="M8 20 L8 12 L14 12" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M8 12 C8 12 12 8 18 8 C24 8 28 12 28 18 C28 24 24 28 18 28 C14 28 11 26 9 23" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-      <!-- Wordmark -->
-      <text x="38" y="22" font-family="'Fraunces', Georgia, serif" font-size="18" font-weight="600" fill="currentColor" letter-spacing="-0.5">recourse</text>
-      <text x="118" y="22" font-family="'Fraunces', Georgia, serif" font-size="18" font-weight="400" font-style="italic" fill="var(--ink-faint)" letter-spacing="-0.5">os</text>
-    </svg>
+    <span class="wordmark">Recourse<span class="os">OS</span></span>
   </a>
   <div class="links">
     <a href="https://github.com/recourseos/recourse">github</a>
