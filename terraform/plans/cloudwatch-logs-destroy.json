@@ -1,0 +1,86 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.6.0",
+  "resource_changes": [
+    {
+      "address": "aws_cloudwatch_log_group.application",
+      "type": "aws_cloudwatch_log_group",
+      "name": "application",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "name": "/recourse-test/application",
+          "arn": "arn:aws:logs:us-east-1:123456789012:log-group:/recourse-test/application",
+          "retention_in_days": 365
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_cloudwatch_log_group.audit",
+      "type": "aws_cloudwatch_log_group",
+      "name": "audit",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "name": "/recourse-test/audit",
+          "arn": "arn:aws:logs:us-east-1:123456789012:log-group:/recourse-test/audit",
+          "retention_in_days": 2555
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_cloudwatch_log_group.debug",
+      "type": "aws_cloudwatch_log_group",
+      "name": "debug",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "name": "/recourse-test/debug",
+          "arn": "arn:aws:logs:us-east-1:123456789012:log-group:/recourse-test/debug",
+          "retention_in_days": 3
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_lambda_function.logger",
+      "type": "aws_lambda_function",
+      "name": "logger",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "function_name": "recourse-test-logger",
+          "arn": "arn:aws:lambda:us-east-1:123456789012:function:recourse-test-logger",
+          "runtime": "nodejs18.x",
+          "handler": "index.handler"
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_iam_role.lambda",
+      "type": "aws_iam_role",
+      "name": "lambda",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "name": "recourse-test-lambda-role",
+          "arn": "arn:aws:iam::123456789012:role/recourse-test-lambda-role"
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    }
+  ]
+}

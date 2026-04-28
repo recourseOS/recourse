@@ -1,0 +1,90 @@
+{
+  "version": 4,
+  "terraform_version": "1.6.0",
+  "resources": [
+    {
+      "mode": "managed",
+      "type": "aws_s3_bucket",
+      "name": "logs",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "attributes": {
+            "id": "my-app-logs-bucket",
+            "bucket": "my-app-logs-bucket",
+            "arn": "arn:aws:s3:::my-app-logs-bucket"
+          }
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_db_instance",
+      "name": "main",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "attributes": {
+            "id": "my-app-db",
+            "identifier": "my-app-db",
+            "endpoint": "my-app-db.abc123.us-east-1.rds.amazonaws.com:5432",
+            "address": "my-app-db.abc123.us-east-1.rds.amazonaws.com",
+            "engine": "postgres",
+            "engine_version": "14.9"
+          },
+          "dependencies": []
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_instance",
+      "name": "web",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "attributes": {
+            "id": "i-1234567890abcdef0",
+            "ami": "ami-12345678",
+            "instance_type": "t3.micro",
+            "private_ip": "10.0.1.50",
+            "public_ip": "54.123.45.67"
+          },
+          "dependencies": [
+            "aws_security_group.web"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_security_group",
+      "name": "web",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "attributes": {
+            "id": "sg-12345678",
+            "name": "web-sg",
+            "vpc_id": "vpc-12345678"
+          }
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cloudwatch_log_group",
+      "name": "app",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "attributes": {
+            "name": "/aws/app/logs",
+            "retention_in_days": 30,
+            "arn": "arn:aws:logs:us-east-1:123456789012:log-group:/aws/app/logs"
+          }
+        }
+      ]
+    }
+  ]
+}

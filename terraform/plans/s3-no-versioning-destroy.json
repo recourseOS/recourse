@@ -1,0 +1,141 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.6.0",
+  "resource_changes": [
+    {
+      "address": "aws_s3_bucket.unversioned",
+      "type": "aws_s3_bucket",
+      "name": "unversioned",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "bucket": "recourse-test-unversioned-a1b2c3d4",
+          "arn": "arn:aws:s3:::recourse-test-unversioned-a1b2c3d4"
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_s3_bucket_versioning.unversioned",
+      "type": "aws_s3_bucket_versioning",
+      "name": "unversioned",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "bucket": "recourse-test-unversioned-a1b2c3d4",
+          "versioning_configuration": [{ "status": "Disabled" }]
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_s3_object.test_data_1",
+      "type": "aws_s3_object",
+      "name": "test_data_1",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "bucket": "recourse-test-unversioned-a1b2c3d4",
+          "key": "important-data/config.json"
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_s3_object.test_data_2",
+      "type": "aws_s3_object",
+      "name": "test_data_2",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "bucket": "recourse-test-unversioned-a1b2c3d4",
+          "key": "backups/2024-01-15.sql"
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_s3_bucket.versioned",
+      "type": "aws_s3_bucket",
+      "name": "versioned",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "bucket": "recourse-test-versioned-a1b2c3d4",
+          "arn": "arn:aws:s3:::recourse-test-versioned-a1b2c3d4"
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_s3_bucket_versioning.versioned",
+      "type": "aws_s3_bucket_versioning",
+      "name": "versioned",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "bucket": "recourse-test-versioned-a1b2c3d4",
+          "versioning_configuration": [{ "status": "Enabled" }]
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_s3_object.versioned_data",
+      "type": "aws_s3_object",
+      "name": "versioned_data",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "bucket": "recourse-test-versioned-a1b2c3d4",
+          "key": "important-data/config.json"
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    }
+  ],
+  "prior_state": {
+    "format_version": "1.0",
+    "terraform_version": "1.6.0",
+    "values": {
+      "root_module": {
+        "resources": [
+          {
+            "address": "aws_s3_bucket_versioning.unversioned",
+            "type": "aws_s3_bucket_versioning",
+            "name": "unversioned",
+            "provider_name": "registry.terraform.io/hashicorp/aws",
+            "values": {
+              "bucket": "recourse-test-unversioned-a1b2c3d4",
+              "versioning_configuration": [{ "status": "Disabled" }]
+            }
+          },
+          {
+            "address": "aws_s3_bucket_versioning.versioned",
+            "type": "aws_s3_bucket_versioning",
+            "name": "versioned",
+            "provider_name": "registry.terraform.io/hashicorp/aws",
+            "values": {
+              "bucket": "recourse-test-versioned-a1b2c3d4",
+              "versioning_configuration": [{ "status": "Enabled" }]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.6.0",
+  "resource_changes": [
+    {
+      "address": "aws_kms_key.short_window",
+      "type": "aws_kms_key",
+      "name": "short_window",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "key_id": "1234abcd-12ab-34cd-56ef-1234567890ab",
+          "arn": "arn:aws:kms:us-east-1:123456789012:key/1234abcd-12ab-34cd-56ef-1234567890ab",
+          "description": "Recourse test key - short deletion window",
+          "deletion_window_in_days": 7,
+          "enable_key_rotation": false
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_kms_key.long_window",
+      "type": "aws_kms_key",
+      "name": "long_window",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "key_id": "5678efgh-56ef-78gh-90ij-0987654321ba",
+          "arn": "arn:aws:kms:us-east-1:123456789012:key/5678efgh-56ef-78gh-90ij-0987654321ba",
+          "description": "Recourse test key - long deletion window",
+          "deletion_window_in_days": 30,
+          "enable_key_rotation": true
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_s3_bucket.encrypted",
+      "type": "aws_s3_bucket",
+      "name": "encrypted",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "bucket": "recourse-test-encrypted-a1b2c3d4",
+          "arn": "arn:aws:s3:::recourse-test-encrypted-a1b2c3d4"
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_db_instance.encrypted",
+      "type": "aws_db_instance",
+      "name": "encrypted",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "identifier": "recourse-test-encrypted",
+          "engine": "postgres",
+          "engine_version": "15.4",
+          "instance_class": "db.t3.micro",
+          "storage_encrypted": true,
+          "kms_key_id": "arn:aws:kms:us-east-1:123456789012:key/1234abcd-12ab-34cd-56ef-1234567890ab",
+          "skip_final_snapshot": true,
+          "deletion_protection": false,
+          "backup_retention_period": 0
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    }
+  ],
+  "prior_state": {
+    "format_version": "1.0",
+    "terraform_version": "1.6.0",
+    "values": {
+      "root_module": {
+        "resources": [
+          {
+            "address": "aws_kms_key.short_window",
+            "type": "aws_kms_key",
+            "name": "short_window",
+            "provider_name": "registry.terraform.io/hashicorp/aws",
+            "values": {
+              "key_id": "1234abcd-12ab-34cd-56ef-1234567890ab",
+              "arn": "arn:aws:kms:us-east-1:123456789012:key/1234abcd-12ab-34cd-56ef-1234567890ab"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

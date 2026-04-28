@@ -1,0 +1,142 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.6.0",
+  "resource_changes": [
+    {
+      "address": "aws_s3_bucket.logs",
+      "type": "aws_s3_bucket",
+      "name": "logs",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "bucket": "my-app-logs-bucket",
+          "versioning": [{ "enabled": false }]
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_db_instance.main",
+      "type": "aws_db_instance",
+      "name": "main",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "identifier": "my-app-db",
+          "engine": "postgres",
+          "skip_final_snapshot": true,
+          "deletion_protection": false,
+          "backup_retention_period": 0
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_instance.web",
+      "type": "aws_instance",
+      "name": "web",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["update"],
+        "before": {
+          "ami": "ami-12345678",
+          "instance_type": "t3.micro"
+        },
+        "after": {
+          "ami": "ami-12345678",
+          "instance_type": "t3.small"
+        },
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_lambda_function.api",
+      "type": "aws_lambda_function",
+      "name": "api",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "function_name": "my-api",
+          "runtime": "nodejs18.x",
+          "handler": "index.handler"
+        },
+        "after_unknown": {
+          "arn": true,
+          "invoke_arn": true
+        }
+      }
+    },
+    {
+      "address": "aws_cloudwatch_log_group.app",
+      "type": "aws_cloudwatch_log_group",
+      "name": "app",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "name": "/aws/app/logs",
+          "retention_in_days": 30
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    }
+  ],
+  "prior_state": {
+    "format_version": "1.0",
+    "terraform_version": "1.6.0",
+    "values": {
+      "root_module": {
+        "resources": [
+          {
+            "address": "aws_s3_bucket.logs",
+            "type": "aws_s3_bucket",
+            "name": "logs",
+            "provider_name": "registry.terraform.io/hashicorp/aws",
+            "values": {
+              "bucket": "my-app-logs-bucket"
+            }
+          },
+          {
+            "address": "aws_db_instance.main",
+            "type": "aws_db_instance",
+            "name": "main",
+            "provider_name": "registry.terraform.io/hashicorp/aws",
+            "values": {
+              "identifier": "my-app-db",
+              "endpoint": "my-app-db.abc123.us-east-1.rds.amazonaws.com:5432"
+            }
+          },
+          {
+            "address": "aws_instance.web",
+            "type": "aws_instance",
+            "name": "web",
+            "provider_name": "registry.terraform.io/hashicorp/aws",
+            "values": {
+              "id": "i-1234567890abcdef0",
+              "ami": "ami-12345678",
+              "instance_type": "t3.micro",
+              "private_ip": "10.0.1.50"
+            }
+          },
+          {
+            "address": "aws_cloudwatch_log_group.app",
+            "type": "aws_cloudwatch_log_group",
+            "name": "app",
+            "provider_name": "registry.terraform.io/hashicorp/aws",
+            "values": {
+              "name": "/aws/app/logs",
+              "retention_in_days": 30
+            }
+          }
+        ]
+      }
+    }
+  }
+}

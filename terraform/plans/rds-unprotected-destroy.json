@@ -1,0 +1,53 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.6.0",
+  "resource_changes": [
+    {
+      "address": "aws_db_instance.main",
+      "type": "aws_db_instance",
+      "name": "main",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "identifier": "recourse-test-db",
+          "engine": "postgres",
+          "engine_version": "15.4",
+          "instance_class": "db.t3.micro",
+          "allocated_storage": 20,
+          "skip_final_snapshot": true,
+          "deletion_protection": false,
+          "backup_retention_period": 0,
+          "multi_az": false,
+          "endpoint": "recourse-test-db.abc123.us-east-1.rds.amazonaws.com:5432",
+          "address": "recourse-test-db.abc123.us-east-1.rds.amazonaws.com"
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_db_instance.protected",
+      "type": "aws_db_instance",
+      "name": "protected",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "identifier": "recourse-test-db-protected",
+          "engine": "postgres",
+          "engine_version": "15.4",
+          "instance_class": "db.t3.micro",
+          "allocated_storage": 20,
+          "skip_final_snapshot": false,
+          "final_snapshot_identifier": "recourse-test-final-snapshot",
+          "deletion_protection": true,
+          "backup_retention_period": 7,
+          "endpoint": "recourse-test-db-protected.xyz789.us-east-1.rds.amazonaws.com:5432"
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    }
+  ]
+}

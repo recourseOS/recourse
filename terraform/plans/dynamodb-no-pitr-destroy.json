@@ -1,0 +1,44 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.6.0",
+  "resource_changes": [
+    {
+      "address": "aws_dynamodb_table.unprotected",
+      "type": "aws_dynamodb_table",
+      "name": "unprotected",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "name": "recourse-test-unprotected",
+          "arn": "arn:aws:dynamodb:us-east-1:123456789012:table/recourse-test-unprotected",
+          "billing_mode": "PAY_PER_REQUEST",
+          "hash_key": "id",
+          "point_in_time_recovery": [{ "enabled": false }],
+          "deletion_protection_enabled": false
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_dynamodb_table.protected",
+      "type": "aws_dynamodb_table",
+      "name": "protected",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "name": "recourse-test-protected",
+          "arn": "arn:aws:dynamodb:us-east-1:123456789012:table/recourse-test-protected",
+          "billing_mode": "PAY_PER_REQUEST",
+          "hash_key": "id",
+          "point_in_time_recovery": [{ "enabled": true }],
+          "deletion_protection_enabled": true
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    }
+  ]
+}
