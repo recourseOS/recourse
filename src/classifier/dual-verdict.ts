@@ -33,6 +33,64 @@ const tierFromString: Record<string, RecoverabilityTier> = {
 // Minimum confidence threshold for classifier-only verdicts
 const CONFIDENCE_THRESHOLD = 0.7;
 
+// Config-only resources: pure configuration, no data stored
+// Deleting these is always reversible - you can recreate the exact same config
+const CONFIG_ONLY_SUFFIXES = [
+  '_policy',               // aws_s3_bucket_policy, aws_iam_role_policy
+  '_configuration',        // aws_s3_bucket_lifecycle_configuration
+  '_config',               // aws_lambda_function_event_invoke_config
+  '_setting',              // aws_api_gateway_settings
+  '_settings',             // aws_cognito_user_pool_client_settings
+  '_rule',                 // aws_security_group_rule, aws_lb_listener_rule
+  '_permission',           // aws_lambda_permission
+  '_endpoint',             // aws_vpc_endpoint
+];
+
+// Attachment resources: join-table style, both parent resources unaffected
+// Deleting these is always reversible - you can re-attach immediately
+const ATTACHMENT_SUFFIXES = [
+  '_attachment',           // aws_iam_role_policy_attachment
+  '_membership',           // aws_iam_group_membership
+  '_association',          // aws_route_table_association
+];
+
+// Full resource types that are known to be config-only (not caught by suffix)
+const CONFIG_ONLY_TYPES = new Set([
+  'aws_lambda_function_event_invoke_config',
+  'aws_s3_bucket_cors_configuration',
+  'aws_s3_bucket_website_configuration',
+  'aws_s3_bucket_notification',
+  'aws_s3_bucket_object_lock_configuration',
+  'aws_api_gateway_deployment',
+  'aws_api_gateway_stage',
+  'aws_cloudwatch_event_rule',
+  'aws_cloudwatch_event_target',
+]);
+
+/**
+ * Check if a resource type is config-only (no data stored).
+ */
+function isConfigOnlyResource(resourceType: string): boolean {
+  if (CONFIG_ONLY_TYPES.has(resourceType)) return true;
+
+  for (const suffix of CONFIG_ONLY_SUFFIXES) {
+    if (resourceType.endsWith(suffix)) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Check if a resource type is an attachment/relationship resource.
+ */
+function isAttachmentResource(resourceType: string): boolean {
+  for (const suffix of ATTACHMENT_SUFFIXES) {
+    if (resourceType.endsWith(suffix)) return true;
+  }
+
+  return false;
+}
+
 export interface DualVerdictResult extends RecoverabilityResult {
   source: VerdictSource;
   confidence: number;
@@ -81,7 +139,47 @@ export function getRecoverabilityDual(
     };
   }
 
-  // No handler - use classifier
+  // No handler - check for special resource categories before using classifier
+
+  // Config-only resources are always reversible (no data loss possible)
+  if (isConfigOnlyResource(change.type) && change.actions.includes('delete')) {
+    return {
+      tier: RecoverabilityTier.REVERSIBLE,
+      label: RecoverabilityLabels[RecoverabilityTier.REVERSIBLE],
+      reasoning: 'Config-only resource — can be recreated with identical settings',
+      source: 'rules',  // This is a rule, just pattern-based
+      confidence: 1.0,
+      classifierAgreement: classifierResult.tier === 'reversible',
+      classifierVerdict: {
+        tier: tierFromString[classifierResult.tier],
+        label: classifierResult.tier,
+        reasoning: `Classifier verdict: ${classifierResult.tier}`,
+        source: 'classifier',
+        confidence: classifierResult.confidence,
+      },
+    };
+  }
+
+  // Attachment resources are always reversible (parent resources unaffected)
+  if (isAttachmentResource(change.type) && change.actions.includes('delete')) {
+    return {
+      tier: RecoverabilityTier.REVERSIBLE,
+      label: RecoverabilityLabels[RecoverabilityTier.REVERSIBLE],
+      reasoning: 'Attachment resource — parent resources are unaffected, can re-attach',
+      source: 'rules',  // This is a rule, just pattern-based
+      confidence: 1.0,
+      classifierAgreement: classifierResult.tier === 'reversible',
+      classifierVerdict: {
+        tier: tierFromString[classifierResult.tier],
+        label: classifierResult.tier,
+        reasoning: `Classifier verdict: ${classifierResult.tier}`,
+        source: 'classifier',
+        confidence: classifierResult.confidence,
+      },
+    };
+  }
+
+  // No handler, not a special category - use classifier
   const tier = tierFromString[classifierResult.tier];
   const features = extractFeatures(change, state);
   const featureExplanation = explainFeatures(features);

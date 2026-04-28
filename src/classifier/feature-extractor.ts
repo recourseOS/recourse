@@ -16,7 +16,8 @@ const DELETION_PROTECTION_ATTRS = [
 
 const BACKUP_ATTRS = [
   'backup_retention_period', 'backup_window', 'automated_backup',
-  'backup_retention', 'backup_policy', 'backup_retention_days'
+  'backup_retention', 'backup_policy', 'backup_retention_days',
+  'snapshot_retention_limit'  // ElastiCache
 ];
 
 const SNAPSHOT_ATTRS = [
@@ -36,7 +37,8 @@ const PITR_ATTRS = [
 
 const RETENTION_ATTRS = [
   'retention_in_days', 'retention_period', 'backup_retention_period',
-  'message_retention_seconds', 'deletion_window_in_days', 'retention_days'
+  'message_retention_seconds', 'deletion_window_in_days', 'retention_days',
+  'recovery_window_in_days'  // Secrets Manager soft-delete
 ];
 
 const EMPTY_ATTRS = [
@@ -189,15 +191,23 @@ function extractSkipFinalSnapshot(attrs: Record<string, unknown>): number {
 }
 
 /**
- * Extract deletion window days (normalized).
+ * Extract deletion/recovery window days (normalized).
+ * Handles both KMS deletion_window_in_days and Secrets Manager recovery_window_in_days.
  */
 function extractDeletionWindow(attrs: Record<string, unknown>): number {
-  if ('deletion_window_in_days' in attrs) {
-    const value = attrs['deletion_window_in_days'];
-    if (value === null || value === undefined) return -1;
-    if (typeof value === 'number') {
-      // Normalize to 0-1 range (assuming max 30 days)
-      return Math.min(value / 30, 1);
+  // Check both KMS-style and Secrets Manager-style windows
+  const windowAttrs = ['deletion_window_in_days', 'recovery_window_in_days'];
+
+  for (const attr of windowAttrs) {
+    if (attr in attrs) {
+      const value = attrs[attr];
+      if (value === null || value === undefined) return -1;
+      if (typeof value === 'number') {
+        // Value of 0 means immediate/no recovery window
+        if (value === 0) return 0;
+        // Normalize to 0-1 range (assuming max 30 days)
+        return Math.min(value / 30, 1);
+      }
     }
   }
   return -1;

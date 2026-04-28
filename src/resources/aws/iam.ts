@@ -64,10 +64,23 @@ export const iamHandler: ResourceHandler = {
       result = classifyIamPolicy(change, state, ctx);
     } else if (change.type === 'aws_iam_user') {
       result = classifyIamUser(change, ctx);
-    } else {
+    } else if (change.type.includes('attachment')) {
+      // Attachment resources (aws_iam_role_policy_attachment, aws_iam_user_policy_attachment)
+      // These are join-table resources - deleting them just detaches, both parent resources still exist
       ctx.check('resource_type', change.type, {
         passed: true,
-        note: 'IAM attachment or profile resource',
+        note: 'IAM attachment resource — parent resources unaffected',
+      });
+      result = {
+        tier: RecoverabilityTier.REVERSIBLE,
+        label: RecoverabilityLabels[RecoverabilityTier.REVERSIBLE],
+        reasoning: 'Attachment resource — policy and role/user still exist, can re-attach',
+      };
+    } else {
+      // Other IAM resources (instance profiles, inline policies)
+      ctx.check('resource_type', change.type, {
+        passed: true,
+        note: 'IAM resource',
       });
       result = {
         tier: RecoverabilityTier.RECOVERABLE_WITH_EFFORT,
