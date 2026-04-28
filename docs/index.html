@@ -1,211 +1,528 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>recourse - Know what you can't undo before you terraform apply</title>
-  <meta name="description" content="Analyze Terraform plans for blast radius and recoverability before you apply destructive changes.">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>RecourseOS — Recoverability checks for Terraform</title>
+<meta name="description" content="terraform plan tells you what will change. RecourseOS tells you what you can't get back. A static analyzer for Terraform plans that classifies every destructive change by recoverability." />
+<meta property="og:title" content="RecourseOS — Recoverability checks for Terraform" />
+<meta property="og:description" content="terraform plan tells you what will change. RecourseOS tells you what you can't get back." />
+<meta property="og:type" content="website" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f4f0e8;
+    --bg-deep: #ebe5d8;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --ink-faint: #8a8580;
+    --rule: #d8d0bf;
+    --accent: #b8412a;
+    --accent-soft: #d97757;
+    --term-bg: #14130f;
+    --term-ink: #e8e4d8;
+    --term-faint: #6f6a5e;
+    --term-green: #8fa876;
+    --term-amber: #c8a55a;
+    --term-red: #c95543;
+    --term-blue: #6a9bb5;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  body {
+    font-family: "Fraunces", Georgia, serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+    font-size: 17px;
+    font-feature-settings: "ss01", "ss02";
+  }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 0 32px; }
+
+  /* Top nav */
+  nav {
+    padding: 28px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .wordmark {
+    font-weight: 600;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+    font-variation-settings: "opsz" 12;
+  }
+  .wordmark .os {
+    color: var(--ink-faint);
+    font-style: italic;
+    font-weight: 400;
+  }
+  nav .links { font-family: "JetBrains Mono", monospace; font-size: 13px; }
+  nav .links a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    margin-left: 24px;
+    border-bottom: 1px solid transparent;
+    padding-bottom: 2px;
+    transition: border-color 120ms ease, color 120ms ease;
+  }
+  nav .links a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+  /* Hero */
+  .hero { padding: 96px 0 64px; }
+  .eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 28px;
+  }
+  h1 {
+    font-size: clamp(36px, 5.4vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    font-weight: 500;
+    font-variation-settings: "opsz" 144;
+    margin-bottom: 28px;
+    max-width: 18ch;
+  }
+  h1 .turns {
+    font-style: italic;
+    color: var(--ink-soft);
+    font-weight: 400;
+  }
+  h1 code {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.78em;
+    font-weight: 500;
+    padding: 0.04em 0.18em;
+    background: var(--bg-deep);
+    border-radius: 4px;
+    vertical-align: 0.06em;
+    letter-spacing: -0.01em;
+  }
+  h1 .accent { color: var(--accent); }
+  .lede {
+    max-width: 56ch;
+    color: var(--ink-soft);
+    font-size: 19px;
+    line-height: 1.55;
+    margin-bottom: 40px;
+  }
+
+  /* Install block */
+  .install {
+    background: var(--term-bg);
+    color: var(--term-ink);
+    border-radius: 6px;
+    padding: 18px 22px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    max-width: 540px;
+  }
+  .install .prompt { color: var(--term-faint); user-select: none; }
+  .install .cmd { color: var(--term-ink); }
+  .install button {
+    background: transparent;
+    border: 1px solid var(--term-faint);
+    color: var(--term-faint);
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 140ms ease;
+  }
+  .install button:hover {
+    color: var(--term-ink);
+    border-color: var(--term-ink);
+  }
+  .install button.copied {
+    color: var(--term-green);
+    border-color: var(--term-green);
+  }
+
+  /* Section heads */
+  .section { padding: 80px 0; border-top: 1px solid var(--rule); }
+  .section-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 18px;
+  }
+  h2 {
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    margin-bottom: 32px;
+    font-variation-settings: "opsz" 36;
+  }
+
+  /* Terminal output */
+  .terminal {
+    background: var(--term-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 20px 60px -25px rgba(20,15,5,0.35);
+  }
+  .terminal-bar {
+    background: #1f1d18;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid #2a2620;
+  }
+  .terminal-bar .dot {
+    width: 11px; height: 11px; border-radius: 50%;
+    background: #3a3630;
+  }
+  .terminal-bar .title {
+    margin-left: 14px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: var(--term-faint);
+    letter-spacing: 0.04em;
+  }
+  .terminal-body {
+    padding: 22px 26px 26px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--term-ink);
+    overflow-x: auto;
+  }
+  .terminal-body .prompt-line { color: var(--term-faint); margin-bottom: 14px; }
+  .terminal-body .prompt-line .user { color: var(--term-blue); }
+  .terminal-body .prompt-line .cmd { color: var(--term-ink); }
+  .terminal-body .heading {
+    color: var(--term-faint);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    margin-top: 16px;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+  .terminal-body .heading:first-child { margin-top: 0; }
+  .terminal-body .row { display: flex; gap: 8px; }
+  .terminal-body .row .marker { width: 14px; flex-shrink: 0; }
+  .terminal-body .row .body { flex: 1; }
+  .terminal-body .red { color: var(--term-red); }
+  .terminal-body .amber { color: var(--term-amber); }
+  .terminal-body .green { color: var(--term-green); }
+  .terminal-body .faint { color: var(--term-faint); }
+  .terminal-body .indent { padding-left: 22px; color: var(--term-faint); font-size: 12.5px; }
+  .terminal-body .summary {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid #2a2620;
+  }
+  .terminal-body .exit {
+    margin-top: 14px;
+    color: var(--term-faint);
+    font-size: 12px;
+  }
+
+  /* Coverage list */
+  .coverage {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border-top: 1px solid var(--rule);
+  }
+  .coverage-item {
+    padding: 18px 0;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+  .coverage-item:nth-child(odd) { padding-right: 24px; }
+  .coverage-item:nth-child(even) { padding-left: 24px; border-left: 1px solid var(--rule); }
+  .coverage-item .num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: var(--ink-faint);
+    width: 28px;
+    flex-shrink: 0;
+  }
+  .coverage-item .label {
+    font-weight: 500;
+    font-size: 16px;
+  }
+  .coverage-item .desc {
+    color: var(--ink-soft);
+    font-size: 14px;
+    margin-left: auto;
+    text-align: right;
+    font-style: italic;
+  }
+
+  /* Principles */
+  .principles { display: grid; gap: 28px; }
+  .principle {
+    padding-left: 20px;
+    border-left: 2px solid var(--rule);
+  }
+  .principle-title {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .principle-body { color: var(--ink-soft); font-size: 16px; max-width: 60ch; }
+
+  /* Limits */
+  .limits {
+    background: var(--bg-deep);
+    padding: 28px 32px;
+    border-radius: 6px;
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.65;
+  }
+  .limits strong { color: var(--ink); font-weight: 500; }
+
+  /* Footer */
+  footer {
+    padding: 60px 0 80px;
+    border-top: 1px solid var(--rule);
+    margin-top: 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: var(--ink-faint);
+  }
+  footer a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 1px;
+    margin-left: 18px;
+    transition: color 120ms ease, border-color 120ms ease;
+  }
+  footer a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+  /* Subtle entrance */
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hero > * { animation: rise 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .hero .eyebrow { animation-delay: 0ms; }
+  .hero h1 { animation-delay: 80ms; }
+  .hero .lede { animation-delay: 160ms; }
+  .hero .install { animation-delay: 240ms; }
+
+  @media (max-width: 640px) {
+    .container { padding: 0 22px; }
+    .hero { padding: 64px 0 48px; }
+    .section { padding: 56px 0; }
+    .coverage { grid-template-columns: 1fr; }
+    .coverage-item:nth-child(even) {
+      padding-left: 0;
+      border-left: none;
     }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      line-height: 1.6;
-      color: #1a1a1a;
-      background: #fafafa;
-    }
-
-    .container {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 80px 24px;
-    }
-
-    h1 {
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin-bottom: 16px;
-      letter-spacing: -0.02em;
-    }
-
-    .tagline {
-      font-size: 1.25rem;
-      color: #666;
-      margin-bottom: 48px;
-    }
-
-    .install {
-      background: #1a1a1a;
-      color: #fff;
-      padding: 16px 24px;
-      border-radius: 8px;
-      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-      font-size: 1rem;
-      margin-bottom: 48px;
-      overflow-x: auto;
-    }
-
-    .install code {
-      color: #4ade80;
-    }
-
-    .example {
-      margin-bottom: 48px;
-    }
-
-    .example h2 {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 16px;
-    }
-
-    .example pre {
-      background: #1a1a1a;
-      color: #e5e5e5;
-      padding: 24px;
-      border-radius: 8px;
-      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-      font-size: 0.875rem;
-      overflow-x: auto;
-      line-height: 1.5;
-    }
-
-    .delete { color: #f87171; }
-    .label { color: #fbbf24; }
-    .dim { color: #737373; }
-    .heading { color: #fff; font-weight: 600; }
-
-    .tiers {
-      margin-bottom: 48px;
-    }
-
-    .tiers h2 {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 16px;
-    }
-
-    .tier {
-      display: flex;
-      gap: 16px;
-      padding: 12px 0;
-      border-bottom: 1px solid #e5e5e5;
-    }
-
-    .tier:last-child {
-      border-bottom: none;
-    }
-
-    .tier-name {
-      font-weight: 600;
-      min-width: 180px;
-      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-      font-size: 0.875rem;
-    }
-
-    .tier-name.red { color: #dc2626; }
-    .tier-name.orange { color: #ea580c; }
-    .tier-name.yellow { color: #ca8a04; }
-    .tier-name.green { color: #16a34a; }
-
-    .tier-desc {
-      color: #666;
-    }
-
-    .links {
-      display: flex;
-      gap: 24px;
-    }
-
-    .links a {
-      color: #1a1a1a;
-      text-decoration: none;
-      font-weight: 500;
-      padding-bottom: 2px;
-      border-bottom: 2px solid #1a1a1a;
-    }
-
-    .links a:hover {
-      color: #666;
-      border-color: #666;
-    }
-
-    footer {
-      margin-top: 80px;
-      padding-top: 24px;
-      border-top: 1px solid #e5e5e5;
-      color: #999;
-      font-size: 0.875rem;
-    }
-  </style>
+    .coverage-item:nth-child(odd) { padding-right: 0; }
+    .coverage-item .desc { text-align: left; margin-left: 0; }
+    .terminal-body { font-size: 12px; padding: 16px 18px; }
+    footer { flex-direction: column; gap: 16px; }
+    footer a { margin-left: 0; margin-right: 18px; }
+  }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>recourse</h1>
-    <p class="tagline">Know what you can't undo before you terraform apply</p>
 
-    <div class="install">
-      <code>npx recourse-cli plan your-plan.json</code>
-    </div>
-
-    <div class="example">
-      <h2>Example Output</h2>
-      <pre><span class="heading">BLAST RADIUS REPORT</span>
-
-<span class="heading">DESTRUCTIVE CHANGES</span>
-
-  <span class="delete">- DELETE aws_s3_bucket.logs</span>
-    Recoverability: <span class="label">unrecoverable</span> <span class="dim">(Versioning disabled; objects cannot be recovered)</span>
-
-  <span class="delete">- DELETE aws_rds_cluster.main</span>
-    Recoverability: <span class="label">unrecoverable</span> <span class="dim">(No snapshots; skip_final_snapshot=true)</span>
-
-  <span class="delete">- DELETE aws_lambda_function.api</span>
-    Recoverability: <span class="label">recoverable-with-effort</span> <span class="dim">(Code in S3; can redeploy)</span>
-
-<span class="heading">SUMMARY</span>
-  Unrecoverable: 2 resources
-  With effort:   1 resource</pre>
-    </div>
-
-    <div class="tiers">
-      <h2>Recoverability Tiers</h2>
-      <div class="tier">
-        <span class="tier-name red">unrecoverable</span>
-        <span class="tier-desc">Data is gone. S3 without versioning, RDS without snapshots.</span>
-      </div>
-      <div class="tier">
-        <span class="tier-name orange">recoverable-from-backup</span>
-        <span class="tier-desc">Restore from snapshot or backup. RDS with snapshots, DynamoDB with PITR.</span>
-      </div>
-      <div class="tier">
-        <span class="tier-name yellow">recoverable-with-effort</span>
-        <span class="tier-desc">Can recreate from config/code. Lambda, IAM roles, EC2 from AMI.</span>
-      </div>
-      <div class="tier">
-        <span class="tier-name green">reversible</span>
-        <span class="tier-desc">Just flip it back. Security group rule changes, instance stops.</span>
-      </div>
-    </div>
-
-    <div class="links">
-      <a href="https://github.com/recourseOS/recourse">GitHub</a>
-      <a href="https://www.npmjs.com/package/recourse-cli">npm</a>
-    </div>
-
-    <footer>
-      MIT License
-    </footer>
+<nav class="container">
+  <div class="wordmark">Recourse<span class="os">os</span></div>
+  <div class="links">
+    <a href="https://github.com/recourseos/recourse">github</a>
+    <a href="#output">output</a>
+    <a href="#principles">principles</a>
   </div>
+</nav>
+
+<header class="hero container">
+  <div class="eyebrow">v0.1 · Terraform · AWS</div>
+  <h1>
+    <code>terraform plan</code> tells you what will change.
+    <span class="turns">RecourseOS tells you</span>
+    <span class="accent">what you can't get back.</span>
+  </h1>
+  <p class="lede">
+    A static analyzer for Terraform plans that classifies every destructive change by recoverability — so you know what's reversible, what's restorable, and what's gone forever before you apply.
+  </p>
+  <div class="install">
+    <span><span class="prompt">$</span> <span class="cmd" id="install-cmd">npx recourse-cli plan plan.json</span></span>
+    <button id="copy-btn" aria-label="Copy install command">Copy</button>
+  </div>
+</header>
+
+<section class="section" id="output">
+  <div class="container">
+    <div class="section-label">Sample output</div>
+    <h2>What you actually see.</h2>
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <div class="title">~/infra · zsh</div>
+      </div>
+      <div class="terminal-body">
+        <div class="prompt-line"><span class="user">$</span> <span class="cmd">recourse plan terraform.tfplan</span></div>
+
+        <div class="heading">DESTRUCTIVE CHANGES</div>
+
+        <div class="row"><span class="marker red">✗</span><span class="body"><span class="red">DELETE</span> aws_db_instance.main</span></div>
+        <div class="indent">recoverability: <span class="red">unrecoverable</span> · skip_final_snapshot=true, no backup retention</div>
+
+        <div class="row"><span class="marker red">✗</span><span class="body"><span class="red">DELETE</span> aws_s3_bucket.logs</span></div>
+        <div class="indent">recoverability: <span class="red">unrecoverable</span> · bucket deletion is permanent; versioning does not survive</div>
+
+        <div class="row"><span class="marker amber">!</span><span class="body"><span class="amber">DELETE</span> aws_kms_key.encryption</span></div>
+        <div class="indent">recoverability: <span class="amber">recoverable-with-effort</span> · 7-day deletion window; can be cancelled</div>
+
+        <div class="row"><span class="marker green">✓</span><span class="body"><span class="green">DELETE</span> aws_s3_object.archive[0]</span></div>
+        <div class="indent">recoverability: <span class="green">recoverable-from-backup</span> · versioning enabled, prior version retained</div>
+
+        <div class="summary">
+          <div class="heading">SUMMARY</div>
+          <div><span class="red">●</span> unrecoverable: 2 &nbsp;·&nbsp; <span class="amber">●</span> recoverable-with-effort: 1 &nbsp;·&nbsp; <span class="green">●</span> recoverable-from-backup: 1</div>
+          <div class="exit">⚠ this plan contains unrecoverable changes · exit 1</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-label">Coverage</div>
+    <h2>What it checks.</h2>
+    <div class="coverage">
+      <div class="coverage-item">
+        <span class="num">01</span>
+        <span class="label">RDS</span>
+        <span class="desc">deletion protection, snapshots, retention</span>
+      </div>
+      <div class="coverage-item">
+        <span class="num">02</span>
+        <span class="label">S3</span>
+        <span class="desc">versioning, MFA delete, object lock</span>
+      </div>
+      <div class="coverage-item">
+        <span class="num">03</span>
+        <span class="label">DynamoDB</span>
+        <span class="desc">PITR, deletion protection, backups</span>
+      </div>
+      <div class="coverage-item">
+        <span class="num">04</span>
+        <span class="label">KMS</span>
+        <span class="desc">deletion windows, dependent resources</span>
+      </div>
+      <div class="coverage-item">
+        <span class="num">05</span>
+        <span class="label">EBS</span>
+        <span class="desc">snapshots, AMI backing</span>
+      </div>
+      <div class="coverage-item">
+        <span class="num">06</span>
+        <span class="label">CloudWatch Logs</span>
+        <span class="desc">retention, S3 export</span>
+      </div>
+      <div class="coverage-item">
+        <span class="num">07</span>
+        <span class="label">IAM</span>
+        <span class="desc">cascade impact across resources</span>
+      </div>
+      <div class="coverage-item">
+        <span class="num">08</span>
+        <span class="label">+ 8 more</span>
+        <span class="desc">EC2, Lambda, VPC, ELB, Route53, SNS, SQS</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="principles">
+  <div class="container">
+    <div class="section-label">Design principles</div>
+    <h2>What it doesn't do.</h2>
+    <div class="principles">
+      <div class="principle">
+        <div class="principle-title">no inference</div>
+        <div class="principle-body">It doesn't guess that something "looks like" a production database. It reads the values in your plan and reports on them.</div>
+      </div>
+      <div class="principle">
+        <div class="principle-title">no severity-by-vibes</div>
+        <div class="principle-body">Verdicts are factual: <em>recoverable</em>, <em>recoverable-with-effort</em>, <em>recoverable-from-backup</em>, <em>unrecoverable</em>, or <em>blocked</em>. Each maps to specific configuration. You can check the work.</div>
+      </div>
+      <div class="principle">
+        <div class="principle-title">no opinions on your config</div>
+        <div class="principle-body">It doesn't suggest you should set deletion_protection. It tells you what would change the verdict if you did.</div>
+      </div>
+      <div class="principle">
+        <div class="principle-title">no agents, no SaaS, no signup</div>
+        <div class="principle-body">It's a CLI. It runs on your machine or in your CI. No data leaves the process.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-label">Honest limits</div>
+    <h2>What v0.1 doesn't cover.</h2>
+    <div class="limits">
+      <p><strong>Terraform plans only.</strong> Not Pulumi, CloudFormation, or raw API calls — yet.</p>
+      <p style="margin-top: 12px;"><strong>AWS only.</strong> GCP and Azure are on the roadmap. The classifier framework is provider-agnostic; the resource libraries take time.</p>
+      <p style="margin-top: 12px;"><strong>Plan-file analysis, no live state.</strong> If a backup vault exists outside your Terraform configuration, RecourseOS can't see it. <code style="font-family: 'JetBrains Mono', monospace; font-size: 13px; background: var(--bg); padding: 1px 5px; border-radius: 3px;">--live-state</code> is in development.</p>
+      <p style="margin-top: 12px;"><strong>Static analysis, not gating.</strong> v0.1 flags. It exits non-zero in CI on unrecoverable changes. Approval workflows come later, after the labels have earned trust.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="container">
+  <div>RecourseOS · v0.1 · MIT</div>
+  <div>
+    <a href="https://github.com/recourseos/recourse">github</a>
+    <a href="https://www.npmjs.com/package/recourse-cli">npm</a>
+  </div>
+</footer>
+
+<script>
+  const btn = document.getElementById('copy-btn');
+  const cmd = document.getElementById('install-cmd');
+  btn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(cmd.textContent);
+      btn.textContent = 'Copied';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+        btn.classList.remove('copied');
+      }, 1600);
+    } catch (e) {
+      btn.textContent = 'Copy failed';
+      setTimeout(() => { btn.textContent = 'Copy'; }, 1600);
+    }
+  });
+</script>
+
 </body>
 </html>
