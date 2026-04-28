@@ -51,8 +51,14 @@
     align-items: baseline;
   }
   .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     text-decoration: none;
     color: var(--ink);
+  }
+  .logo-icon {
+    flex-shrink: 0;
   }
   .wordmark {
     font-weight: 600;
@@ -353,6 +359,16 @@
 
 <nav class="container">
   <a href="/" class="logo" aria-label="RecourseOS home">
+    <svg class="logo-icon" width="36" height="36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Outer circle -->
+      <circle cx="50" cy="50" r="46" stroke="currentColor" stroke-width="6" fill="none"/>
+      <!-- R letterform -->
+      <path d="M32 75 V25 H55 C67 25 76 33 76 44 C76 55 67 63 55 63 H32" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M52 63 L72 75" stroke="currentColor" stroke-width="7" stroke-linecap="round" fill="none"/>
+      <!-- Return arrow -->
+      <path d="M76 72 C88 72 96 62 96 50 C96 38 88 28 76 28" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" fill="none"/>
+      <path d="M76 28 L76 42 L62 42" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
     <span class="wordmark">Recourse<span class="os">OS</span></span>
   </a>
   <div class="links">
