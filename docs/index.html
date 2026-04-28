@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>recourse - Know what you can't undo before you terraform apply</title>
+  <meta name="description" content="Analyze Terraform plans for blast radius and recoverability before you apply destructive changes.">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      color: #1a1a1a;
+      background: #fafafa;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 80px 24px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .tagline {
+      font-size: 1.25rem;
+      color: #666;
+      margin-bottom: 48px;
+    }
+
+    .install {
+      background: #1a1a1a;
+      color: #fff;
+      padding: 16px 24px;
+      border-radius: 8px;
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-size: 1rem;
+      margin-bottom: 48px;
+      overflow-x: auto;
+    }
+
+    .install code {
+      color: #4ade80;
+    }
+
+    .example {
+      margin-bottom: 48px;
+    }
+
+    .example h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+    }
+
+    .example pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 24px;
+      border-radius: 8px;
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-size: 0.875rem;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+
+    .delete { color: #f87171; }
+    .label { color: #fbbf24; }
+    .dim { color: #737373; }
+    .heading { color: #fff; font-weight: 600; }
+
+    .tiers {
+      margin-bottom: 48px;
+    }
+
+    .tiers h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+    }
+
+    .tier {
+      display: flex;
+      gap: 16px;
+      padding: 12px 0;
+      border-bottom: 1px solid #e5e5e5;
+    }
+
+    .tier:last-child {
+      border-bottom: none;
+    }
+
+    .tier-name {
+      font-weight: 600;
+      min-width: 180px;
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-size: 0.875rem;
+    }
+
+    .tier-name.red { color: #dc2626; }
+    .tier-name.orange { color: #ea580c; }
+    .tier-name.yellow { color: #ca8a04; }
+    .tier-name.green { color: #16a34a; }
+
+    .tier-desc {
+      color: #666;
+    }
+
+    .links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .links a {
+      color: #1a1a1a;
+      text-decoration: none;
+      font-weight: 500;
+      padding-bottom: 2px;
+      border-bottom: 2px solid #1a1a1a;
+    }
+
+    .links a:hover {
+      color: #666;
+      border-color: #666;
+    }
+
+    footer {
+      margin-top: 80px;
+      padding-top: 24px;
+      border-top: 1px solid #e5e5e5;
+      color: #999;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>recourse</h1>
+    <p class="tagline">Know what you can't undo before you terraform apply</p>
+
+    <div class="install">
+      <code>npx recourse-cli plan your-plan.json</code>
+    </div>
+
+    <div class="example">
+      <h2>Example Output</h2>
+      <pre><span class="heading">BLAST RADIUS REPORT</span>
+
+<span class="heading">DESTRUCTIVE CHANGES</span>
+
+  <span class="delete">- DELETE aws_s3_bucket.logs</span>
+    Recoverability: <span class="label">unrecoverable</span> <span class="dim">(Versioning disabled; objects cannot be recovered)</span>
+
+  <span class="delete">- DELETE aws_rds_cluster.main</span>
+    Recoverability: <span class="label">unrecoverable</span> <span class="dim">(No snapshots; skip_final_snapshot=true)</span>
+
+  <span class="delete">- DELETE aws_lambda_function.api</span>
+    Recoverability: <span class="label">recoverable-with-effort</span> <span class="dim">(Code in S3; can redeploy)</span>
+
+<span class="heading">SUMMARY</span>
+  Unrecoverable: 2 resources
+  With effort:   1 resource</pre>
+    </div>
+
+    <div class="tiers">
+      <h2>Recoverability Tiers</h2>
+      <div class="tier">
+        <span class="tier-name red">unrecoverable</span>
+        <span class="tier-desc">Data is gone. S3 without versioning, RDS without snapshots.</span>
+      </div>
+      <div class="tier">
+        <span class="tier-name orange">recoverable-from-backup</span>
+        <span class="tier-desc">Restore from snapshot or backup. RDS with snapshots, DynamoDB with PITR.</span>
+      </div>
+      <div class="tier">
+        <span class="tier-name yellow">recoverable-with-effort</span>
+        <span class="tier-desc">Can recreate from config/code. Lambda, IAM roles, EC2 from AMI.</span>
+      </div>
+      <div class="tier">
+        <span class="tier-name green">reversible</span>
+        <span class="tier-desc">Just flip it back. Security group rule changes, instance stops.</span>
+      </div>
+    </div>
+
+    <div class="links">
+      <a href="https://github.com/recourseOS/recourse">GitHub</a>
+      <a href="https://www.npmjs.com/package/recourse-cli">npm</a>
+    </div>
+
+    <footer>
+      MIT License
+    </footer>
+  </div>
+</body>
+</html>
