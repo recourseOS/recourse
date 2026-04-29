@@ -32,6 +32,18 @@ const docPages: DocPage[] = [
     title: 'Classifier Notes',
     description: 'Feature schema gaps, semantic unknown-resource behavior, and the BitNet-compatible path.',
   },
+  {
+    source: 'docs/agent-interface.md',
+    output: 'docs/agent-interface.html',
+    title: 'Agent Interface',
+    description: 'MCP tool contract and consequence report semantics for agents that call RecourseOS before acting.',
+  },
+  {
+    source: 'docs/public-boundaries.md',
+    output: 'docs/public-boundaries.html',
+    title: 'Public Boundaries',
+    description: 'Guidance for keeping public documentation useful without exposing sensitive product, customer, or model information.',
+  },
 ];
 
 export async function renderDocPages(pages = docPages): Promise<Array<{ output: string; html: string }>> {
@@ -147,6 +159,7 @@ export function renderDocPage(page: DocPage, markdown: string): string {
     font-family: "JetBrains Mono", monospace;
     font-size: 12px;
     color: var(--ink-faint);
+    min-width: 0;
   }
   .toc-title { color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
   .toc a { display: block; color: var(--ink-soft); text-decoration: none; margin: 8px 0; }
@@ -157,6 +170,7 @@ export function renderDocPage(page: DocPage, markdown: string): string {
     border-radius: 18px;
     padding: 34px;
     box-shadow: 0 28px 80px -52px rgba(30, 22, 10, 0.42);
+    min-width: 0;
   }
   article h1 { display: none; }
   article h2 { font-size: 32px; margin: 30px 0 14px; padding-top: 8px; }
@@ -172,18 +186,29 @@ export function renderDocPage(page: DocPage, markdown: string): string {
     padding: 1px 5px;
     font-size: 0.92em;
     color: var(--ink);
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
   pre {
     background: var(--term-bg);
     color: var(--term-ink);
     border-radius: 12px;
     padding: 18px;
-    overflow-x: auto;
+    overflow-x: hidden;
     margin: 18px 0;
     font-size: 13px;
     line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
-  pre code { background: transparent; border: 0; color: inherit; padding: 0; }
+  pre code {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    padding: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
   table {
     width: 100%;
     border-collapse: collapse;
@@ -218,9 +243,8 @@ export function renderDocPage(page: DocPage, markdown: string): string {
     nav { flex-direction: column; align-items: flex-start; gap: 16px; }
     nav .links {
       width: 100%;
-      display: grid;
-      grid-template-columns: repeat(4, max-content);
-      justify-content: flex-start;
+      display: flex;
+      flex-wrap: wrap;
       gap: 16px;
       padding-bottom: 5px;
     }
@@ -242,6 +266,7 @@ export function renderDocPage(page: DocPage, markdown: string): string {
     <a href="/">home</a>
     <a href="/resource-coverage.html">coverage</a>
     <a href="/golden-fixtures.html">fixtures</a>
+    <a href="/agent-interface.html">agents</a>
     <a href="https://github.com/recourseos/recourse">github</a>
   </div>
 </nav>

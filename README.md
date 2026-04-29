@@ -1,8 +1,8 @@
 # recourse
 
-Know what you cannot undo before a destructive change lands.
+AI-ready consequence analysis for infrastructure changes.
 
-Recourse is a local consequence evaluator for infrastructure changes. It reads Terraform plans, shell commands, or MCP tool calls and classifies each mutation by recoverability: reversible, recoverable with effort, recoverable from backup, unrecoverable, or needs review.
+Recourse is a rules-first, BitNet-ready consequence evaluator for infrastructure changes. It reads Terraform plans, shell commands, or MCP tool calls and classifies each mutation by recoverability: reversible, recoverable with effort, recoverable from backup, unrecoverable, or needs review.
 
 The public CLI is local-first. No account or cloud service is required.
 
@@ -148,6 +148,12 @@ recourse evaluate mcp '{"server":"aws","tool":"s3.delete_bucket","arguments":{"b
 
 `evaluate` emits a normalized consequence report for Terraform, shell, or MCP inputs. This is the public contract Recourse Cloud can ingest later.
 
+### Agent Interface
+
+RecourseOS is designed to become the consequence layer agents call before they act. The public MCP tool contract and agent decision semantics are documented in `docs/agent-interface.md`.
+
+Public documentation boundaries are documented in `docs/public-boundaries.md`; keep private strategy, credentials, model weights, proprietary datasets, telemetry, and hosted-service internals out of this repository.
+
 ### Read-Only AWS Evidence
 
 ```bash
@@ -173,23 +179,23 @@ The generated coverage reference is in `docs/resource-coverage.md`, with the lan
 Known resources use hand-written deterministic rules and remain authoritative.
 
 AWS coverage includes:
-- Databases: RDS instances/clusters and DynamoDB tables.
-- Storage: S3 buckets/objects and EBS volumes/snapshots.
+- Databases and caches: RDS instances/clusters, DynamoDB tables, ElastiCache, and Neptune.
+- Storage: S3 buckets/objects, EBS volumes/snapshots, and EFS file systems.
 - Compute: EC2 instances, Lambda functions, and AMIs.
 - Networking: VPCs, subnets, security groups, EIPs, load balancers, and Route53.
-- IAM and platform services: IAM roles/policies/users, KMS, SNS/SQS, and CloudWatch logs.
+- IAM and platform services: IAM roles/policies/users, KMS, Secrets Manager, SNS/SQS, and CloudWatch logs.
 
 GCP coverage includes:
 - Storage: `google_storage_bucket`, bucket objects, and bucket IAM.
-- Databases: `google_sql_database_instance`, databases, and users.
-- IAM: project IAM, service accounts, and service account keys.
+- Databases and analytics: `google_sql_database_instance`, databases, users, and BigQuery datasets/tables.
+- IAM and secrets: project IAM, service accounts, service account keys, and Secret Manager secrets/versions/IAM.
 - Core: DNS records, persistent disks, snapshots, KMS keys, and GKE clusters/node pools.
 
 Azure coverage includes:
 - Storage: `azurerm_storage_account`, containers, blobs, shares, queues, and tables.
-- Databases: Azure SQL/MSSQL, PostgreSQL Flexible Server, MySQL Flexible Server, and MariaDB.
+- Databases: Azure SQL/MSSQL, PostgreSQL Flexible Server, MySQL Flexible Server, MariaDB, and Cosmos DB.
 - IAM: role assignments/definitions and Azure AD applications/service principals/passwords.
-- Core: DNS records, managed disks, snapshots, Key Vault keys/vaults, and AKS clusters/node pools.
+- Core: DNS records, managed disks, snapshots, Key Vault vaults/keys/secrets/certificates/access policies, and AKS clusters/node pools.
 
 ## Unknown Resources and BitNet Path
 
@@ -204,7 +210,7 @@ For unknown resource types, `--classifier` enables a provider-neutral semantic p
 - IAM/config-only relationship resources
 - credential material that cannot be recovered after deletion
 
-If evidence is weak, the classifier returns `needs-review` rather than marking the change safe. This path is intentionally BitNet-compatible: a compact model can later replace the semantic scorer without changing the public consequence report contract.
+If evidence is weak, the classifier returns `needs-review` rather than marking the change safe. This path is intentionally BitNet-compatible: a compact model can later replace the semantic scorer without changing the public consequence report contract. BitNet belongs on unknown-resource classification after the deterministic handler surface and false-safe fixture corpus are broad enough to measure it.
 
 ## Golden Fixtures
 

@@ -16,8 +16,6 @@ export const azureCoreHandler: ResourceHandler = {
     'azurerm_private_dns_a_record',
     'azurerm_managed_disk',
     'azurerm_snapshot',
-    'azurerm_key_vault',
-    'azurerm_key_vault_key',
     'azurerm_kubernetes_cluster',
     'azurerm_kubernetes_cluster_node_pool',
   ],
@@ -34,18 +32,6 @@ export const azureCoreHandler: ResourceHandler = {
     }
     if (change.type === 'azurerm_managed_disk') {
       return unrecoverable('Managed disk deletion can permanently destroy disk data without snapshot evidence');
-    }
-    if (change.type === 'azurerm_key_vault_key') {
-      const purgeProtection = (change.before ?? {}).purge_protection_enabled === true;
-      return purgeProtection
-        ? recoverableWithEffort('Key Vault purge protection is enabled; deleted key may be recoverable during retention window')
-        : unrecoverable('Key Vault key deletion without purge protection can make encrypted data unrecoverable');
-    }
-    if (change.type === 'azurerm_key_vault') {
-      const purgeProtection = (change.before ?? {}).purge_protection_enabled === true;
-      return purgeProtection
-        ? recoverableWithEffort('Key Vault purge protection is enabled; vault deletion may be recoverable during retention window')
-        : recoverableWithEffort('Key Vault can be recreated, but deleted secrets/keys/certificates require separate recovery evidence');
     }
     if (change.type === 'azurerm_kubernetes_cluster_node_pool') {
       return recoverableWithEffort('AKS node pool can be recreated; running workloads may be disrupted');

@@ -98,6 +98,7 @@
     font-family: "JetBrains Mono", monospace;
     font-size: 12px;
     color: var(--ink-faint);
+    min-width: 0;
   }
   .toc-title { color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
   .toc a { display: block; color: var(--ink-soft); text-decoration: none; margin: 8px 0; }
@@ -108,6 +109,7 @@
     border-radius: 18px;
     padding: 34px;
     box-shadow: 0 28px 80px -52px rgba(30, 22, 10, 0.42);
+    min-width: 0;
   }
   article h1 { display: none; }
   article h2 { font-size: 32px; margin: 30px 0 14px; padding-top: 8px; }
@@ -123,18 +125,29 @@
     padding: 1px 5px;
     font-size: 0.92em;
     color: var(--ink);
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
   pre {
     background: var(--term-bg);
     color: var(--term-ink);
     border-radius: 12px;
     padding: 18px;
-    overflow-x: auto;
+    overflow-x: hidden;
     margin: 18px 0;
     font-size: 13px;
     line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
-  pre code { background: transparent; border: 0; color: inherit; padding: 0; }
+  pre code {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    padding: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
   table {
     width: 100%;
     border-collapse: collapse;
@@ -169,9 +182,8 @@
     nav { flex-direction: column; align-items: flex-start; gap: 16px; }
     nav .links {
       width: 100%;
-      display: grid;
-      grid-template-columns: repeat(4, max-content);
-      justify-content: flex-start;
+      display: flex;
+      flex-wrap: wrap;
       gap: 16px;
       padding-bottom: 5px;
     }
@@ -200,6 +212,7 @@
     <a href="/">home</a>
     <a href="/resource-coverage.html">coverage</a>
     <a href="/golden-fixtures.html">fixtures</a>
+    <a href="/agent-interface.html">agents</a>
     <a href="https://github.com/recourseos/recourse">github</a>
   </div>
 </nav>
@@ -213,11 +226,11 @@
   <article>
     <h1 id="feature-schema-gap-analysis">Feature Schema Gap Analysis</h1>
 <h2 id="summary">Summary</h2>
-<p>Testing the classifier against edge-case resource types revealed gaps in the feature schema and rule handlers. This validation found <strong>6 fixable bugs</strong> and <strong>4 documented limits</strong>.</p>
+<p>Testing the classifier against edge-case resource types revealed gaps in the feature schema and rule handlers. This validation found fixable bugs that now drive deterministic handlers, semantic unknown-resource scoring, and golden fixtures.</p>
 <h3 id="what-was-fixed-v0-1">What Was Fixed (v0.1)</h3>
-<table><thead><tr><th>Fix</th><th>Category</th><th>Description</th></tr></thead><tbody><tr><td>IAM attachment handler</td><td>Rule bug</td><td>Handler returned <code>recoverable-with-effort</code> for attachment resources; now <code>reversible</code></td></tr><tr><td>Config-only detection</td><td>Schema addition</td><td>Resources ending in <code>_policy</code>, <code>_config</code>, <code>_rule</code> etc. now detected as <code>reversible</code></td></tr><tr><td>Attachment detection</td><td>Schema addition</td><td>Resources ending in <code>_attachment</code>, <code>_membership</code> now detected as <code>reversible</code></td></tr><tr><td>snapshot_retention_limit</td><td>Training gap</td><td>Added to backup attribute recognition (ElastiCache)</td></tr><tr><td>recovery_window_in_days</td><td>Training gap</td><td>Added to retention/window detection (Secrets Manager)</td></tr><tr><td>Secrets Manager window</td><td>Rule bug</td><td>recovery_window now detected via existing feature infrastructure</td></tr></tbody></table>
+<table><thead><tr><th>Fix</th><th>Category</th><th>Description</th></tr></thead><tbody><tr><td>IAM attachment handler</td><td>Rule bug</td><td>Handler returned <code>recoverable-with-effort</code> for attachment resources; now <code>reversible</code></td></tr><tr><td>Config-only detection</td><td>Schema addition</td><td>Resources ending in <code>_policy</code>, <code>_config</code>, <code>_rule</code> etc. now detected as <code>reversible</code></td></tr><tr><td>Attachment detection</td><td>Schema addition</td><td>Resources ending in <code>_attachment</code>, <code>_membership</code> now detected as <code>reversible</code></td></tr><tr><td>snapshot_retention_limit</td><td>Training gap</td><td>Added to backup attribute recognition (ElastiCache)</td></tr><tr><td>recovery_window_in_days</td><td>Training gap</td><td>Added to retention/window detection (Secrets Manager)</td></tr><tr><td>Secrets Manager window</td><td>Rule bug</td><td>recovery_window now detected via existing feature infrastructure</td></tr><tr><td>Secrets and key material handlers</td><td>Rule coverage</td><td>Added deterministic AWS Secrets Manager, GCP Secret Manager, and Azure Key Vault child-resource rules</td></tr><tr><td>ElastiCache and Neptune handlers</td><td>Rule coverage</td><td>Added deterministic AWS cache/graph database rules for snapshot retention, final snapshots, and deletion protection</td></tr></tbody></table>
 <h3 id="what-remains-as-known-limits">What Remains as Known Limits</h3>
-<table><thead><tr><th>Limit</th><th>Why It's Hard</th><th>Mitigation</th></tr></thead><tbody><tr><td>Route53 record classification</td><td>Recoverability depends on out-of-band state (zone backups, IP ownership)</td><td>Document as limit; future: ask user for context</td></tr><tr><td>Multi-cloud suffix detection</td><td>AWS naming conventions don't transfer to every GCP/Azure resource</td><td>Semantic profile first; future BitNet/model-backed metadata for weaker names</td></tr><tr><td>Classifier confidence on unknown types</td><td>72-100% confidence but sometimes wrong</td><td>Dual-verdict surfaces disagreements</td></tr></tbody></table>
+<table><thead><tr><th>Limit</th><th>Why It's Hard</th><th>Mitigation</th></tr></thead><tbody><tr><td>Route53 record classification</td><td>Recoverability depends on out-of-band state (zone backups, IP ownership)</td><td>Document as limit; future: ask user for context</td></tr><tr><td>Azure Key Vault child resources without recovery evidence</td><td>Child resources do not always expose parent vault retention settings in the same plan change</td><td>Return <code>needs-review</code> unless recovery-level or retention evidence is present</td></tr><tr><td>Multi-cloud suffix detection</td><td>AWS naming conventions don't transfer to every GCP/Azure resource</td><td>Semantic profile first; future BitNet/model-backed metadata for weaker names</td></tr><tr><td>Classifier confidence on unknown types</td><td>72-100% confidence but sometimes wrong</td><td>Dual-verdict surfaces disagreements</td></tr></tbody></table>
 <p>---</p>
 <h2 id="baseline-test-results">Baseline Test Results</h2>
 <p>These are the original classifier gaps that motivated the semantic profile and dual-verdict work.</p>
@@ -233,16 +246,19 @@
 <ul><li><code>aws_iam_role_policy_attachment</code> - Links policy to role</li><li><code>aws_iam_user_policy_attachment</code> - Links policy to user</li><li><code>aws_iam_group_membership</code> - Links user to group</li><li><code>aws_lb_target_group_attachment</code> - Links target to target group</li><li><code>aws_security_group</code> → <code>aws_network_interface_sg_attachment</code></li></ul>
 <p><strong>Impact</strong>: Deleting these doesn't destroy data - both parent resources still exist. Should be <code>reversible</code>.</p>
 <p><strong>Proposed feature</strong>: <code>is_attachment</code> or <code>is_relationship</code></p>
-<h3 id="gap-3-missing-recovery-window-semantics">Gap 3: Missing recovery window semantics</h3>
+<h3 id="gap-3-recovery-window-semantics">Gap 3: Recovery window semantics</h3>
 <p><strong>Problem</strong>: Some resources have &quot;soft delete&quot; with configurable recovery:</p>
 <ul><li><code>aws_secretsmanager_secret</code> - <code>recovery_window_in_days</code> (7-30 days, or 0 for immediate)</li><li><code>aws_kms_key</code> - <code>deletion_window_in_days</code> (7-30 days)</li><li><code>aws_rds_cluster</code> - <code>delete_automated_backups</code> affects retention</li></ul>
-<p>We handle <code>deletion_window_in_days</code> for KMS but not <code>recovery_window_in_days</code> for Secrets Manager.</p>
-<p><strong>Proposed feature</strong>: <code>has_recovery_window</code> and/or unify these under a common pattern</p>
+<p><strong>Current status</strong>: Known AWS Secrets Manager rules now classify recovery-window deletes as <code>recoverable-with-effort</code> and immediate/forced deletes as <code>unrecoverable</code>. The semantic profile also normalizes <code>recovery_window_in_days</code> and <code>deletion_window_in_days</code> for unknown resources.</p>
+<p><strong>Remaining risk</strong>: Provider child resources do not always expose parent retention settings. Azure Key Vault secrets, keys, and certificates return <code>needs-review</code> unless the plan includes recovery-level, retention, or purge-protection evidence.</p>
 <h3 id="gap-4-snapshot-retention-limit-not-recognized">Gap 4: Snapshot retention limit not recognized</h3>
 <p><strong>Problem</strong>: ElastiCache uses <code>snapshot_retention_limit</code> (0-35 days), not the standard snapshot attributes.</p>
 <pre><code>snapshot_retention_limit: 0  -&gt; no snapshots -&gt; unrecoverable
 snapshot_retention_limit: 7  -&gt; has snapshots -&gt; recoverable-from-backup</code></pre>
-<p><strong>Fix</strong>: <code>snapshot_retention_limit</code> is now recognized as backup evidence.</p>
+<p><strong>Current status</strong>: Known ElastiCache rules now classify Redis/Valkey deletes without snapshot evidence as <code>unrecoverable</code>, retained snapshots/final snapshots as <code>recoverable-from-backup</code>, and Memcached deletes as <code>recoverable-with-effort</code> because cache contents are ephemeral.</p>
+<h3 id="gap-5-neptune-cluster-semantics">Gap 5: Neptune cluster semantics</h3>
+<p><strong>Problem</strong>: Neptune is graph-database state, but the generic classifier only saw broad deletion-protection and backup-like features.</p>
+<p><strong>Current status</strong>: Known Neptune rules now honor <code>deletion_protection</code>, <code>skip_final_snapshot</code>, <code>final_snapshot_identifier</code>, and <code>backup_retention_period</code>. Protected deletes are blocked, unprotected deletes without snapshots/backups are <code>unrecoverable</code>, and backup/final-snapshot evidence is <code>recoverable-from-backup</code>.</p>
 <h2 id="implemented-semantic-profile-contract">Implemented Semantic Profile Contract</h2>
 <p>The public classifier still exposes the original feature vector, but unknown-resource scoring now builds a semantic profile first. This profile is the BitNet-ready contract:</p>
 <pre><code>interface SemanticResourceProfile {
@@ -304,6 +320,8 @@ snapshot_retention_limit: 7  -&gt; has snapshots -&gt; recoverable-from-backup</
 <ul><li>Learns abstract patterns such as <code>deletion_protection=true</code> on any provider.</li><li>Treats semantically related attributes, such as <code>recovery_window_in_days</code> and <code>deletion_window_in_days</code>, as the same safety concept.</li><li>Classifies <code>aws_s3_bucket</code>, <code>google_storage_bucket</code>, and <code>azurerm_storage_account</code> through storage semantics instead of provider-specific type IDs.</li><li>Reduces reliance on suffix heuristics for config-only and attachment resources.</li></ul>
 <p><strong>Safety requirements:</strong></p>
 <ul><li>Known resource handlers remain authoritative.</li><li>Unknown resources can return <code>needs-review</code> when evidence is incomplete.</li><li>Model output must include tier, confidence, evidence, and missing evidence.</li><li>Golden fixtures must include false-safe cases where the classifier must avoid understating risk.</li></ul>
+<p><strong>When BitNet becomes active:</strong></p>
+<p>BitNet should replace <code>src/classifier/semantic-unknown.ts</code> after the public fixture corpus includes enough known and unknown AWS, GCP, and Azure resources to evaluate false-safe risk. Known handlers for services such as EFS, BigQuery, Cosmos DB, Secrets Manager, Key Vault, ElastiCache, and Neptune should continue to run first.</p>
 <h2 id="files">Files</h2>
 <ul><li>Test file: <code>tests/schema-validation.test.ts</code></li><li>Unknown semantic classifier tests: <code>tests/semantic-unknown-classifier.test.ts</code></li><li>Feature extractor: <code>src/classifier/feature-extractor.ts</code></li><li>Semantic profile contract: <code>src/classifier/semantic-profile.ts</code></li><li>Semantic unknown classifier: <code>src/classifier/semantic-unknown.ts</code></li><li>Dual-verdict (rules-first orchestration): <code>src/classifier/dual-verdict.ts</code></li></ul>
     <p class="source-note">Generated from <code>docs/schema-gaps.md</code>. Markdown remains available for source review.</p>

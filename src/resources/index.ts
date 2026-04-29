@@ -18,14 +18,22 @@ import { snsHandler } from './aws/sns.js';
 import { sqsHandler } from './aws/sqs.js';
 import { cloudwatchHandler } from './aws/cloudwatch.js';
 import { kmsHandler } from './aws/kms.js';
+import { secretsManagerHandler } from './aws/secrets-manager.js';
+import { elasticacheHandler } from './aws/elasticache.js';
+import { neptuneHandler } from './aws/neptune.js';
+import { efsHandler } from './aws/efs.js';
 import { gcpStorageHandler } from './gcp/storage.js';
 import { gcpSqlHandler } from './gcp/sql.js';
 import { gcpIamHandler } from './gcp/iam.js';
 import { gcpCoreHandler } from './gcp/core.js';
+import { gcpSecretsHandler } from './gcp/secrets.js';
+import { gcpBigQueryHandler } from './gcp/bigquery.js';
 import { azureStorageHandler } from './azure/storage.js';
 import { azureSqlHandler } from './azure/sql.js';
 import { azureIamHandler } from './azure/iam.js';
 import { azureCoreHandler } from './azure/core.js';
+import { azureKeyVaultHandler } from './azure/key-vault.js';
+import { azureCosmosDbHandler } from './azure/cosmosdb.js';
 
 // Registry of all handlers
 const handlers: ResourceHandler[] = [
@@ -44,14 +52,22 @@ const handlers: ResourceHandler[] = [
   sqsHandler,
   cloudwatchHandler,
   kmsHandler,
+  secretsManagerHandler,
+  elasticacheHandler,
+  neptuneHandler,
+  efsHandler,
   gcpStorageHandler,
   gcpSqlHandler,
   gcpIamHandler,
   gcpCoreHandler,
+  gcpSecretsHandler,
+  gcpBigQueryHandler,
   azureStorageHandler,
   azureSqlHandler,
   azureIamHandler,
   azureCoreHandler,
+  azureKeyVaultHandler,
+  azureCosmosDbHandler,
 ];
 
 // Build a map from resource type to handler for O(1) lookup

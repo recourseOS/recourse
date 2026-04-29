@@ -6,9 +6,9 @@ These fixtures are stable Terraform plan JSON inputs used to validate Recourse's
 
 | Fixture | Purpose | Expected decision |
 | --- | --- | --- |
-| `tests/fixtures/plans/aws-golden.json` | AWS rule authority for RDS and S3 object recovery | `block` |
-| `tests/fixtures/plans/gcp-golden.json` | First-class GCP storage, Cloud SQL, and IAM rules | `block` |
-| `tests/fixtures/plans/azure-golden.json` | First-class Azure storage, database, and role assignment rules | `block` |
+| `tests/fixtures/plans/aws-golden.json` | AWS rule authority for RDS, S3 object recovery, Secrets Manager, ElastiCache, Neptune, and EFS | `block` |
+| `tests/fixtures/plans/gcp-golden.json` | First-class GCP storage, Cloud SQL, IAM, Secret Manager, and BigQuery rules | `block` |
+| `tests/fixtures/plans/azure-golden.json` | First-class Azure storage, database, Cosmos DB, role assignment, and Key Vault secret rules | `block` |
 | `tests/fixtures/plans/unknown-semantic-golden.json` | Provider-neutral unknown-resource classifier behavior | `escalate` |
 
 ## Run Locally

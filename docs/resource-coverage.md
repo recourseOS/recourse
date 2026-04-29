@@ -2,7 +2,7 @@
 
 This document is generated from the public resource handler registry. Do not hand-edit the resource lists; run `npm run docs:coverage` after adding or removing handlers.
 
-Total deterministic resource types: 119
+Total deterministic resource types: 175
 
 Known resource handlers are authoritative. Unknown resource types can still be evaluated with `--classifier`, which uses provider-neutral semantic safety signals and returns `needs-review` when evidence is weak.
 
@@ -14,7 +14,7 @@ recourse evaluate terraform plan.json --classifier
 
 ## AWS
 
-Supported deterministic types: 70
+Supported deterministic types: 97
 
 ### Databases
 
@@ -24,6 +24,23 @@ Supported deterministic types: 70
 - `aws_dynamodb_global_table`
 - `aws_dynamodb_table`
 - `aws_dynamodb_table_item`
+- `aws_elasticache_cluster`
+- `aws_elasticache_global_replication_group`
+- `aws_elasticache_parameter_group`
+- `aws_elasticache_replication_group`
+- `aws_elasticache_serverless_cache`
+- `aws_elasticache_snapshot`
+- `aws_elasticache_subnet_group`
+- `aws_elasticache_user`
+- `aws_elasticache_user_group`
+- `aws_elasticache_user_group_association`
+- `aws_neptune_cluster`
+- `aws_neptune_cluster_instance`
+- `aws_neptune_cluster_parameter_group`
+- `aws_neptune_cluster_snapshot`
+- `aws_neptune_event_subscription`
+- `aws_neptune_parameter_group`
+- `aws_neptune_subnet_group`
 - `aws_rds_cluster`
 - `aws_rds_cluster_instance`
 
@@ -34,6 +51,12 @@ Supported deterministic types: 70
 - `aws_ebs_snapshot`
 - `aws_ebs_snapshot_copy`
 - `aws_ebs_volume`
+- `aws_efs_access_point`
+- `aws_efs_backup_policy`
+- `aws_efs_file_system`
+- `aws_efs_file_system_policy`
+- `aws_efs_mount_target`
+- `aws_efs_replication_configuration`
 - `aws_s3_bucket`
 - `aws_s3_bucket_versioning`
 - `aws_s3_object`
@@ -84,6 +107,10 @@ Supported deterministic types: 70
 - `aws_kms_alias`
 - `aws_kms_grant`
 - `aws_kms_key`
+- `aws_secretsmanager_secret`
+- `aws_secretsmanager_secret_policy`
+- `aws_secretsmanager_secret_rotation`
+- `aws_secretsmanager_secret_version`
 
 ### Messaging and Observability
 
@@ -109,7 +136,7 @@ Supported deterministic types: 70
 
 ## GCP
 
-Supported deterministic types: 24
+Supported deterministic types: 38
 
 ### Storage
 
@@ -121,6 +148,15 @@ Supported deterministic types: 24
 
 ### Databases
 
+- `google_bigquery_dataset`
+- `google_bigquery_dataset_iam_binding`
+- `google_bigquery_dataset_iam_member`
+- `google_bigquery_dataset_iam_policy`
+- `google_bigquery_routine`
+- `google_bigquery_table`
+- `google_bigquery_table_iam_binding`
+- `google_bigquery_table_iam_member`
+- `google_bigquery_table_iam_policy`
 - `google_sql_database`
 - `google_sql_database_instance`
 - `google_sql_user`
@@ -132,6 +168,11 @@ Supported deterministic types: 24
 - `google_project_iam_binding`
 - `google_project_iam_member`
 - `google_project_iam_policy`
+- `google_secret_manager_secret`
+- `google_secret_manager_secret_iam_binding`
+- `google_secret_manager_secret_iam_member`
+- `google_secret_manager_secret_iam_policy`
+- `google_secret_manager_secret_version`
 - `google_service_account`
 - `google_service_account_iam_binding`
 - `google_service_account_iam_member`
@@ -149,7 +190,7 @@ Supported deterministic types: 24
 
 ## Azure
 
-Supported deterministic types: 22
+Supported deterministic types: 37
 
 ### Storage
 
@@ -162,6 +203,18 @@ Supported deterministic types: 22
 
 ### Databases
 
+- `azurerm_cosmosdb_account`
+- `azurerm_cosmosdb_cassandra_keyspace`
+- `azurerm_cosmosdb_cassandra_table`
+- `azurerm_cosmosdb_gremlin_database`
+- `azurerm_cosmosdb_gremlin_graph`
+- `azurerm_cosmosdb_mongo_collection`
+- `azurerm_cosmosdb_mongo_database`
+- `azurerm_cosmosdb_sql_container`
+- `azurerm_cosmosdb_sql_database`
+- `azurerm_cosmosdb_sql_role_assignment`
+- `azurerm_cosmosdb_sql_role_definition`
+- `azurerm_cosmosdb_table`
 - `azurerm_mariadb_server`
 - `azurerm_mssql_database`
 - `azurerm_mysql_flexible_server`
@@ -178,7 +231,10 @@ Supported deterministic types: 22
 - `azurerm_dns_a_record`
 - `azurerm_dns_cname_record`
 - `azurerm_key_vault`
+- `azurerm_key_vault_access_policy`
+- `azurerm_key_vault_certificate`
 - `azurerm_key_vault_key`
+- `azurerm_key_vault_secret`
 - `azurerm_kubernetes_cluster`
 - `azurerm_kubernetes_cluster_node_pool`
 - `azurerm_managed_disk`
