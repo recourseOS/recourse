@@ -18,11 +18,11 @@ This is a Node.js TypeScript CLI for analyzing Terraform plans. Source code live
 
 ## Coding Style & Naming Conventions
 
-Use strict TypeScript with ES modules and explicit `.js` extensions in relative imports. Prefer two-space indentation, single quotes, semicolons, and `camelCase`. Resource handlers are grouped by provider and service, for example `src/resources/aws/s3.ts`; new handlers should implement `src/resources/types.ts` contracts and be registered in `src/resources/index.ts`. Keep handlers authoritative. Treat the decision tree as a baseline; BitNet is the planned multi-cloud replacement.
+Use strict TypeScript with ES modules and explicit `.js` extensions in relative imports. Prefer two-space indentation, single quotes, semicolons, and `camelCase`. Resource handlers are grouped by provider and service, for example `src/resources/aws/s3.ts`, `src/resources/gcp/storage.ts`, and `src/resources/azure/storage.ts`; new handlers should implement `src/resources/types.ts` contracts and be registered in `src/resources/index.ts`. Keep handlers authoritative. Unknown resources flow through `src/classifier/semantic-unknown.ts` before the legacy decision tree; keep that path conservative and BitNet-compatible.
 
 ## Testing Guidelines
 
-Tests use Vitest and live in `tests/*.test.ts`. Name suites after the unit or behavior under test, such as `describe('analyzeBlastRadius', ...)`, and write fixtures that mirror Terraform JSON. Add tests for new handlers, parser behavior, or recoverability edge cases. Run `npm test` before opening a pull request; run `npm run build` when touching public types or CLI wiring.
+Tests use Vitest and live in `tests/*.test.ts`. Name suites after the unit or behavior under test, such as `describe('analyzeBlastRadius', ...)`, and write fixtures that mirror Terraform JSON. Add tests for new handlers, parser behavior, or recoverability edge cases; use `tests/multicloud-rules.test.ts` for provider-specific GCP/Azure rules and `tests/semantic-unknown-classifier.test.ts` for provider-neutral unknown-resource behavior. Run `npm test` before opening a pull request; run `npm run build` when touching public types or CLI wiring.
 
 ## Commit & Pull Request Guidelines
 

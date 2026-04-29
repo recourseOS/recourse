@@ -156,36 +156,41 @@ Configuration:
 
 Run `recourse-cli resources` to see the full list.
 
-### GCP & Azure (Experimental)
+### GCP & Azure
 
-GCP and Azure resources are classified via an experimental unknown-resource classifier that reads abstract safety patterns from your plans. The current release ships a zero-dependency TypeScript decision tree; the roadmap replaces that decision tree with BitNet for stronger semantic generalization across clouds.
+GCP and Azure now have first-class deterministic handlers for common destructive resources. The unknown-resource classifier remains available for ambiguous resource types, but deterministic rules win when a provider-specific handler exists.
 
-**What's tested (8 resource types):**
-- GCP: `google_project_iam_binding`, `google_sql_database_instance`, `google_storage_bucket`
-- Azure: `azurerm_role_assignment`, `azurerm_dns_a_record`, `azurerm_storage_account`
+**GCP coverage includes:**
+- Storage: `google_storage_bucket`, bucket objects, bucket IAM
+- Databases: `google_sql_database_instance`, databases, users
+- IAM: project IAM, service accounts, service account keys
+- Core: DNS records, persistent disks, snapshots, KMS keys, GKE clusters/node pools
 
-**What works:**
-- IAM/access control resources (via naming patterns)
-- Databases with `deletion_protection` (via abstract feature transfer)
-- DNS records (config-only, always reversible)
+**Azure coverage includes:**
+- Storage: `azurerm_storage_account`, containers, blobs, shares, queues, tables
+- Databases: Azure SQL/MSSQL, PostgreSQL Flexible Server, MySQL Flexible Server, MariaDB
+- IAM: role assignments/definitions, Azure AD applications/service principals/passwords
+- Core: DNS records, managed disks, snapshots, Key Vault keys/vaults, AKS clusters/node pools
 
-**What's not yet validated:**
-- Full coverage across all resource types
-- Correct `unrecoverable` verdicts for storage without versioning/backups
-
-We're actively looking for testers. Run `recourse-cli plan` with `--classifier` on your GCP/Azure plans and tell us what we got wrong.
+**Examples of provider-specific safety checks:**
+- GCS bucket versioning and Azure Storage soft delete/versioning can move destructive storage changes to `recoverable-from-backup`.
+- Cloud SQL deletion protection produces a blocked/reversible verdict.
+- Cloud SQL and Azure SQL backup retention produce `recoverable-from-backup`.
+- Service account keys and service principal passwords are treated as unrecoverable credential material.
 
 ## Classifier Roadmap
 
-Known AWS resources use hand-written rules and remain the source of truth. Unknown resources currently fall back to a small decision tree trained on AWS examples. This works for some abstract patterns, such as `deletion_protection=true`, but can miss features on unknown resource types; for example, `google_storage_bucket` versioning is detected but ignored by the tree.
+Known AWS, GCP, and Azure resources use hand-written rules and remain the source of truth. Unknown resource types now go through a provider-neutral semantic classifier before the legacy AWS-trained decision tree. This public path is BitNet-ready: it uses the same abstract safety signals a compact model will learn, while keeping today's runtime dependency-free.
 
-BitNet is the planned replacement for unknown-resource classification. It is intended to learn provider-neutral recoverability semantics such as:
+The semantic classifier recognizes provider-neutral recoverability signals such as:
 
 - `deletion_protection=true` on any managed resource means the apply is blocked or reversible.
 - `versioning=true` on storage resources means recovery may come from versioned data.
 - `recovery_window_in_days` and `deletion_window_in_days` are related soft-delete signals.
+- database backup retention and PITR imply `recoverable-from-backup`.
+- unknown destructive resources with weak evidence return `needs-review` instead of being marked safe.
 
-The safety boundary does not change: deterministic rules win for known resources, and unknown destructive verdicts should remain conservative until backed by evidence.
+The safety boundary does not change: deterministic rules win for known resources, and unknown destructive verdicts remain conservative until backed by evidence. BitNet can replace the semantic scorer later without changing the public classifier contract.
 
 ## JSON Output
 
