@@ -198,6 +198,6 @@ Supported deterministic types: 3
 ## Coverage Notes
 
 - Deterministic rules classify known resource types by explicit safety signals such as deletion protection, versioning, soft delete, snapshots, backup retention, PITR, and credential material.
-- `--classifier` is for unknown or long-tail resources; it does not override deterministic handlers.
+- `--classifier` is for unknown or long-tail resources; it builds a provider-neutral semantic profile and does not override deterministic handlers.
 - Low-evidence destructive changes should resolve to `needs-review` rather than being treated as safe.
 - Live cloud state is only available where explicit evidence commands exist; out-of-band backups must be supplied as evidence before Recourse can rely on them.

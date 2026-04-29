@@ -195,7 +195,7 @@ Azure coverage includes:
 
 For known AWS, GCP, and Azure resources, deterministic rules win.
 
-For unknown resource types, `--classifier` enables a provider-neutral semantic classifier. It recognizes abstract safety signals such as:
+For unknown resource types, `--classifier` enables a provider-neutral semantic profile and classifier. It recognizes abstract safety signals such as:
 
 - `deletion_protection=true`
 - storage versioning and soft delete

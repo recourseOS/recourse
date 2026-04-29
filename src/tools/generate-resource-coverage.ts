@@ -99,7 +99,7 @@ export function renderResourceCoverage(types = getSupportedResourceTypes()): str
 
   lines.push('## Coverage Notes', '');
   lines.push('- Deterministic rules classify known resource types by explicit safety signals such as deletion protection, versioning, soft delete, snapshots, backup retention, PITR, and credential material.');
-  lines.push('- `--classifier` is for unknown or long-tail resources; it does not override deterministic handlers.');
+  lines.push('- `--classifier` is for unknown or long-tail resources; it builds a provider-neutral semantic profile and does not override deterministic handlers.');
   lines.push('- Low-evidence destructive changes should resolve to `needs-review` rather than being treated as safe.');
   lines.push('- Live cloud state is only available where explicit evidence commands exist; out-of-band backups must be supplied as evidence before Recourse can rely on them.');
   lines.push('');

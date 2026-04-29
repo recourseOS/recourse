@@ -20,14 +20,16 @@ Testing the classifier against edge-case resource types revealed gaps in the fea
 | Limit | Why It's Hard | Mitigation |
 |-------|---------------|------------|
 | Route53 record classification | Recoverability depends on out-of-band state (zone backups, IP ownership) | Document as limit; future: ask user for context |
-| Multi-cloud suffix detection | AWS naming conventions don't transfer to GCP/Azure | Document; future: BitNet semantic classification plus structural detection |
+| Multi-cloud suffix detection | AWS naming conventions don't transfer to every GCP/Azure resource | Semantic profile first; future BitNet/model-backed metadata for weaker names |
 | Classifier confidence on unknown types | 72-100% confidence but sometimes wrong | Dual-verdict surfaces disagreements |
 
 ---
 
-## Test Results
+## Baseline Test Results
 
-| Resource Type | Expected | Actual | Confidence | Root Cause |
+These are the original classifier gaps that motivated the semantic profile and dual-verdict work.
+
+| Resource Type | Expected | Original Actual | Confidence | Root Cause |
 |---------------|----------|--------|------------|------------|
 | aws_lambda_function_event_invoke_config | reversible | recoverable-with-effort | 100% | No signal for config-only resources |
 | aws_iam_role_policy_attachment | reversible | recoverable-with-effort | 100% | No signal for attachment resources |
@@ -91,21 +93,25 @@ snapshot_retention_limit: 0  -> no snapshots -> unrecoverable
 snapshot_retention_limit: 7  -> has snapshots -> recoverable-from-backup
 ```
 
-**Fix**: Add `snapshot_retention_limit` to BACKUP_ATTRS or SNAPSHOT_ATTRS
+**Fix**: `snapshot_retention_limit` is now recognized as backup evidence.
 
-## Proposed Schema v2
+## Implemented Semantic Profile Contract
 
-Add these features:
+The public classifier still exposes the original feature vector, but unknown-resource scoring now builds a semantic profile first. This profile is the BitNet-ready contract:
 
 ```typescript
-interface ClassifierFeaturesV2 extends ClassifierFeatures {
-  // Resource category signals
-  is_config_only: number;      // 1 = pure config, 0 = stores data, -1 = unknown
-  is_attachment: number;       // 1 = relationship resource, 0 = standalone, -1 = unknown
-
-  // Recovery window (unified)
-  has_recovery_window: number; // 1 = has soft delete, 0 = immediate delete, -1 = unknown
-  recovery_window_days: number; // Normalized 0-1 (0-30 days)
+interface SemanticResourceProfile {
+  kind: 'storage' | 'database' | 'disk' | 'iam' | 'dns' | 'credential' | 'config' | 'relationship' | 'unknown';
+  isConfigOnly: boolean;
+  isRelationship: boolean;
+  hasDeletionProtection: boolean;
+  hasVersioning: boolean;
+  hasBackup: boolean;
+  hasRecoveryWindow: boolean;
+  recoveryWindowDays: number;
+  skipsFinalSnapshot: boolean;
+  forceDeletes: boolean;
+  evidence: string[];
 }
 ```
 
@@ -118,7 +124,7 @@ How to determine these features:
 - Resource has only `arn`, `id`, and config fields (no `size`, `count`, `instances`) → likely config
 - Known config resource types from documentation
 
-### is_attachment
+### is_relationship
 - Resource type ends with `_attachment`, `_membership`, `_association` → attachment
 - Resource has exactly 2 foreign key references (e.g., `role`, `policy_arn`) → attachment
 
@@ -128,15 +134,15 @@ How to determine these features:
 
 ## Implications
 
-1. **Cannot fix with training data alone** - These are conceptual categories, not patterns in attributes
-2. **Need resource metadata** - May need to consult Terraform provider schema
-3. **Heuristics vs lookup** - Can use naming conventions as heuristics, but false positives exist
+1. **Rules remain authoritative** - Known handlers still decide first.
+2. **Unknown scoring is structured** - The scorer reads a semantic profile instead of raw ad hoc attributes.
+3. **BitNet can replace the scorer** - A compact model can consume the same profile while preserving tier, confidence, evidence, and abstention behavior.
 
 ## Recommended Next Steps
 
-1. **Quick fix**: Add `snapshot_retention_limit` to feature extractor (5 min)
-2. **Medium fix**: Add name-based heuristics for config/attachment resources (1 hour)
-3. **Proper fix**: Replace the semantic fallback with BitNet weights once model training and golden multi-cloud fixtures are ready
+1. Add more golden unknown-resource fixtures for cloud-native resources that do not follow Terraform naming conventions.
+2. Add provider-schema-derived metadata where static naming patterns are too weak.
+3. Replace the deterministic semantic scorer with BitNet weights once the fixture corpus is broad enough to measure false-safe risk.
 
 ## Known Limits
 
@@ -195,7 +201,7 @@ google_storage_bucket with versioning: { enabled: true }
 
 Before the semantic unknown-resource classifier, both GCP buckets (with and without versioning) got `recoverable-with-effort` because the tree was trained only on known AWS types. The feature was detected but not used.
 
-**Current fix:** `src/classifier/semantic-unknown.ts` now runs before the decision tree for unknown resource types. It recognizes storage versioning, backup retention, PITR, deletion protection, recovery/deletion windows, IAM relationships, DNS records, and credential material across providers. Low-evidence destructive resources return `needs-review`.
+**Current fix:** `src/classifier/semantic-profile.ts` builds a provider-neutral profile before `src/classifier/semantic-unknown.ts` scores unknown resource types. It recognizes storage versioning, backup retention, PITR, deletion protection, recovery/deletion windows, IAM relationships, DNS records, and credential material across providers. Low-evidence destructive resources return `needs-review`.
 
 **Remaining gap:** This is a deterministic semantic scorer, not trained BitNet weights. It preserves the public contract and safety behavior that BitNet should eventually implement.
 
@@ -206,7 +212,7 @@ BitNet is intended to replace the semantic scorer for recoverability classificat
 **What is implemented now:**
 
 - Known resource handlers remain authoritative.
-- Unknown resources are classified by provider-neutral semantics before falling back to the legacy decision tree.
+- Unknown resources are classified by a provider-neutral semantic profile before falling back to the legacy decision tree.
 - The unknown classifier can return `needs-review` when evidence is incomplete.
 - Output includes tier, confidence, and evidence strings.
 
@@ -229,5 +235,6 @@ BitNet is intended to replace the semantic scorer for recoverability classificat
 - Test file: `tests/schema-validation.test.ts`
 - Unknown semantic classifier tests: `tests/semantic-unknown-classifier.test.ts`
 - Feature extractor: `src/classifier/feature-extractor.ts`
+- Semantic profile contract: `src/classifier/semantic-profile.ts`
 - Semantic unknown classifier: `src/classifier/semantic-unknown.ts`
-- Dual-verdict (config/attachment detection): `src/classifier/dual-verdict.ts`
+- Dual-verdict (rules-first orchestration): `src/classifier/dual-verdict.ts`

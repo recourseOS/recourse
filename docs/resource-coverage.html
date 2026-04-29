@@ -252,7 +252,7 @@ recourse evaluate terraform plan.json --classifier</code></pre>
 <h3 id="identity-and-credentials">Identity and Credentials</h3>
 <ul><li><code>azuread_application</code></li><li><code>azuread_service_principal</code></li><li><code>azuread_service_principal_password</code></li></ul>
 <h2 id="coverage-notes">Coverage Notes</h2>
-<ul><li>Deterministic rules classify known resource types by explicit safety signals such as deletion protection, versioning, soft delete, snapshots, backup retention, PITR, and credential material.</li><li><code>--classifier</code> is for unknown or long-tail resources; it does not override deterministic handlers.</li><li>Low-evidence destructive changes should resolve to <code>needs-review</code> rather than being treated as safe.</li><li>Live cloud state is only available where explicit evidence commands exist; out-of-band backups must be supplied as evidence before Recourse can rely on them.</li></ul>
+<ul><li>Deterministic rules classify known resource types by explicit safety signals such as deletion protection, versioning, soft delete, snapshots, backup retention, PITR, and credential material.</li><li><code>--classifier</code> is for unknown or long-tail resources; it builds a provider-neutral semantic profile and does not override deterministic handlers.</li><li>Low-evidence destructive changes should resolve to <code>needs-review</code> rather than being treated as safe.</li><li>Live cloud state is only available where explicit evidence commands exist; out-of-band backups must be supplied as evidence before Recourse can rely on them.</li></ul>
     <p class="source-note">Generated from <code>docs/resource-coverage.md</code>. Markdown remains available for source review.</p>
   </article>
 </main>

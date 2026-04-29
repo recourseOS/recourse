@@ -21,7 +21,16 @@ export {
 
 export {
   classifyUnknownResourceSemantically,
+  classifySemanticProfile,
 } from './semantic-unknown.js';
+
+export {
+  buildSemanticResourceProfile,
+  isConfigOnlyResource,
+  isRelationshipResource,
+  type SemanticResourceKind,
+  type SemanticResourceProfile,
+} from './semantic-profile.js';
 
 export {
   getRecoverabilityDual,
