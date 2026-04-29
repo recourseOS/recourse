@@ -18,7 +18,7 @@ const providerGroups: ProviderGroup[] = [
       ['Storage and Backups', ['s3_', 'ebs_', 'ami']],
       ['Compute', ['instance', 'lambda']],
       ['Networking', ['vpc', 'subnet', 'security_group', 'eip', 'lb', 'alb', 'nat_gateway', 'internet_gateway', 'route53']],
-      ['Identity and Security', ['iam_', 'kms_']],
+      ['Identity and Security', ['iam_', 'kms_', 'secretsmanager']],
       ['Messaging and Observability', ['sns_', 'sqs_', 'cloudwatch']],
     ],
   },
@@ -28,7 +28,7 @@ const providerGroups: ProviderGroup[] = [
     servicePatterns: [
       ['Storage', ['storage']],
       ['Databases', ['sql']],
-      ['Identity and Access', ['iam', 'service_account']],
+      ['Identity and Access', ['iam', 'service_account', 'secret_manager']],
       ['Core Infrastructure', ['dns', 'compute', 'kms', 'container']],
     ],
   },

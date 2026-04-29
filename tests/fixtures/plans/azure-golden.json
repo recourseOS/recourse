@@ -51,6 +51,39 @@
         "after": null,
         "after_unknown": {}
       }
+    },
+    {
+      "address": "azurerm_key_vault_secret.retained",
+      "type": "azurerm_key_vault_secret",
+      "name": "retained",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "name": "prod-db-password",
+          "key_vault_id": "/subscriptions/000/resourceGroups/prod/providers/Microsoft.KeyVault/vaults/prod-kv",
+          "recovery_level": "Recoverable+Purgeable"
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "azurerm_key_vault_access_policy.app",
+      "type": "azurerm_key_vault_access_policy",
+      "name": "app",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "key_vault_id": "/subscriptions/000/resourceGroups/prod/providers/Microsoft.KeyVault/vaults/prod-kv",
+          "tenant_id": "00000000-0000-0000-0000-000000000002",
+          "object_id": "00000000-0000-0000-0000-000000000003",
+          "secret_permissions": ["Get", "List"]
+        },
+        "after": null,
+        "after_unknown": {}
+      }
     }
   ]
 }

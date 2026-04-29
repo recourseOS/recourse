@@ -94,6 +94,22 @@ describe('multi-cloud deterministic recoverability rules', () => {
   });
 
   it('classifies cloud provider secrets and credential material as unrecoverable', () => {
+    expect(getRecoverability(change('aws_secretsmanager_secret', {
+      name: 'prod/db/password',
+      recovery_window_in_days: 0,
+      force_delete_without_recovery: true,
+    }), null).tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+    expect(getRecoverability(change('aws_secretsmanager_secret_version', {
+      secret_id: 'prod/db/password',
+      secret_string: 'redacted',
+    }), null).tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+    expect(getRecoverability(change('google_secret_manager_secret', {
+      secret_id: 'prod-db-password',
+    }), null).tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+    expect(getRecoverability(change('google_secret_manager_secret_version', {
+      secret: 'prod-db-password',
+      secret_data: 'redacted',
+    }), null).tier).toBe(RecoverabilityTier.UNRECOVERABLE);
     expect(getRecoverability(change('google_service_account_key', {
       service_account_id: 'svc@example.iam.gserviceaccount.com',
     }), null).tier).toBe(RecoverabilityTier.UNRECOVERABLE);
@@ -102,12 +118,50 @@ describe('multi-cloud deterministic recoverability rules', () => {
     }), null).tier).toBe(RecoverabilityTier.UNRECOVERABLE);
   });
 
+  it('classifies secrets with explicit recovery windows as recoverable with effort', () => {
+    expect(getRecoverability(change('aws_secretsmanager_secret', {
+      name: 'prod/db/password',
+      recovery_window_in_days: 30,
+    }), null).tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+    expect(getRecoverability(change('azurerm_key_vault_secret', {
+      name: 'prod-db-password',
+      recovery_level: 'Recoverable+Purgeable',
+    }), null).tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+  });
+
+  it('escalates Azure Key Vault secret deletion without recovery evidence', () => {
+    const result = getRecoverability(change('azurerm_key_vault_secret', {
+      name: 'prod-db-password',
+      key_vault_id: '/subscriptions/000/resourceGroups/prod/providers/Microsoft.KeyVault/vaults/prod-kv',
+    }), null);
+
+    expect(result.tier).toBe(RecoverabilityTier.NEEDS_REVIEW);
+  });
+
+  it('classifies secret IAM and policy attachments as reversible', () => {
+    expect(getRecoverability(change('aws_secretsmanager_secret_policy', {
+      secret_arn: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:prod/db/password',
+    }), null).tier).toBe(RecoverabilityTier.REVERSIBLE);
+    expect(getRecoverability(change('google_secret_manager_secret_iam_binding', {
+      secret_id: 'prod-db-password',
+      role: 'roles/secretmanager.secretAccessor',
+    }), null).tier).toBe(RecoverabilityTier.REVERSIBLE);
+    expect(getRecoverability(change('azurerm_key_vault_access_policy', {
+      key_vault_id: '/subscriptions/000/resourceGroups/prod/providers/Microsoft.KeyVault/vaults/prod-kv',
+    }), null).tier).toBe(RecoverabilityTier.REVERSIBLE);
+  });
+
   it('registers first-class GCP and Azure resource handlers', () => {
     const types = getSupportedResourceTypes();
+    expect(types).toContain('aws_secretsmanager_secret');
+    expect(types).toContain('aws_secretsmanager_secret_version');
     expect(types).toContain('google_storage_bucket');
     expect(types).toContain('google_sql_database_instance');
+    expect(types).toContain('google_secret_manager_secret');
+    expect(types).toContain('google_secret_manager_secret_version');
     expect(types).toContain('azurerm_storage_account');
     expect(types).toContain('azurerm_mssql_database');
+    expect(types).toContain('azurerm_key_vault_secret');
   });
 });
 
@@ -125,6 +179,7 @@ function change(type: string, before: Record<string, unknown>): ResourceChange {
 }
 
 function providerFor(type: string): string {
+  if (type.startsWith('aws_')) return 'registry.terraform.io/hashicorp/aws';
   if (type.startsWith('google_')) return 'registry.terraform.io/hashicorp/google';
   if (type.startsWith('azurerm_')) return 'registry.terraform.io/hashicorp/azurerm';
   if (type.startsWith('azuread_')) return 'registry.terraform.io/hashicorp/azuread';

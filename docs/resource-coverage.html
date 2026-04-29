@@ -213,13 +213,13 @@
   <article>
     <h1 id="resource-coverage">Resource Coverage</h1>
 <p>This document is generated from the public resource handler registry. Do not hand-edit the resource lists; run <code>npm run docs:coverage</code> after adding or removing handlers.</p>
-<p>Total deterministic resource types: 119</p>
+<p>Total deterministic resource types: 131</p>
 <p>Known resource handlers are authoritative. Unknown resource types can still be evaluated with <code>--classifier</code>, which uses provider-neutral semantic safety signals and returns <code>needs-review</code> when evidence is weak.</p>
 <pre><code>recourse resources
 recourse plan plan.json --classifier
 recourse evaluate terraform plan.json --classifier</code></pre>
 <h2 id="aws">AWS</h2>
-<p>Supported deterministic types: 70</p>
+<p>Supported deterministic types: 74</p>
 <h3 id="databases">Databases</h3>
 <ul><li><code>aws_db_cluster_snapshot</code></li><li><code>aws_db_instance</code></li><li><code>aws_db_snapshot</code></li><li><code>aws_dynamodb_global_table</code></li><li><code>aws_dynamodb_table</code></li><li><code>aws_dynamodb_table_item</code></li><li><code>aws_rds_cluster</code></li><li><code>aws_rds_cluster_instance</code></li></ul>
 <h3 id="storage-and-backups">Storage and Backups</h3>
@@ -229,23 +229,23 @@ recourse evaluate terraform plan.json --classifier</code></pre>
 <h3 id="networking">Networking</h3>
 <ul><li><code>aws_alb</code></li><li><code>aws_eip</code></li><li><code>aws_elb</code></li><li><code>aws_internet_gateway</code></li><li><code>aws_lb</code></li><li><code>aws_lb_listener</code></li><li><code>aws_lb_listener_rule</code></li><li><code>aws_lb_target_group</code></li><li><code>aws_lb_target_group_attachment</code></li><li><code>aws_nat_gateway</code></li><li><code>aws_route53_health_check</code></li><li><code>aws_route53_record</code></li><li><code>aws_route53_zone</code></li><li><code>aws_security_group</code></li><li><code>aws_security_group_rule</code></li><li><code>aws_subnet</code></li><li><code>aws_vpc</code></li><li><code>aws_vpc_security_group_egress_rule</code></li><li><code>aws_vpc_security_group_ingress_rule</code></li></ul>
 <h3 id="identity-and-security">Identity and Security</h3>
-<ul><li><code>aws_iam_group</code></li><li><code>aws_iam_policy</code></li><li><code>aws_iam_role</code></li><li><code>aws_iam_role_policy</code></li><li><code>aws_iam_role_policy_attachment</code></li><li><code>aws_iam_user</code></li><li><code>aws_iam_user_policy</code></li><li><code>aws_iam_user_policy_attachment</code></li><li><code>aws_kms_alias</code></li><li><code>aws_kms_grant</code></li><li><code>aws_kms_key</code></li></ul>
+<ul><li><code>aws_iam_group</code></li><li><code>aws_iam_policy</code></li><li><code>aws_iam_role</code></li><li><code>aws_iam_role_policy</code></li><li><code>aws_iam_role_policy_attachment</code></li><li><code>aws_iam_user</code></li><li><code>aws_iam_user_policy</code></li><li><code>aws_iam_user_policy_attachment</code></li><li><code>aws_kms_alias</code></li><li><code>aws_kms_grant</code></li><li><code>aws_kms_key</code></li><li><code>aws_secretsmanager_secret</code></li><li><code>aws_secretsmanager_secret_policy</code></li><li><code>aws_secretsmanager_secret_rotation</code></li><li><code>aws_secretsmanager_secret_version</code></li></ul>
 <h3 id="messaging-and-observability">Messaging and Observability</h3>
 <ul><li><code>aws_cloudwatch_dashboard</code></li><li><code>aws_cloudwatch_log_group</code></li><li><code>aws_cloudwatch_log_stream</code></li><li><code>aws_cloudwatch_metric_alarm</code></li><li><code>aws_sns_topic</code></li><li><code>aws_sns_topic_policy</code></li><li><code>aws_sns_topic_subscription</code></li><li><code>aws_sqs_queue</code></li><li><code>aws_sqs_queue_policy</code></li></ul>
 <h3 id="other">Other</h3>
 <ul><li><code>aws_launch_template</code></li><li><code>aws_network_acl</code></li><li><code>aws_network_acl_rule</code></li><li><code>aws_route</code></li><li><code>aws_route_table</code></li><li><code>aws_route_table_association</code></li><li><code>aws_volume_attachment</code></li></ul>
 <h2 id="gcp">GCP</h2>
-<p>Supported deterministic types: 24</p>
+<p>Supported deterministic types: 29</p>
 <h3 id="storage">Storage</h3>
 <ul><li><code>google_storage_bucket</code></li><li><code>google_storage_bucket_iam_binding</code></li><li><code>google_storage_bucket_iam_member</code></li><li><code>google_storage_bucket_iam_policy</code></li><li><code>google_storage_bucket_object</code></li></ul>
 <h3 id="databases">Databases</h3>
 <ul><li><code>google_sql_database</code></li><li><code>google_sql_database_instance</code></li><li><code>google_sql_user</code></li></ul>
 <h3 id="identity-and-access">Identity and Access</h3>
-<ul><li><code>google_kms_crypto_key_iam_binding</code></li><li><code>google_kms_crypto_key_iam_member</code></li><li><code>google_project_iam_binding</code></li><li><code>google_project_iam_member</code></li><li><code>google_project_iam_policy</code></li><li><code>google_service_account</code></li><li><code>google_service_account_iam_binding</code></li><li><code>google_service_account_iam_member</code></li><li><code>google_service_account_key</code></li></ul>
+<ul><li><code>google_kms_crypto_key_iam_binding</code></li><li><code>google_kms_crypto_key_iam_member</code></li><li><code>google_project_iam_binding</code></li><li><code>google_project_iam_member</code></li><li><code>google_project_iam_policy</code></li><li><code>google_secret_manager_secret</code></li><li><code>google_secret_manager_secret_iam_binding</code></li><li><code>google_secret_manager_secret_iam_member</code></li><li><code>google_secret_manager_secret_iam_policy</code></li><li><code>google_secret_manager_secret_version</code></li><li><code>google_service_account</code></li><li><code>google_service_account_iam_binding</code></li><li><code>google_service_account_iam_member</code></li><li><code>google_service_account_key</code></li></ul>
 <h3 id="core-infrastructure">Core Infrastructure</h3>
 <ul><li><code>google_compute_disk</code></li><li><code>google_compute_snapshot</code></li><li><code>google_container_cluster</code></li><li><code>google_container_node_pool</code></li><li><code>google_dns_record_set</code></li><li><code>google_kms_crypto_key</code></li><li><code>google_kms_key_ring</code></li></ul>
 <h2 id="azure">Azure</h2>
-<p>Supported deterministic types: 22</p>
+<p>Supported deterministic types: 25</p>
 <h3 id="storage">Storage</h3>
 <ul><li><code>azurerm_storage_account</code></li><li><code>azurerm_storage_blob</code></li><li><code>azurerm_storage_container</code></li><li><code>azurerm_storage_queue</code></li><li><code>azurerm_storage_share</code></li><li><code>azurerm_storage_table</code></li></ul>
 <h3 id="databases">Databases</h3>
@@ -253,7 +253,7 @@ recourse evaluate terraform plan.json --classifier</code></pre>
 <h3 id="identity-and-access">Identity and Access</h3>
 <ul><li><code>azurerm_role_assignment</code></li><li><code>azurerm_role_definition</code></li></ul>
 <h3 id="core-infrastructure">Core Infrastructure</h3>
-<ul><li><code>azurerm_dns_a_record</code></li><li><code>azurerm_dns_cname_record</code></li><li><code>azurerm_key_vault</code></li><li><code>azurerm_key_vault_key</code></li><li><code>azurerm_kubernetes_cluster</code></li><li><code>azurerm_kubernetes_cluster_node_pool</code></li><li><code>azurerm_managed_disk</code></li><li><code>azurerm_private_dns_a_record</code></li><li><code>azurerm_snapshot</code></li></ul>
+<ul><li><code>azurerm_dns_a_record</code></li><li><code>azurerm_dns_cname_record</code></li><li><code>azurerm_key_vault</code></li><li><code>azurerm_key_vault_access_policy</code></li><li><code>azurerm_key_vault_certificate</code></li><li><code>azurerm_key_vault_key</code></li><li><code>azurerm_key_vault_secret</code></li><li><code>azurerm_kubernetes_cluster</code></li><li><code>azurerm_kubernetes_cluster_node_pool</code></li><li><code>azurerm_managed_disk</code></li><li><code>azurerm_private_dns_a_record</code></li><li><code>azurerm_snapshot</code></li></ul>
 <h2 id="azure-ad">Azure AD</h2>
 <p>Supported deterministic types: 3</p>
 <h3 id="identity-and-credentials">Identity and Credentials</h3>

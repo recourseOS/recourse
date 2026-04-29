@@ -2,7 +2,7 @@
 
 ## Summary
 
-Testing the classifier against edge-case resource types revealed gaps in the feature schema and rule handlers. This validation found **6 fixable bugs** and **4 documented limits**.
+Testing the classifier against edge-case resource types revealed gaps in the feature schema and rule handlers. This validation found fixable bugs that now drive deterministic handlers, semantic unknown-resource scoring, and golden fixtures.
 
 ### What Was Fixed (v0.1)
 
@@ -14,12 +14,14 @@ Testing the classifier against edge-case resource types revealed gaps in the fea
 | snapshot_retention_limit | Training gap | Added to backup attribute recognition (ElastiCache) |
 | recovery_window_in_days | Training gap | Added to retention/window detection (Secrets Manager) |
 | Secrets Manager window | Rule bug | recovery_window now detected via existing feature infrastructure |
+| Secrets and key material handlers | Rule coverage | Added deterministic AWS Secrets Manager, GCP Secret Manager, and Azure Key Vault child-resource rules |
 
 ### What Remains as Known Limits
 
 | Limit | Why It's Hard | Mitigation |
 |-------|---------------|------------|
 | Route53 record classification | Recoverability depends on out-of-band state (zone backups, IP ownership) | Document as limit; future: ask user for context |
+| Azure Key Vault child resources without recovery evidence | Child resources do not always expose parent vault retention settings in the same plan change | Return `needs-review` unless recovery-level or retention evidence is present |
 | Multi-cloud suffix detection | AWS naming conventions don't transfer to every GCP/Azure resource | Semantic profile first; future BitNet/model-backed metadata for weaker names |
 | Classifier confidence on unknown types | 72-100% confidence but sometimes wrong | Dual-verdict surfaces disagreements |
 
@@ -72,7 +74,7 @@ These are the original classifier gaps that motivated the semantic profile and d
 
 **Proposed feature**: `is_attachment` or `is_relationship`
 
-### Gap 3: Missing recovery window semantics
+### Gap 3: Recovery window semantics
 
 **Problem**: Some resources have "soft delete" with configurable recovery:
 
@@ -80,9 +82,9 @@ These are the original classifier gaps that motivated the semantic profile and d
 - `aws_kms_key` - `deletion_window_in_days` (7-30 days)
 - `aws_rds_cluster` - `delete_automated_backups` affects retention
 
-We handle `deletion_window_in_days` for KMS but not `recovery_window_in_days` for Secrets Manager.
+**Current status**: Known AWS Secrets Manager rules now classify recovery-window deletes as `recoverable-with-effort` and immediate/forced deletes as `unrecoverable`. The semantic profile also normalizes `recovery_window_in_days` and `deletion_window_in_days` for unknown resources.
 
-**Proposed feature**: `has_recovery_window` and/or unify these under a common pattern
+**Remaining risk**: Provider child resources do not always expose parent retention settings. Azure Key Vault secrets, keys, and certificates return `needs-review` unless the plan includes recovery-level, retention, or purge-protection evidence.
 
 ### Gap 4: Snapshot retention limit not recognized
 

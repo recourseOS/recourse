@@ -2,7 +2,7 @@
 
 This document is generated from the public resource handler registry. Do not hand-edit the resource lists; run `npm run docs:coverage` after adding or removing handlers.
 
-Total deterministic resource types: 119
+Total deterministic resource types: 131
 
 Known resource handlers are authoritative. Unknown resource types can still be evaluated with `--classifier`, which uses provider-neutral semantic safety signals and returns `needs-review` when evidence is weak.
 
@@ -14,7 +14,7 @@ recourse evaluate terraform plan.json --classifier
 
 ## AWS
 
-Supported deterministic types: 70
+Supported deterministic types: 74
 
 ### Databases
 
@@ -84,6 +84,10 @@ Supported deterministic types: 70
 - `aws_kms_alias`
 - `aws_kms_grant`
 - `aws_kms_key`
+- `aws_secretsmanager_secret`
+- `aws_secretsmanager_secret_policy`
+- `aws_secretsmanager_secret_rotation`
+- `aws_secretsmanager_secret_version`
 
 ### Messaging and Observability
 
@@ -109,7 +113,7 @@ Supported deterministic types: 70
 
 ## GCP
 
-Supported deterministic types: 24
+Supported deterministic types: 29
 
 ### Storage
 
@@ -132,6 +136,11 @@ Supported deterministic types: 24
 - `google_project_iam_binding`
 - `google_project_iam_member`
 - `google_project_iam_policy`
+- `google_secret_manager_secret`
+- `google_secret_manager_secret_iam_binding`
+- `google_secret_manager_secret_iam_member`
+- `google_secret_manager_secret_iam_policy`
+- `google_secret_manager_secret_version`
 - `google_service_account`
 - `google_service_account_iam_binding`
 - `google_service_account_iam_member`
@@ -149,7 +158,7 @@ Supported deterministic types: 24
 
 ## Azure
 
-Supported deterministic types: 22
+Supported deterministic types: 25
 
 ### Storage
 
@@ -178,7 +187,10 @@ Supported deterministic types: 22
 - `azurerm_dns_a_record`
 - `azurerm_dns_cname_record`
 - `azurerm_key_vault`
+- `azurerm_key_vault_access_policy`
+- `azurerm_key_vault_certificate`
 - `azurerm_key_vault_key`
+- `azurerm_key_vault_secret`
 - `azurerm_kubernetes_cluster`
 - `azurerm_kubernetes_cluster_node_pool`
 - `azurerm_managed_disk`

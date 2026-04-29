@@ -52,6 +52,37 @@
         "after": null,
         "after_unknown": {}
       }
+    },
+    {
+      "address": "aws_secretsmanager_secret.recovery_window",
+      "type": "aws_secretsmanager_secret",
+      "name": "recovery_window",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "name": "prod/db/password",
+          "recovery_window_in_days": 30,
+          "force_delete_without_recovery": false
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_secretsmanager_secret_version.current",
+      "type": "aws_secretsmanager_secret_version",
+      "name": "current",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "secret_id": "prod/db/password",
+          "version_stages": ["AWSCURRENT"]
+        },
+        "after": null,
+        "after_unknown": {}
+      }
     }
   ],
   "prior_state": {

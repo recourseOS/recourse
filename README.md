@@ -177,19 +177,19 @@ AWS coverage includes:
 - Storage: S3 buckets/objects and EBS volumes/snapshots.
 - Compute: EC2 instances, Lambda functions, and AMIs.
 - Networking: VPCs, subnets, security groups, EIPs, load balancers, and Route53.
-- IAM and platform services: IAM roles/policies/users, KMS, SNS/SQS, and CloudWatch logs.
+- IAM and platform services: IAM roles/policies/users, KMS, Secrets Manager, SNS/SQS, and CloudWatch logs.
 
 GCP coverage includes:
 - Storage: `google_storage_bucket`, bucket objects, and bucket IAM.
 - Databases: `google_sql_database_instance`, databases, and users.
-- IAM: project IAM, service accounts, and service account keys.
+- IAM and secrets: project IAM, service accounts, service account keys, and Secret Manager secrets/versions/IAM.
 - Core: DNS records, persistent disks, snapshots, KMS keys, and GKE clusters/node pools.
 
 Azure coverage includes:
 - Storage: `azurerm_storage_account`, containers, blobs, shares, queues, and tables.
 - Databases: Azure SQL/MSSQL, PostgreSQL Flexible Server, MySQL Flexible Server, and MariaDB.
 - IAM: role assignments/definitions and Azure AD applications/service principals/passwords.
-- Core: DNS records, managed disks, snapshots, Key Vault keys/vaults, and AKS clusters/node pools.
+- Core: DNS records, managed disks, snapshots, Key Vault vaults/keys/secrets/certificates/access policies, and AKS clusters/node pools.
 
 ## Unknown Resources and BitNet Path
 

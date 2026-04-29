@@ -157,10 +157,10 @@ describe('Edge Case: aws_secretsmanager_secret', () => {
   /**
    * Secrets Manager has a recovery window (7-30 days).
    * Deleting schedules deletion, but you can cancel it.
-   * This is REVERSIBLE during the window, then UNRECOVERABLE.
+   * This is recoverable with effort during the window, then UNRECOVERABLE.
    */
 
-  it('should classify delete as reversible when recovery_window_in_days > 0', () => {
+  it('should classify delete as recoverable with effort when recovery_window_in_days > 0', () => {
     const change = makeChange('aws_secretsmanager_secret', 'delete', {
       id: 'my-secret',
       name: 'prod/db/password',
@@ -175,9 +175,7 @@ describe('Edge Case: aws_secretsmanager_secret', () => {
     console.log('Feature explanations:', explainFeatures(features));
     console.log('Classification:', result);
 
-    // SHOULD be reversible - you can cancel the deletion
-    // But our feature schema doesn't have "recovery_window_in_days"
-    // (we have deletion_window_days for KMS, but this is different)
+    // SHOULD be recoverable with effort - you can cancel the deletion during the window.
   });
 
   it('should classify delete as unrecoverable when force_overwrite_replica_secret', () => {
@@ -524,7 +522,7 @@ describe('Feature Schema Gap Analysis', () => {
         resource: 'aws_secretsmanager_secret',
         expected: 'reversible (with window) or unrecoverable (immediate)',
         reason: 'Has recovery_window_in_days that determines recoverability',
-        missingFeature: 'has_recovery_window (different from deletion_window)',
+        missingFeature: 'fixed for known AWS handler; semantic profile also normalizes recovery/deletion windows',
       },
       {
         resource: 'aws_route53_record',
