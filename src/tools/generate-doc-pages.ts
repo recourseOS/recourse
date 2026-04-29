@@ -215,8 +215,15 @@ export function renderDocPage(page: DocPage, markdown: string): string {
   }
   @media (max-width: 820px) {
     .container { padding: 0 22px; }
-    nav { align-items: flex-start; gap: 18px; }
-    nav .links { flex-wrap: wrap; justify-content: flex-end; gap: 12px; }
+    nav { flex-direction: column; align-items: flex-start; gap: 16px; }
+    nav .links {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(4, max-content);
+      justify-content: flex-start;
+      gap: 16px;
+      padding-bottom: 5px;
+    }
     header { padding-top: 56px; }
     .doc-shell { grid-template-columns: 1fr; gap: 22px; }
     .toc { position: static; }
