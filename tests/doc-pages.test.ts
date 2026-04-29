@@ -20,13 +20,11 @@ describe('themed documentation pages', () => {
     expect(index).toContain('href="/live-aws-tests.html"');
     expect(index).toContain('href="/schema-gaps.html"');
     expect(index).toContain('href="/agent-interface.html"');
-    expect(index).toContain('href="/public-boundaries.html"');
     expect(index).not.toContain('href="/resource-coverage.md"');
     expect(index).not.toContain('href="/golden-fixtures.md"');
     expect(index).not.toContain('href="/live-aws-tests.md"');
     expect(index).not.toContain('href="/schema-gaps.md"');
     expect(index).not.toContain('href="/agent-interface.md"');
-    expect(index).not.toContain('href="/public-boundaries.md"');
   });
 
   it('keeps local site links and table-of-content anchors resolvable', async () => {

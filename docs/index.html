@@ -838,11 +838,6 @@
         <span class="label">Agent interface</span>
         <span class="desc">Working MCP server command, tool contract, and consequence report semantics for agents before they act.</span>
       </a>
-      <a class="coverage-item" href="/public-boundaries.html">
-        <span class="num">06</span>
-        <span class="label">Public boundaries</span>
-        <span class="desc">Rules for keeping public docs useful without exposing sensitive product or model information.</span>
-      </a>
     </div>
   </div>
 </section>
@@ -882,7 +877,7 @@
       <p><strong>Evidence-bound.</strong> If an out-of-band backup exists but is not in the plan, state, or supplied evidence, RecourseOS will not pretend it verified recovery.</p>
       <p style="margin-top: 12px;"><strong>Provider rules are incremental.</strong> AWS, GCP, and Azure have first-class coverage for common destructive resources, but long-tail services still need rules and fixtures.</p>
       <p style="margin-top: 12px;"><strong>Unknown resources stay conservative.</strong> The semantic classifier can transfer safety patterns, but weak evidence becomes <code>needs-review</code>.</p>
-      <p style="margin-top: 12px;"><strong>Cloud is optional.</strong> The private control plane can ingest consequence reports later; the public CLI and MCP server remain useful without signup or hosted state.</p>
+      <p style="margin-top: 12px;"><strong>Cloud is optional.</strong> RecourseOS can submit consequence reports to a configured endpoint, but the public CLI and MCP server remain useful without signup or hosted state.</p>
     </div>
   </div>
 </section>
