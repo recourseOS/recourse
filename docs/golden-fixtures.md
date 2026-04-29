@@ -16,6 +16,7 @@ These fixtures are stable Terraform plan JSON inputs used to validate Recourse's
 ```bash
 npm run build
 npx vitest --run tests/golden-plan-fixtures.test.ts
+npx vitest --run tests/cli-scenarios.test.ts
 ```
 
 To inspect a fixture through the CLI:

@@ -9,6 +9,11 @@ import {
   type EvidenceKind,
   type EvidenceScenario,
 } from './helpers/evidence-scenarios.js';
+import {
+  goldenPlanFixturePath,
+  goldenPlanScenarios,
+  type GoldenPlanScenario,
+} from './helpers/golden-plan-scenarios.js';
 
 const distCli = 'dist/index.js';
 
@@ -41,6 +46,20 @@ describe('compiled CLI scenario matrix', () => {
 
     const result = runCli(scenario as EvidenceScenario, 'escalate');
     expect(result.status).toBe(1);
+  });
+
+  it.each(goldenPlanScenarios)('evaluates golden Terraform fixture: $name', scenario => {
+    expect(existsSync(distCli), 'dist/index.js must exist; run npm run build before CLI scenarios').toBe(true);
+
+    const result = runGoldenPlanCli(scenario);
+    expect(result.status).toBe(scenario.expectedDecision === 'block' ? 1 : 0);
+    expect(result.stderr).toBe('');
+
+    const report = JSON.parse(result.stdout) as ConsequenceReport;
+    expect(report.decision).toBe(scenario.expectedDecision);
+    expect(report.summary.worstRecoverability.tier).toBe(scenario.expectedWorstTier);
+    expect(report.summary.totalMutations).toBe(Object.keys(scenario.expectedByAddress).length);
+    expect(tiersByAddress(report)).toEqual(scenario.expectedByAddress);
   });
 
   it('submits evaluate reports to Recourse Cloud when requested', async () => {
@@ -150,6 +169,34 @@ function runCli(scenario: EvidenceScenario, failOn: 'warn' | 'escalate' | 'block
     cwd: process.cwd(),
     encoding: 'utf8',
   });
+}
+
+function runGoldenPlanCli(scenario: GoldenPlanScenario) {
+  const args = [
+    distCli,
+    'evaluate',
+    'terraform',
+    goldenPlanFixturePath(scenario.fixture),
+    '--classifier',
+    '--actor',
+    'agent/golden-fixture',
+    '--environment',
+    'test',
+    '--fail-on',
+    'block',
+  ];
+
+  return spawnSync(process.execPath, args, {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+  });
+}
+
+function tiersByAddress(report: ConsequenceReport): Record<string, number> {
+  return Object.fromEntries(report.mutations.map(mutation => [
+    mutation.intent.target.id,
+    mutation.recoverability.tier,
+  ]));
 }
 
 function evidenceFlag(kind: EvidenceKind): string {

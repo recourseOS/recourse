@@ -582,6 +582,7 @@
   </a>
   <div class="links">
     <a href="https://github.com/recourseos/recourse">github</a>
+    <a href="#difference">difference</a>
     <a href="#output">output</a>
     <a href="#coverage">coverage</a>
     <a href="#principles" class="nav-cta">principles</a>
@@ -598,7 +599,7 @@
       RecourseOS is a local consequence evaluator for Terraform plans, shell commands, and MCP tool calls. It classifies each mutation by recoverability before destructive infrastructure changes reach production.
     </p>
     <div class="hero-actions">
-      <a class="button primary" href="#output">See sample output →</a>
+      <a class="button primary" href="#difference">Why not just plan? →</a>
       <a class="button secondary" href="#principles">Why it’s different</a>
     </div>
     <div class="install">
@@ -654,6 +655,39 @@
     </div>
   </aside>
 </header>
+
+<section class="section alt" id="difference">
+  <div class="container split">
+    <div>
+      <div class="section-label">Why not just Terraform plan?</div>
+      <h2>Terraform shows the diff. Recourse shows the consequence.</h2>
+      <p class="section-copy">
+        Terraform tells you a resource will be destroyed. Recourse tells you whether that destruction is reversible, recoverable from backup, unrecoverable, or too ambiguous to treat as safe.
+      </p>
+    </div>
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <div class="title">diff vs consequence</div>
+      </div>
+      <div class="terminal-body">
+        <div class="heading">TERRAFORM PLAN</div>
+        <div><span class="red">-</span> aws_db_instance.main will be destroyed</div>
+
+        <div class="heading">RECOURSE</div>
+        <div>aws_db_instance.main</div>
+        <div class="indent">recoverability: <span class="red">unrecoverable</span></div>
+        <div class="indent">reason: skip_final_snapshot=true, backup_retention_period=0</div>
+        <div class="indent">decision: <span class="red">block</span></div>
+
+        <div class="summary">
+          <div class="heading">SAME MODEL, MORE INPUTS</div>
+          <div>Terraform plan · shell command · MCP tool call</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
 <section class="section" id="output">
   <div class="container split">
