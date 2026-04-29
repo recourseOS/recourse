@@ -166,6 +166,8 @@ Supported evidence providers: `aws-s3`, `aws-rds`, `aws-dynamodb`, `aws-iam-role
 recourse resources
 ```
 
+The generated coverage reference is in `docs/resource-coverage.md`.
+
 ## Multi-Cloud Coverage
 
 Known resources use hand-written deterministic rules and remain authoritative.
@@ -260,6 +262,7 @@ Focused test suites:
 npx vitest --run tests/multicloud-rules.test.ts
 npx vitest --run tests/semantic-unknown-classifier.test.ts
 npx vitest --run tests/golden-plan-fixtures.test.ts
+npx vitest --run tests/resource-coverage-doc.test.ts
 ```
 
 ## Limitations

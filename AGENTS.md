@@ -22,7 +22,7 @@ Use strict TypeScript with ES modules and explicit `.js` extensions in relative 
 
 ## Testing Guidelines
 
-Tests use Vitest and live in `tests/*.test.ts`. Name suites after the unit or behavior under test, such as `describe('analyzeBlastRadius', ...)`, and write fixtures that mirror Terraform JSON. Add tests for new handlers, parser behavior, or recoverability edge cases; use `tests/multicloud-rules.test.ts` for provider-specific GCP/Azure rules, `tests/semantic-unknown-classifier.test.ts` for provider-neutral unknown-resource behavior, and `tests/golden-plan-fixtures.test.ts` for end-to-end provider fixture contracts. Run `npm test` before opening a pull request; run `npm run build` when touching public types or CLI wiring.
+Tests use Vitest and live in `tests/*.test.ts`. Name suites after the unit or behavior under test, such as `describe('analyzeBlastRadius', ...)`, and write fixtures that mirror Terraform JSON. Add tests for new handlers, parser behavior, or recoverability edge cases; use `tests/multicloud-rules.test.ts` for provider-specific GCP/Azure rules, `tests/semantic-unknown-classifier.test.ts` for provider-neutral unknown-resource behavior, `tests/golden-plan-fixtures.test.ts` for end-to-end provider fixture contracts, and `tests/resource-coverage-doc.test.ts` for coverage-doc drift. Run `npm test` before opening a pull request; run `npm run build` when touching public types or CLI wiring.
 
 ## Commit & Pull Request Guidelines
 
@@ -30,4 +30,4 @@ Recent commits use short, imperative messages such as `Make favicon larger by ti
 
 ## Agent-Specific Instructions
 
-Do not overwrite generated `dist/` files unless the task requires a build artifact. Preserve Terraform fixtures and add new ones instead of weakening coverage. When changing classification logic, update both the rule implementation and tests. Unknown-resource classifiers must stay conservative: rules win for known resources, and low-evidence destructive changes should not be marked safe. Cloud submission code must keep local evaluation authoritative: stdout remains report JSON, submission status goes to stderr, and submission failures must not hide or alter the local decision.
+Do not overwrite generated `dist/` files unless the task requires a build artifact. Preserve Terraform fixtures and add new ones instead of weakening coverage. When changing classification logic, update both the rule implementation and tests. After adding or removing resource handlers, run `npm run docs:coverage` and commit the resulting `docs/resource-coverage.md`. Unknown-resource classifiers must stay conservative: rules win for known resources, and low-evidence destructive changes should not be marked safe. Cloud submission code must keep local evaluation authoritative: stdout remains report JSON, submission status goes to stderr, and submission failures must not hide or alter the local decision.
