@@ -30,3 +30,5 @@ node dist/index.js evaluate terraform tests/fixtures/plans/gcp-golden.json --cla
 These fixtures model the payload shape Recourse Cloud should ingest later: a local consequence report with deterministic recoverability tiers, evidence strings, policy decision, actor context, and mutation targets. Cloud can store, compare, and govern these reports without changing the local evaluator behavior.
 
 Known resource handlers remain authoritative. The unknown semantic fixture verifies that low-evidence destructive resources become `needs-review` instead of being marked safe.
+
+For the generated list of deterministic resource handlers, see `docs/resource-coverage.md`.
