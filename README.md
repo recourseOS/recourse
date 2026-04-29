@@ -254,6 +254,7 @@ npm install
 npm run build
 npm test
 npm run test:all
+npm run test:docs:visual
 ```
 
 Focused test suites:
@@ -265,6 +266,8 @@ npx vitest --run tests/golden-plan-fixtures.test.ts
 npx vitest --run tests/resource-coverage-doc.test.ts
 npx vitest --run tests/doc-pages.test.ts
 ```
+
+`npm run test:docs:visual` runs Playwright against the generated docs site in desktop and mobile Chromium viewports and writes ignored screenshots to `docs-visual-screenshots/`. If Chromium is not installed yet, run `npx playwright install chromium` once.
 
 Regenerate public documentation after changing resource handlers or Markdown-backed docs:
 

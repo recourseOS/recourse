@@ -10,6 +10,9 @@ docs/testing-strategy.md
 *.log
 .DS_Store
 recourseOS_idea.md
+docs-visual-screenshots/
+playwright-report/
+test-results/
 
 # Terraform
 .terraform/
