@@ -12,6 +12,7 @@ This is a Node.js TypeScript CLI for analyzing Terraform plans. Source code live
 - `npm test`: run the Vitest suite.
 - `npm run lint`: run ESLint over `src/**/*.ts`.
 - `node dist/index.js plan <plan.json>`: run the CLI after building.
+- `node dist/index.js evaluate <source> <input> --submit`: submit a consequence report to Recourse Cloud when `RECOURSE_CLOUD_URL`, `RECOURSE_ORGANIZATION_ID`, and an actor are configured.
 - `node dist/index.js resources`: list resource types.
 - `npm run preview` / `npm run deploy`: run or deploy the Wrangler configuration.
 
@@ -29,4 +30,4 @@ Recent commits use short, imperative messages such as `Make favicon larger by ti
 
 ## Agent-Specific Instructions
 
-Do not overwrite generated `dist/` files unless the task requires a build artifact. Preserve Terraform fixtures and add new ones instead of weakening coverage. When changing classification logic, update both the rule implementation and tests. Unknown-resource classifiers must stay conservative: rules win for known resources, and low-evidence destructive changes should not be marked safe.
+Do not overwrite generated `dist/` files unless the task requires a build artifact. Preserve Terraform fixtures and add new ones instead of weakening coverage. When changing classification logic, update both the rule implementation and tests. Unknown-resource classifiers must stay conservative: rules win for known resources, and low-evidence destructive changes should not be marked safe. Cloud submission code must keep local evaluation authoritative: stdout remains report JSON, submission status goes to stderr, and submission failures must not hide or alter the local decision.

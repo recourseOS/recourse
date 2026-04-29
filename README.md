@@ -121,6 +121,28 @@ Exit codes:
 
 Options for `--fail-on`: `unrecoverable`, `backup`, `effort`, `reversible`
 
+## Recourse Cloud Submission
+
+`evaluate` can submit its consequence report to a private Recourse Cloud control plane while still printing the local JSON report to stdout:
+
+```bash
+RECOURSE_CLOUD_URL=https://recourse-cloud.example.com \
+RECOURSE_ORGANIZATION_ID=org_123 \
+RECOURSE_ACTOR_ID=agent/deploy \
+recourse-cli evaluate shell 'aws s3 rm s3://prod-audit-logs --recursive' \
+  --environment production \
+  --submit
+```
+
+Cloud submission status is written to stderr so JSON output remains parseable. If submission fails, local evaluation still completes and the exit code is based on `--fail-on`.
+
+Configuration:
+
+- `RECOURSE_CLOUD_URL`: private API base URL.
+- `RECOURSE_ORGANIZATION_ID`: organization scope for the evaluation.
+- `RECOURSE_ACTOR_ID` or `--actor`: actor identity sent in auth headers and request body.
+- `RECOURSE_ENVIRONMENT` or `--environment`: optional environment label.
+
 ## Supported Resources
 
 ### AWS (70+ resource types, hand-written rules)
