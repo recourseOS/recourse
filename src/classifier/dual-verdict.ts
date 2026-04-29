@@ -22,6 +22,7 @@ import { getHandler, hasHandler } from '../resources/index.js';
 import { classifyFromFeatures, type ClassifierResult } from './decision-tree.js';
 import { extractFeatures, explainFeatures } from './feature-extractor.js';
 import { classifyUnknownResourceSemantically, type SemanticClassifierResult } from './semantic-unknown.js';
+import { isConfigOnlyResource, isRelationshipResource } from './semantic-profile.js';
 
 type UnknownClassifierResult = ClassifierResult | SemanticClassifierResult;
 
@@ -36,99 +37,6 @@ const tierFromString: Record<UnknownClassifierResult['tier'], RecoverabilityTier
 
 // Minimum confidence threshold for classifier-only verdicts
 const CONFIDENCE_THRESHOLD = 0.7;
-
-// Config-only resources: pure configuration, no data stored
-// Deleting these is always reversible - you can recreate the exact same config
-const CONFIG_ONLY_SUFFIXES = [
-  // AWS
-  '_policy',               // aws_s3_bucket_policy, aws_iam_role_policy
-  '_configuration',        // aws_s3_bucket_lifecycle_configuration
-  '_config',               // aws_lambda_function_event_invoke_config
-  '_setting',              // aws_api_gateway_settings
-  '_settings',             // aws_cognito_user_pool_client_settings
-  '_rule',                 // aws_security_group_rule, aws_lb_listener_rule
-  '_permission',           // aws_lambda_permission
-  '_endpoint',             // aws_vpc_endpoint
-
-  // GCP
-  '_iam_policy',           // google_project_iam_policy
-  '_iam_binding',          // google_project_iam_binding (also attachment-like)
-  '_iam_member',           // google_project_iam_member (also attachment-like)
-  '_access_level',         // google_access_context_manager_access_level
-
-  // Azure
-  '_configuration',        // azurerm_app_configuration (already covered)
-  '_diagnostic_setting',   // azurerm_monitor_diagnostic_setting
-];
-
-// Attachment resources: join-table style, both parent resources unaffected
-// Deleting these is always reversible - you can re-attach immediately
-const ATTACHMENT_SUFFIXES = [
-  // AWS
-  '_attachment',           // aws_iam_role_policy_attachment
-  '_membership',           // aws_iam_group_membership
-  '_association',          // aws_route_table_association
-
-  // GCP
-  '_binding',              // google_project_iam_binding, google_service_account_iam_binding
-  '_member',               // google_project_iam_member, google_storage_bucket_iam_member
-
-  // Azure
-  '_assignment',           // azurerm_role_assignment
-];
-
-// Full resource types that are known to be config-only (not caught by suffix)
-const CONFIG_ONLY_TYPES = new Set([
-  // AWS
-  'aws_lambda_function_event_invoke_config',
-  'aws_s3_bucket_cors_configuration',
-  'aws_s3_bucket_website_configuration',
-  'aws_s3_bucket_notification',
-  'aws_s3_bucket_object_lock_configuration',
-  'aws_api_gateway_deployment',
-  'aws_api_gateway_stage',
-  'aws_cloudwatch_event_rule',
-  'aws_cloudwatch_event_target',
-
-  // GCP - config resources that don't end with standard suffixes
-  'google_project_service',              // Enabling an API
-  'google_project_iam_audit_config',     // Audit logging config
-  'google_compute_project_metadata',     // Project-level metadata
-  'google_compute_project_metadata_item', // Single metadata key
-  'google_dns_record_set',               // DNS record (config, can recreate)
-  'google_cloud_run_service_iam_policy', // IAM for Cloud Run
-
-  // Azure - config resources that don't end with standard suffixes
-  'azurerm_resource_group',              // Just a container, resources inside matter
-  'azurerm_dns_a_record',                // DNS record
-  'azurerm_dns_cname_record',            // DNS record
-  'azurerm_private_dns_a_record',        // Private DNS record
-  'azurerm_management_lock',             // Lock config
-]);
-
-/**
- * Check if a resource type is config-only (no data stored).
- */
-function isConfigOnlyResource(resourceType: string): boolean {
-  if (CONFIG_ONLY_TYPES.has(resourceType)) return true;
-
-  for (const suffix of CONFIG_ONLY_SUFFIXES) {
-    if (resourceType.endsWith(suffix)) return true;
-  }
-
-  return false;
-}
-
-/**
- * Check if a resource type is an attachment/relationship resource.
- */
-function isAttachmentResource(resourceType: string): boolean {
-  for (const suffix of ATTACHMENT_SUFFIXES) {
-    if (resourceType.endsWith(suffix)) return true;
-  }
-
-  return false;
-}
 
 export interface DualVerdictResult extends RecoverabilityResult {
   source: VerdictSource;
@@ -200,7 +108,7 @@ export function getRecoverabilityDual(
   }
 
   // Attachment resources are always reversible (parent resources unaffected)
-  if (isAttachmentResource(change.type) && change.actions.includes('delete')) {
+  if (isRelationshipResource(change.type) && change.actions.includes('delete')) {
     return {
       tier: RecoverabilityTier.REVERSIBLE,
       label: RecoverabilityLabels[RecoverabilityTier.REVERSIBLE],

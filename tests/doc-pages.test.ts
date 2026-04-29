@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 import { renderDocPages } from '../src/tools/generate-doc-pages.js';
 
@@ -23,5 +23,27 @@ describe('themed documentation pages', () => {
     expect(index).not.toContain('href="/golden-fixtures.md"');
     expect(index).not.toContain('href="/live-aws-tests.md"');
     expect(index).not.toContain('href="/schema-gaps.md"');
+  });
+
+  it('keeps local site links and table-of-content anchors resolvable', async () => {
+    const pages = ['docs/index.html', ...(await renderDocPages()).map(page => page.output)];
+
+    for (const page of pages) {
+      const html = readFileSync(page, 'utf8');
+      const hrefs = [...html.matchAll(/href="([^"]+)"/g)].map(match => match[1]);
+
+      for (const href of hrefs) {
+        if (href.startsWith('https://')) continue;
+        if (href.startsWith('#')) {
+          expect(html, `${page} missing anchor ${href}`).toContain(`id="${href.slice(1)}"`);
+          continue;
+        }
+
+        if (href.startsWith('/')) {
+          const target = href === '/' ? 'docs/index.html' : `docs/${href.slice(1)}`;
+          expect(existsSync(target), `${page} links to missing ${href}`).toBe(true);
+        }
+      }
+    }
   });
 });

@@ -13,6 +13,7 @@
     "test:cli": "npm run build && vitest --run tests/cli-scenarios.test.ts",
     "test:all": "npm run build && vitest --run && vitest --run tests/cli-scenarios.test.ts",
     "test:aws-live": "RUN_AWS_LIVE_TESTS=1 vitest --run tests/aws-live.test.ts",
+    "test:docs:visual": "playwright test",
     "docs:coverage": "npm run build && node dist/tools/generate-resource-coverage.js",
     "docs:pages": "npm run build && node dist/tools/generate-doc-pages.js",
     "docs:all": "npm run docs:coverage && npm run docs:pages",
@@ -39,6 +40,7 @@
     "bin"
   ],
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/node": "^20.10.0",
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",

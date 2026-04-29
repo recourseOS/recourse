@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { getRecoverabilityDual } from '../src/classifier/index.js';
+import {
+  buildSemanticResourceProfile,
+  classifyUnknownResourceSemantically,
+  extractFeatures,
+  getRecoverabilityDual,
+} from '../src/classifier/index.js';
 import {
   RecoverabilityTier,
   type ResourceChange,
@@ -52,6 +57,32 @@ describe('semantic unknown-resource classifier', () => {
 
     expect(recoveryWindow.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
     expect(deletionWindow.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+  });
+
+  it('normalizes provider-specific storage soft-delete evidence', () => {
+    const result = getRecoverabilityDual(change('example_storage_container', {
+      delete_retention_policy: [{ enabled: true, days: 7 }],
+    }), null);
+
+    expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
+    expect(result.reasoning).toContain('storage retention/backup evidence');
+  });
+
+  it('builds a BitNet-ready semantic profile before scoring unknown resources', () => {
+    const resource = change('future_cloud_sql_database', {
+      backup_policy: [{ enabled: true, retained_backups: 7 }],
+      deletion_protection: false,
+    });
+    const features = extractFeatures(resource, null);
+    const profile = buildSemanticResourceProfile(resource, features);
+    const result = classifyUnknownResourceSemantically(resource, null, features);
+
+    expect(profile.kind).toBe('database');
+    expect(profile.hasBackup).toBe(true);
+    expect(profile.hasDeletionProtection).toBe(false);
+    expect(profile.evidence).toContain('backup, snapshot, retention, or PITR evidence');
+    expect(result.model).toBe('semantic-unknown@bitnet-contract-v1');
+    expect(result.tier).toBe('recoverable-from-backup');
   });
 
   it('abstains on unknown destructive resources without enough semantic evidence', () => {
