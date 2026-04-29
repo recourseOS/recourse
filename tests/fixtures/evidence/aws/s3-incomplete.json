@@ -1,0 +1,10 @@
+{
+  "evidence": {
+    "bucket": "prod-audit-logs",
+    "versioning": "Unknown",
+    "missingEvidence": [
+      "s3.versioning",
+      "s3.object_listing"
+    ]
+  }
+}

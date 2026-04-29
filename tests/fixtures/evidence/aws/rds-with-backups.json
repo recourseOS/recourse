@@ -1,0 +1,11 @@
+{
+  "evidence": {
+    "dbInstanceIdentifier": "prod-db",
+    "exists": true,
+    "engine": "postgres",
+    "deletionProtection": false,
+    "backupRetentionPeriod": 7,
+    "latestRestorableTime": "2026-04-29T12:00:00.000Z",
+    "snapshotCount": 2
+  }
+}

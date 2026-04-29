@@ -1,0 +1,9 @@
+{
+  "evidence": {
+    "keyId": "alias/aws/s3",
+    "exists": true,
+    "keyState": "Enabled",
+    "keyManager": "AWS",
+    "keyUsage": "ENCRYPT_DECRYPT"
+  }
+}

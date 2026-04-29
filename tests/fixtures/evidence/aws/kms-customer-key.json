@@ -1,0 +1,10 @@
+{
+  "evidence": {
+    "keyId": "1234abcd",
+    "exists": true,
+    "keyState": "Enabled",
+    "keyManager": "CUSTOMER",
+    "keyUsage": "ENCRYPT_DECRYPT",
+    "rotationEnabled": true
+  }
+}

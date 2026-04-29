@@ -1,0 +1,11 @@
+{
+  "evidence": {
+    "tableName": "prod-events",
+    "exists": true,
+    "tableStatus": "ACTIVE",
+    "itemCount": 42,
+    "deletionProtectionEnabled": false,
+    "pointInTimeRecoveryStatus": "ENABLED",
+    "backupCount": 0
+  }
+}

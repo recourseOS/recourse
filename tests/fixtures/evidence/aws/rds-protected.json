@@ -1,0 +1,10 @@
+{
+  "evidence": {
+    "dbInstanceIdentifier": "prod-db",
+    "exists": true,
+    "engine": "postgres",
+    "deletionProtection": true,
+    "backupRetentionPeriod": 0,
+    "snapshotCount": 0
+  }
+}

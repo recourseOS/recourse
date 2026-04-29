@@ -1,0 +1,11 @@
+{
+  "evidence": {
+    "bucket": "prod-audit-logs",
+    "exists": true,
+    "versioning": "Off",
+    "objectLockEnabled": false,
+    "hasReplication": false,
+    "hasLifecycleRules": false,
+    "isEmpty": false
+  }
+}

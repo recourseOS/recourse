@@ -1,0 +1,9 @@
+{
+  "evidence": {
+    "roleName": "prod-runner",
+    "exists": true,
+    "attachedPolicyCount": 2,
+    "inlinePolicyCount": 1,
+    "instanceProfileCount": 0
+  }
+}
