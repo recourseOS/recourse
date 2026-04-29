@@ -610,19 +610,19 @@
 
 <header class="hero container">
   <div class="hero-copy">
-    <div class="eyebrow">v0.1.2 · Terraform · AWS · GCP · Azure</div>
+    <div class="eyebrow">v0.1.2 · MCP · Terraform · AWS · GCP · Azure</div>
     <h1>
       AI-ready consequence analysis for infrastructure changes.
     </h1>
     <p class="lede">
-      RecourseOS is rules-first where safety matters and BitNet-ready where cloud resources are unknown. It classifies Terraform plans, shell commands, and MCP tool calls by recoverability before destructive changes reach production.
+      RecourseOS is rules-first where safety matters and BitNet-ready where cloud resources are unknown. It runs as a CLI or MCP server so agents can classify Terraform plans, shell commands, and tool calls by recoverability before destructive changes reach production.
     </p>
     <div class="hero-actions">
       <a class="button primary" href="#difference">Why not just plan? →</a>
       <a class="button secondary" href="#principles">Why it’s different</a>
     </div>
     <div class="install">
-      <span><span class="prompt">$</span> <span class="cmd" id="install-cmd">npx recourse-cli plan plan.json</span></span>
+      <span><span class="prompt">$</span> <span class="cmd" id="install-cmd">npx recourse-cli mcp serve</span></span>
       <button id="copy-btn" aria-label="Copy install command">Copy</button>
     </div>
   </div>
@@ -714,7 +714,7 @@
       <div class="section-label">Sample output</div>
       <h2>Point-of-no-return checks for infrastructure mutations.</h2>
       <p class="section-copy">
-        RecourseOS does not replace <code>terraform plan</code>, shell guardrails, or MCP permissions. It turns proposed mutations into consequence reports so reviewers know whether there is a safe path back.
+        RecourseOS does not replace <code>terraform plan</code>, shell guardrails, or MCP permissions. It gives agents and reviewers a structured consequence report so they know whether there is a safe path back.
       </p>
     </div>
     <div class="terminal">
@@ -809,7 +809,7 @@
       <div class="section-label">Useful docs</div>
       <h2>Proof points you can inspect.</h2>
       <p class="section-copy">
-        The public repository includes generated coverage, golden fixture contracts, and agent-facing schemas so users can see exactly what is supported and how agents should consume it.
+        The public repository includes generated coverage, golden fixture contracts, and the working MCP interface so users can see exactly what is supported and how agents should consume it.
       </p>
     </div>
     <div class="coverage">
@@ -836,7 +836,7 @@
       <a class="coverage-item" href="/agent-interface.html">
         <span class="num">05</span>
         <span class="label">Agent interface</span>
-        <span class="desc">MCP tool contract and consequence report semantics for agents before they act.</span>
+        <span class="desc">Working MCP server command, tool contract, and consequence report semantics for agents before they act.</span>
       </a>
       <a class="coverage-item" href="/public-boundaries.html">
         <span class="num">06</span>
@@ -882,7 +882,7 @@
       <p><strong>Evidence-bound.</strong> If an out-of-band backup exists but is not in the plan, state, or supplied evidence, RecourseOS will not pretend it verified recovery.</p>
       <p style="margin-top: 12px;"><strong>Provider rules are incremental.</strong> AWS, GCP, and Azure have first-class coverage for common destructive resources, but long-tail services still need rules and fixtures.</p>
       <p style="margin-top: 12px;"><strong>Unknown resources stay conservative.</strong> The semantic classifier can transfer safety patterns, but weak evidence becomes <code>needs-review</code>.</p>
-      <p style="margin-top: 12px;"><strong>Cloud is optional.</strong> The private control plane can ingest consequence reports later; the public CLI remains useful without signup, agents, or hosted state.</p>
+      <p style="margin-top: 12px;"><strong>Cloud is optional.</strong> The private control plane can ingest consequence reports later; the public CLI and MCP server remain useful without signup or hosted state.</p>
     </div>
   </div>
 </section>

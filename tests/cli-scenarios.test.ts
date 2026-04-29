@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from 'child_process';
 import { createServer, type IncomingMessage } from 'http';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 import type { ConsequenceReport } from '../src/core/index.js';
 import {
@@ -149,6 +149,109 @@ describe('compiled CLI scenario matrix', () => {
       server.close();
     }
   });
+
+  it('serves the RecourseOS MCP tool list over stdio', async () => {
+    expect(existsSync(distCli), 'dist/index.js must exist; run npm run build before CLI scenarios').toBe(true);
+
+    const server = spawnMcpServer();
+    try {
+      const response = await sendMcpRequest(server, {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/list',
+        params: {},
+      });
+
+      const tools = response.result.tools.map((tool: { name: string }) => tool.name);
+      expect(tools).toContain('recourse_evaluate_terraform');
+      expect(tools).toContain('recourse_evaluate_shell');
+      expect(tools).toContain('recourse_evaluate_mcp_call');
+      expect(tools).toContain('recourse_supported_resources');
+    } finally {
+      server.kill();
+    }
+  });
+
+  it('evaluates shell commands through the MCP server with schema-versioned output', async () => {
+    expect(existsSync(distCli), 'dist/index.js must exist; run npm run build before CLI scenarios').toBe(true);
+
+    const server = spawnMcpServer();
+    try {
+      const response = await sendMcpRequest(server, {
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/call',
+        params: {
+          name: 'recourse_evaluate_shell',
+          arguments: {
+            command: 'aws s3 rm s3://prod-audit-logs --recursive',
+            actor: 'agent/deploy',
+            environment: 'production',
+          },
+        },
+      });
+
+      const payload = response.result.structuredContent;
+      expect(payload.schemaVersion).toBe('recourse.consequence.v1');
+      expect(payload.version).toBe('0.1.0');
+      expect(payload.decision).toBeDefined();
+      expect(payload.mutations[0].intent.actor.id).toBe('agent/deploy');
+      expect(response.result.content[0].type).toBe('text');
+    } finally {
+      server.kill();
+    }
+  });
+
+  it('evaluates Terraform plan JSON through the MCP server', async () => {
+    expect(existsSync(distCli), 'dist/index.js must exist; run npm run build before CLI scenarios').toBe(true);
+
+    const plan = JSON.parse(readFileSync(goldenPlanFixturePath('aws-golden.json'), 'utf8'));
+    const server = spawnMcpServer();
+    try {
+      const response = await sendMcpRequest(server, {
+        jsonrpc: '2.0',
+        id: 3,
+        method: 'tools/call',
+        params: {
+          name: 'recourse_evaluate_terraform',
+          arguments: {
+            plan,
+            classifier: true,
+            actor: 'agent/golden-fixture',
+          },
+        },
+      });
+
+      const payload = response.result.structuredContent;
+      expect(payload.schemaVersion).toBe('recourse.consequence.v1');
+      expect(payload.decision).toBe('block');
+      expect(payload.summary.totalMutations).toBeGreaterThan(0);
+    } finally {
+      server.kill();
+    }
+  });
+
+  it('fails closed on invalid MCP tool input', async () => {
+    expect(existsSync(distCli), 'dist/index.js must exist; run npm run build before CLI scenarios').toBe(true);
+
+    const server = spawnMcpServer();
+    try {
+      const response = await sendMcpRequest(server, {
+        jsonrpc: '2.0',
+        id: 4,
+        method: 'tools/call',
+        params: {
+          name: 'recourse_evaluate_shell',
+          arguments: {},
+        },
+      });
+
+      expect(response.error.code).toBe(-32602);
+      expect(response.error.message).toContain('Shell command is required');
+    } finally {
+      server.kill();
+    }
+  });
 });
 
 function runCli(scenario: EvidenceScenario, failOn: 'warn' | 'escalate' | 'block') {
@@ -244,6 +347,72 @@ function runCliAsync(args: string[], env: Record<string, string>) {
       resolve({ status, stdout, stderr });
     });
   });
+}
+
+function spawnMcpServer() {
+  return spawn(process.execPath, [distCli, 'mcp', 'serve'], {
+    cwd: process.cwd(),
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
+}
+
+function sendMcpRequest(
+  child: ReturnType<typeof spawnMcpServer>,
+  request: Record<string, unknown>
+): Promise<any> {
+  return new Promise((resolve, reject) => {
+    let buffer: Buffer<ArrayBufferLike> = Buffer.alloc(0);
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error('Timed out waiting for MCP response'));
+    }, 2000);
+
+    const onData = (chunk: Buffer) => {
+      buffer = Buffer.concat([buffer, chunk]);
+      const frame = readMcpFrame(buffer);
+      if (!frame) return;
+
+      cleanup();
+      resolve(JSON.parse(frame.body.toString('utf8')));
+    };
+
+    const onError = (error: Error) => {
+      cleanup();
+      reject(error);
+    };
+
+    const cleanup = () => {
+      clearTimeout(timeout);
+      child.stdout.off('data', onData);
+      child.off('error', onError);
+    };
+
+    child.stdout.on('data', onData);
+    child.once('error', onError);
+    writeMcpFrame(child.stdin, request);
+  });
+}
+
+function writeMcpFrame(stdin: NodeJS.WritableStream, request: Record<string, unknown>): void {
+  const body = JSON.stringify(request);
+  stdin.write(`Content-Length: ${Buffer.byteLength(body, 'utf8')}\r\n\r\n${body}`);
+}
+
+function readMcpFrame(buffer: Buffer<ArrayBufferLike>): { body: Buffer<ArrayBufferLike> } | null {
+  const headerEnd = buffer.indexOf('\r\n\r\n');
+  if (headerEnd === -1) return null;
+
+  const header = buffer.subarray(0, headerEnd).toString('ascii');
+  const match = /content-length:\s*(\d+)/i.exec(header);
+  if (!match) throw new Error('MCP response missing Content-Length header');
+
+  const bodyStart = headerEnd + 4;
+  const frameEnd = bodyStart + Number(match[1]);
+  if (buffer.length < frameEnd) return null;
+
+  return {
+    body: buffer.subarray(bodyStart, frameEnd),
+  };
 }
 
 function listen(server: ReturnType<typeof createServer>) {

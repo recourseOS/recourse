@@ -10,6 +10,7 @@ The public CLI is local-first. No account or cloud service is required.
 
 - Analyzes Terraform plan JSON before `terraform apply`.
 - Evaluates shell commands and MCP tool calls as mutation intents.
+- Runs as an MCP stdio server so agents can ask RecourseOS before they act.
 - Classifies destructive AWS, GCP, and Azure resources with deterministic provider rules.
 - Uses a provider-neutral semantic classifier for unknown resource types when `--classifier` is enabled.
 - Produces human-readable blast-radius reports and machine-readable consequence JSON.
@@ -150,7 +151,13 @@ recourse evaluate mcp '{"server":"aws","tool":"s3.delete_bucket","arguments":{"b
 
 ### Agent Interface
 
-RecourseOS is designed to become the consequence layer agents call before they act. The public MCP tool contract and agent decision semantics are documented in `docs/agent-interface.md`.
+RecourseOS can run as the consequence layer agents call before they act:
+
+```bash
+recourse mcp serve
+```
+
+The MCP server exposes `recourse_evaluate_terraform`, `recourse_evaluate_shell`, `recourse_evaluate_mcp_call`, and `recourse_supported_resources`. The public MCP tool contract and agent decision semantics are documented in `docs/agent-interface.md`.
 
 Public documentation boundaries are documented in `docs/public-boundaries.md`; keep private strategy, credentials, model weights, proprietary datasets, telemetry, and hosted-service internals out of this repository.
 
