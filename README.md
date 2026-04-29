@@ -174,20 +174,20 @@ Known resources use hand-written deterministic rules and remain authoritative.
 
 AWS coverage includes:
 - Databases and caches: RDS instances/clusters, DynamoDB tables, ElastiCache, and Neptune.
-- Storage: S3 buckets/objects and EBS volumes/snapshots.
+- Storage: S3 buckets/objects, EBS volumes/snapshots, and EFS file systems.
 - Compute: EC2 instances, Lambda functions, and AMIs.
 - Networking: VPCs, subnets, security groups, EIPs, load balancers, and Route53.
 - IAM and platform services: IAM roles/policies/users, KMS, Secrets Manager, SNS/SQS, and CloudWatch logs.
 
 GCP coverage includes:
 - Storage: `google_storage_bucket`, bucket objects, and bucket IAM.
-- Databases: `google_sql_database_instance`, databases, and users.
+- Databases and analytics: `google_sql_database_instance`, databases, users, and BigQuery datasets/tables.
 - IAM and secrets: project IAM, service accounts, service account keys, and Secret Manager secrets/versions/IAM.
 - Core: DNS records, persistent disks, snapshots, KMS keys, and GKE clusters/node pools.
 
 Azure coverage includes:
 - Storage: `azurerm_storage_account`, containers, blobs, shares, queues, and tables.
-- Databases: Azure SQL/MSSQL, PostgreSQL Flexible Server, MySQL Flexible Server, and MariaDB.
+- Databases: Azure SQL/MSSQL, PostgreSQL Flexible Server, MySQL Flexible Server, MariaDB, and Cosmos DB.
 - IAM: role assignments/definitions and Azure AD applications/service principals/passwords.
 - Core: DNS records, managed disks, snapshots, Key Vault vaults/keys/secrets/certificates/access policies, and AKS clusters/node pools.
 
@@ -204,7 +204,7 @@ For unknown resource types, `--classifier` enables a provider-neutral semantic p
 - IAM/config-only relationship resources
 - credential material that cannot be recovered after deletion
 
-If evidence is weak, the classifier returns `needs-review` rather than marking the change safe. This path is intentionally BitNet-compatible: a compact model can later replace the semantic scorer without changing the public consequence report contract.
+If evidence is weak, the classifier returns `needs-review` rather than marking the change safe. This path is intentionally BitNet-compatible: a compact model can later replace the semantic scorer without changing the public consequence report contract. BitNet belongs on unknown-resource classification after the deterministic handler surface and false-safe fixture corpus are broad enough to measure it.
 
 ## Golden Fixtures
 

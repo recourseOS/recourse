@@ -213,17 +213,17 @@
   <article>
     <h1 id="resource-coverage">Resource Coverage</h1>
 <p>This document is generated from the public resource handler registry. Do not hand-edit the resource lists; run <code>npm run docs:coverage</code> after adding or removing handlers.</p>
-<p>Total deterministic resource types: 148</p>
+<p>Total deterministic resource types: 175</p>
 <p>Known resource handlers are authoritative. Unknown resource types can still be evaluated with <code>--classifier</code>, which uses provider-neutral semantic safety signals and returns <code>needs-review</code> when evidence is weak.</p>
 <pre><code>recourse resources
 recourse plan plan.json --classifier
 recourse evaluate terraform plan.json --classifier</code></pre>
 <h2 id="aws">AWS</h2>
-<p>Supported deterministic types: 91</p>
+<p>Supported deterministic types: 97</p>
 <h3 id="databases">Databases</h3>
 <ul><li><code>aws_db_cluster_snapshot</code></li><li><code>aws_db_instance</code></li><li><code>aws_db_snapshot</code></li><li><code>aws_dynamodb_global_table</code></li><li><code>aws_dynamodb_table</code></li><li><code>aws_dynamodb_table_item</code></li><li><code>aws_elasticache_cluster</code></li><li><code>aws_elasticache_global_replication_group</code></li><li><code>aws_elasticache_parameter_group</code></li><li><code>aws_elasticache_replication_group</code></li><li><code>aws_elasticache_serverless_cache</code></li><li><code>aws_elasticache_snapshot</code></li><li><code>aws_elasticache_subnet_group</code></li><li><code>aws_elasticache_user</code></li><li><code>aws_elasticache_user_group</code></li><li><code>aws_elasticache_user_group_association</code></li><li><code>aws_neptune_cluster</code></li><li><code>aws_neptune_cluster_instance</code></li><li><code>aws_neptune_cluster_parameter_group</code></li><li><code>aws_neptune_cluster_snapshot</code></li><li><code>aws_neptune_event_subscription</code></li><li><code>aws_neptune_parameter_group</code></li><li><code>aws_neptune_subnet_group</code></li><li><code>aws_rds_cluster</code></li><li><code>aws_rds_cluster_instance</code></li></ul>
 <h3 id="storage-and-backups">Storage and Backups</h3>
-<ul><li><code>aws_ami</code></li><li><code>aws_ami_copy</code></li><li><code>aws_ebs_snapshot</code></li><li><code>aws_ebs_snapshot_copy</code></li><li><code>aws_ebs_volume</code></li><li><code>aws_s3_bucket</code></li><li><code>aws_s3_bucket_versioning</code></li><li><code>aws_s3_object</code></li></ul>
+<ul><li><code>aws_ami</code></li><li><code>aws_ami_copy</code></li><li><code>aws_ebs_snapshot</code></li><li><code>aws_ebs_snapshot_copy</code></li><li><code>aws_ebs_volume</code></li><li><code>aws_efs_access_point</code></li><li><code>aws_efs_backup_policy</code></li><li><code>aws_efs_file_system</code></li><li><code>aws_efs_file_system_policy</code></li><li><code>aws_efs_mount_target</code></li><li><code>aws_efs_replication_configuration</code></li><li><code>aws_s3_bucket</code></li><li><code>aws_s3_bucket_versioning</code></li><li><code>aws_s3_object</code></li></ul>
 <h3 id="compute">Compute</h3>
 <ul><li><code>aws_iam_instance_profile</code></li><li><code>aws_instance</code></li><li><code>aws_lambda_alias</code></li><li><code>aws_lambda_event_source_mapping</code></li><li><code>aws_lambda_function</code></li><li><code>aws_lambda_layer_version</code></li><li><code>aws_lambda_permission</code></li><li><code>aws_spot_instance_request</code></li></ul>
 <h3 id="networking">Networking</h3>
@@ -235,21 +235,21 @@ recourse evaluate terraform plan.json --classifier</code></pre>
 <h3 id="other">Other</h3>
 <ul><li><code>aws_launch_template</code></li><li><code>aws_network_acl</code></li><li><code>aws_network_acl_rule</code></li><li><code>aws_route</code></li><li><code>aws_route_table</code></li><li><code>aws_route_table_association</code></li><li><code>aws_volume_attachment</code></li></ul>
 <h2 id="gcp">GCP</h2>
-<p>Supported deterministic types: 29</p>
+<p>Supported deterministic types: 38</p>
 <h3 id="storage">Storage</h3>
 <ul><li><code>google_storage_bucket</code></li><li><code>google_storage_bucket_iam_binding</code></li><li><code>google_storage_bucket_iam_member</code></li><li><code>google_storage_bucket_iam_policy</code></li><li><code>google_storage_bucket_object</code></li></ul>
 <h3 id="databases">Databases</h3>
-<ul><li><code>google_sql_database</code></li><li><code>google_sql_database_instance</code></li><li><code>google_sql_user</code></li></ul>
+<ul><li><code>google_bigquery_dataset</code></li><li><code>google_bigquery_dataset_iam_binding</code></li><li><code>google_bigquery_dataset_iam_member</code></li><li><code>google_bigquery_dataset_iam_policy</code></li><li><code>google_bigquery_routine</code></li><li><code>google_bigquery_table</code></li><li><code>google_bigquery_table_iam_binding</code></li><li><code>google_bigquery_table_iam_member</code></li><li><code>google_bigquery_table_iam_policy</code></li><li><code>google_sql_database</code></li><li><code>google_sql_database_instance</code></li><li><code>google_sql_user</code></li></ul>
 <h3 id="identity-and-access">Identity and Access</h3>
 <ul><li><code>google_kms_crypto_key_iam_binding</code></li><li><code>google_kms_crypto_key_iam_member</code></li><li><code>google_project_iam_binding</code></li><li><code>google_project_iam_member</code></li><li><code>google_project_iam_policy</code></li><li><code>google_secret_manager_secret</code></li><li><code>google_secret_manager_secret_iam_binding</code></li><li><code>google_secret_manager_secret_iam_member</code></li><li><code>google_secret_manager_secret_iam_policy</code></li><li><code>google_secret_manager_secret_version</code></li><li><code>google_service_account</code></li><li><code>google_service_account_iam_binding</code></li><li><code>google_service_account_iam_member</code></li><li><code>google_service_account_key</code></li></ul>
 <h3 id="core-infrastructure">Core Infrastructure</h3>
 <ul><li><code>google_compute_disk</code></li><li><code>google_compute_snapshot</code></li><li><code>google_container_cluster</code></li><li><code>google_container_node_pool</code></li><li><code>google_dns_record_set</code></li><li><code>google_kms_crypto_key</code></li><li><code>google_kms_key_ring</code></li></ul>
 <h2 id="azure">Azure</h2>
-<p>Supported deterministic types: 25</p>
+<p>Supported deterministic types: 37</p>
 <h3 id="storage">Storage</h3>
 <ul><li><code>azurerm_storage_account</code></li><li><code>azurerm_storage_blob</code></li><li><code>azurerm_storage_container</code></li><li><code>azurerm_storage_queue</code></li><li><code>azurerm_storage_share</code></li><li><code>azurerm_storage_table</code></li></ul>
 <h3 id="databases">Databases</h3>
-<ul><li><code>azurerm_mariadb_server</code></li><li><code>azurerm_mssql_database</code></li><li><code>azurerm_mysql_flexible_server</code></li><li><code>azurerm_postgresql_flexible_server</code></li><li><code>azurerm_sql_database</code></li></ul>
+<ul><li><code>azurerm_cosmosdb_account</code></li><li><code>azurerm_cosmosdb_cassandra_keyspace</code></li><li><code>azurerm_cosmosdb_cassandra_table</code></li><li><code>azurerm_cosmosdb_gremlin_database</code></li><li><code>azurerm_cosmosdb_gremlin_graph</code></li><li><code>azurerm_cosmosdb_mongo_collection</code></li><li><code>azurerm_cosmosdb_mongo_database</code></li><li><code>azurerm_cosmosdb_sql_container</code></li><li><code>azurerm_cosmosdb_sql_database</code></li><li><code>azurerm_cosmosdb_sql_role_assignment</code></li><li><code>azurerm_cosmosdb_sql_role_definition</code></li><li><code>azurerm_cosmosdb_table</code></li><li><code>azurerm_mariadb_server</code></li><li><code>azurerm_mssql_database</code></li><li><code>azurerm_mysql_flexible_server</code></li><li><code>azurerm_postgresql_flexible_server</code></li><li><code>azurerm_sql_database</code></li></ul>
 <h3 id="identity-and-access">Identity and Access</h3>
 <ul><li><code>azurerm_role_assignment</code></li><li><code>azurerm_role_definition</code></li></ul>
 <h3 id="core-infrastructure">Core Infrastructure</h3>

@@ -15,7 +15,7 @@ const providerGroups: ProviderGroup[] = [
     prefix: 'aws_',
     servicePatterns: [
       ['Databases', ['db_', 'rds_', 'dynamodb', 'elasticache', 'neptune']],
-      ['Storage and Backups', ['s3_', 'ebs_', 'ami']],
+      ['Storage and Backups', ['s3_', 'ebs_', 'efs_', 'ami']],
       ['Compute', ['instance', 'lambda']],
       ['Networking', ['vpc', 'subnet', 'security_group', 'eip', 'lb', 'alb', 'nat_gateway', 'internet_gateway', 'route53']],
       ['Identity and Security', ['iam_', 'kms_', 'secretsmanager']],
@@ -27,7 +27,7 @@ const providerGroups: ProviderGroup[] = [
     prefix: 'google_',
     servicePatterns: [
       ['Storage', ['storage']],
-      ['Databases', ['sql']],
+      ['Databases', ['sql', 'bigquery']],
       ['Identity and Access', ['iam', 'service_account', 'secret_manager']],
       ['Core Infrastructure', ['dns', 'compute', 'kms', 'container']],
     ],
@@ -37,7 +37,7 @@ const providerGroups: ProviderGroup[] = [
     prefix: 'azurerm_',
     servicePatterns: [
       ['Storage', ['storage']],
-      ['Databases', ['sql', 'mssql', 'postgresql', 'mysql', 'mariadb']],
+      ['Databases', ['sql', 'mssql', 'postgresql', 'mysql', 'mariadb', 'cosmosdb']],
       ['Identity and Access', ['role_']],
       ['Core Infrastructure', ['dns', 'disk', 'snapshot', 'key_vault', 'kubernetes']],
     ],

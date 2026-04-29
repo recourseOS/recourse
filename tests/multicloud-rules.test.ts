@@ -3,6 +3,7 @@ import { getRecoverability, getSupportedResourceTypes } from '../src/resources/i
 import {
   RecoverabilityTier,
   type ResourceChange,
+  type TerraformState,
 } from '../src/resources/types.js';
 
 describe('multi-cloud deterministic recoverability rules', () => {
@@ -220,8 +221,117 @@ describe('multi-cloud deterministic recoverability rules', () => {
     }), null).tier).toBe(RecoverabilityTier.REVERSIBLE);
   });
 
+  it('classifies EFS file system deletion by backup policy evidence', () => {
+    const state: TerraformState = {
+      formatVersion: '1.0',
+      terraformVersion: '1.6.0',
+      resources: [
+        {
+          address: 'aws_efs_backup_policy.prod',
+          type: 'aws_efs_backup_policy',
+          name: 'prod',
+          providerName: 'registry.terraform.io/hashicorp/aws',
+          values: {
+            file_system_id: 'fs-123',
+            backup_policy: [{ status: 'ENABLED' }],
+          },
+          dependsOn: [],
+        },
+      ],
+    };
+
+    expect(getRecoverability(change('aws_efs_file_system', {
+      id: 'fs-123',
+      encrypted: true,
+    }), state).tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
+    expect(getRecoverability(change('aws_efs_file_system', {
+      id: 'fs-456',
+      encrypted: true,
+    }), null).tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+  });
+
+  it('classifies EFS supporting resources conservatively', () => {
+    expect(getRecoverability(change('aws_efs_mount_target', {
+      file_system_id: 'fs-123',
+      subnet_id: 'subnet-123',
+    }), null).tier).toBe(RecoverabilityTier.REVERSIBLE);
+    expect(getRecoverability(change('aws_efs_replication_configuration', {
+      source_file_system_id: 'fs-123',
+    }), null).tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+  });
+
+  it('classifies BigQuery datasets and tables by destructive flags and time travel evidence', () => {
+    expect(getRecoverability(change('google_bigquery_dataset', {
+      dataset_id: 'prod_analytics',
+      delete_contents_on_destroy: true,
+    }), null).tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+    expect(getRecoverability(change('google_bigquery_dataset', {
+      dataset_id: 'prod_analytics',
+      max_time_travel_hours: 168,
+    }), null).tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
+    expect(getRecoverability(change('google_bigquery_table', {
+      dataset_id: 'prod_analytics',
+      table_id: 'events',
+      deletion_protection: true,
+    }), null).tier).toBe(RecoverabilityTier.REVERSIBLE);
+    expect(getRecoverability(change('google_bigquery_table', {
+      dataset_id: 'prod_analytics',
+      table_id: 'events',
+    }), null).tier).toBe(RecoverabilityTier.NEEDS_REVIEW);
+  });
+
+  it('classifies BigQuery IAM and routines as reversible', () => {
+    expect(getRecoverability(change('google_bigquery_dataset_iam_binding', {
+      dataset_id: 'prod_analytics',
+      role: 'roles/bigquery.dataViewer',
+    }), null).tier).toBe(RecoverabilityTier.REVERSIBLE);
+    expect(getRecoverability(change('google_bigquery_routine', {
+      dataset_id: 'prod_analytics',
+      routine_id: 'normalize_event',
+    }), null).tier).toBe(RecoverabilityTier.REVERSIBLE);
+  });
+
+  it('classifies Cosmos DB deletes by backup policy evidence', () => {
+    expect(getRecoverability(change('azurerm_cosmosdb_account', {
+      name: 'prod-cosmos',
+      backup: [{ type: 'Continuous' }],
+    }), null).tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
+    expect(getRecoverability(change('azurerm_cosmosdb_account', {
+      name: 'prod-cosmos',
+    }), null).tier).toBe(RecoverabilityTier.NEEDS_REVIEW);
+    expect(getRecoverability(change('azurerm_cosmosdb_sql_container', {
+      name: 'events',
+      account_name: 'prod-cosmos',
+    }), {
+      formatVersion: '1.0',
+      terraformVersion: '1.6.0',
+      resources: [
+        {
+          address: 'azurerm_cosmosdb_account.prod',
+          type: 'azurerm_cosmosdb_account',
+          name: 'prod',
+          providerName: 'registry.terraform.io/hashicorp/azurerm',
+          values: {
+            name: 'prod-cosmos',
+            backup: [{ type: 'Periodic', retention_in_hours: 8 }],
+          },
+          dependsOn: [],
+        },
+      ],
+    }).tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
+  });
+
+  it('classifies Cosmos DB SQL role resources as reversible', () => {
+    expect(getRecoverability(change('azurerm_cosmosdb_sql_role_assignment', {
+      account_name: 'prod-cosmos',
+      role_definition_id: 'reader',
+    }), null).tier).toBe(RecoverabilityTier.REVERSIBLE);
+  });
+
   it('registers first-class GCP and Azure resource handlers', () => {
     const types = getSupportedResourceTypes();
+    expect(types).toContain('aws_efs_file_system');
+    expect(types).toContain('aws_efs_backup_policy');
     expect(types).toContain('aws_elasticache_cluster');
     expect(types).toContain('aws_elasticache_replication_group');
     expect(types).toContain('aws_neptune_cluster');
@@ -232,9 +342,13 @@ describe('multi-cloud deterministic recoverability rules', () => {
     expect(types).toContain('google_sql_database_instance');
     expect(types).toContain('google_secret_manager_secret');
     expect(types).toContain('google_secret_manager_secret_version');
+    expect(types).toContain('google_bigquery_dataset');
+    expect(types).toContain('google_bigquery_table');
     expect(types).toContain('azurerm_storage_account');
     expect(types).toContain('azurerm_mssql_database');
     expect(types).toContain('azurerm_key_vault_secret');
+    expect(types).toContain('azurerm_cosmosdb_account');
+    expect(types).toContain('azurerm_cosmosdb_sql_container');
   });
 });
 

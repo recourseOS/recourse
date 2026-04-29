@@ -27,6 +27,8 @@ export const goldenPlanScenarios: GoldenPlanScenario[] = [
       'aws_elasticache_cluster.unretained': RecoverabilityTier.UNRECOVERABLE,
       'aws_neptune_cluster.protected': RecoverabilityTier.REVERSIBLE,
       'aws_neptune_cluster.unprotected': RecoverabilityTier.UNRECOVERABLE,
+      'aws_efs_file_system.unprotected': RecoverabilityTier.UNRECOVERABLE,
+      'aws_efs_file_system.backed_up': RecoverabilityTier.RECOVERABLE_FROM_BACKUP,
     },
   },
   {
@@ -40,6 +42,8 @@ export const goldenPlanScenarios: GoldenPlanScenario[] = [
       'google_project_iam_binding.viewer': RecoverabilityTier.REVERSIBLE,
       'google_secret_manager_secret.prod_db': RecoverabilityTier.UNRECOVERABLE,
       'google_secret_manager_secret_iam_binding.reader': RecoverabilityTier.REVERSIBLE,
+      'google_bigquery_dataset.destructive': RecoverabilityTier.UNRECOVERABLE,
+      'google_bigquery_table.review': RecoverabilityTier.RECOVERABLE_FROM_BACKUP,
     },
   },
   {
@@ -53,6 +57,7 @@ export const goldenPlanScenarios: GoldenPlanScenario[] = [
       'azurerm_role_assignment.reader': RecoverabilityTier.REVERSIBLE,
       'azurerm_key_vault_secret.retained': RecoverabilityTier.RECOVERABLE_WITH_EFFORT,
       'azurerm_key_vault_access_policy.app': RecoverabilityTier.REVERSIBLE,
+      'azurerm_cosmosdb_account.continuous': RecoverabilityTier.RECOVERABLE_FROM_BACKUP,
     },
   },
   {

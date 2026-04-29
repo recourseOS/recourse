@@ -239,6 +239,10 @@ BitNet is intended to replace the semantic scorer for recoverability classificat
 - Model output must include tier, confidence, evidence, and missing evidence.
 - Golden fixtures must include false-safe cases where the classifier must avoid understating risk.
 
+**When BitNet becomes active:**
+
+BitNet should replace `src/classifier/semantic-unknown.ts` after the public fixture corpus includes enough known and unknown AWS, GCP, and Azure resources to evaluate false-safe risk. Known handlers for services such as EFS, BigQuery, Cosmos DB, Secrets Manager, Key Vault, ElastiCache, and Neptune should continue to run first.
+
 ## Files
 
 - Test file: `tests/schema-validation.test.ts`

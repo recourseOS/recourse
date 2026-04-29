@@ -149,6 +149,36 @@
         "after": null,
         "after_unknown": {}
       }
+    },
+    {
+      "address": "aws_efs_file_system.unprotected",
+      "type": "aws_efs_file_system",
+      "name": "unprotected",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "id": "fs-prod-unprotected",
+          "encrypted": true
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_efs_file_system.backed_up",
+      "type": "aws_efs_file_system",
+      "name": "backed_up",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "id": "fs-prod-backed-up",
+          "encrypted": true
+        },
+        "after": null,
+        "after_unknown": {}
+      }
     }
   ],
   "prior_state": {
@@ -165,6 +195,16 @@
             "values": {
               "bucket": "prod-audit-logs",
               "versioning_configuration": [{ "status": "Enabled" }]
+            }
+          },
+          {
+            "address": "aws_efs_backup_policy.backed_up",
+            "type": "aws_efs_backup_policy",
+            "name": "backed_up",
+            "provider_name": "registry.terraform.io/hashicorp/aws",
+            "values": {
+              "file_system_id": "fs-prod-backed-up",
+              "backup_policy": [{ "status": "ENABLED" }]
             }
           }
         ]

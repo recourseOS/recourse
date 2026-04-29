@@ -85,6 +85,37 @@
         "after": null,
         "after_unknown": {}
       }
+    },
+    {
+      "address": "google_bigquery_dataset.destructive",
+      "type": "google_bigquery_dataset",
+      "name": "destructive",
+      "provider_name": "registry.terraform.io/hashicorp/google",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "dataset_id": "prod_analytics",
+          "delete_contents_on_destroy": true
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "google_bigquery_table.review",
+      "type": "google_bigquery_table",
+      "name": "review",
+      "provider_name": "registry.terraform.io/hashicorp/google",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "dataset_id": "prod_analytics",
+          "table_id": "events",
+          "max_time_travel_hours": 168
+        },
+        "after": null,
+        "after_unknown": {}
+      }
     }
   ]
 }

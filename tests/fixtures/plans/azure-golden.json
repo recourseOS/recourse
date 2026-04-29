@@ -84,6 +84,21 @@
         "after": null,
         "after_unknown": {}
       }
+    },
+    {
+      "address": "azurerm_cosmosdb_account.continuous",
+      "type": "azurerm_cosmosdb_account",
+      "name": "continuous",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "name": "prod-cosmos",
+          "backup": [{ "type": "Continuous" }]
+        },
+        "after": null,
+        "after_unknown": {}
+      }
     }
   ]
 }

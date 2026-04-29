@@ -2,7 +2,7 @@
 
 This document is generated from the public resource handler registry. Do not hand-edit the resource lists; run `npm run docs:coverage` after adding or removing handlers.
 
-Total deterministic resource types: 148
+Total deterministic resource types: 175
 
 Known resource handlers are authoritative. Unknown resource types can still be evaluated with `--classifier`, which uses provider-neutral semantic safety signals and returns `needs-review` when evidence is weak.
 
@@ -14,7 +14,7 @@ recourse evaluate terraform plan.json --classifier
 
 ## AWS
 
-Supported deterministic types: 91
+Supported deterministic types: 97
 
 ### Databases
 
@@ -51,6 +51,12 @@ Supported deterministic types: 91
 - `aws_ebs_snapshot`
 - `aws_ebs_snapshot_copy`
 - `aws_ebs_volume`
+- `aws_efs_access_point`
+- `aws_efs_backup_policy`
+- `aws_efs_file_system`
+- `aws_efs_file_system_policy`
+- `aws_efs_mount_target`
+- `aws_efs_replication_configuration`
 - `aws_s3_bucket`
 - `aws_s3_bucket_versioning`
 - `aws_s3_object`
@@ -130,7 +136,7 @@ Supported deterministic types: 91
 
 ## GCP
 
-Supported deterministic types: 29
+Supported deterministic types: 38
 
 ### Storage
 
@@ -142,6 +148,15 @@ Supported deterministic types: 29
 
 ### Databases
 
+- `google_bigquery_dataset`
+- `google_bigquery_dataset_iam_binding`
+- `google_bigquery_dataset_iam_member`
+- `google_bigquery_dataset_iam_policy`
+- `google_bigquery_routine`
+- `google_bigquery_table`
+- `google_bigquery_table_iam_binding`
+- `google_bigquery_table_iam_member`
+- `google_bigquery_table_iam_policy`
 - `google_sql_database`
 - `google_sql_database_instance`
 - `google_sql_user`
@@ -175,7 +190,7 @@ Supported deterministic types: 29
 
 ## Azure
 
-Supported deterministic types: 25
+Supported deterministic types: 37
 
 ### Storage
 
@@ -188,6 +203,18 @@ Supported deterministic types: 25
 
 ### Databases
 
+- `azurerm_cosmosdb_account`
+- `azurerm_cosmosdb_cassandra_keyspace`
+- `azurerm_cosmosdb_cassandra_table`
+- `azurerm_cosmosdb_gremlin_database`
+- `azurerm_cosmosdb_gremlin_graph`
+- `azurerm_cosmosdb_mongo_collection`
+- `azurerm_cosmosdb_mongo_database`
+- `azurerm_cosmosdb_sql_container`
+- `azurerm_cosmosdb_sql_database`
+- `azurerm_cosmosdb_sql_role_assignment`
+- `azurerm_cosmosdb_sql_role_definition`
+- `azurerm_cosmosdb_table`
 - `azurerm_mariadb_server`
 - `azurerm_mssql_database`
 - `azurerm_mysql_flexible_server`
