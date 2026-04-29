@@ -1,13 +1,40 @@
 import { Command } from 'commander';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { parsePlanFile } from './parsers/plan.js';
 import { parseStateFile } from './parsers/state.js';
 import { analyzeBlastRadius } from './analyzer/blast-radius.js';
 import { formatReport } from './output/human.js';
 import { formatJson } from './output/json.js';
+import { formatConsequenceJson } from './output/consequence-json.js';
 import { formatExplain, formatExplainJson } from './output/explain.js';
+import {
+  evaluateMcpToolCallConsequences,
+  evaluateShellCommandConsequences,
+  evaluateTerraformPlanConsequences,
+} from './evaluator/index.js';
+import type { McpToolCall } from './adapters/index.js';
+import {
+  analyzeDynamoDbTableDeletionEvidence,
+  analyzeIamRoleDeletionEvidence,
+  analyzeKmsKeyDeletionEvidence,
+  analyzeRdsInstanceDeletionEvidence,
+  analyzeS3BucketDeletionEvidence,
+  AwsSignedClient,
+  loadAwsCredentials,
+  readDynamoDbTableEvidence,
+  readIamRoleEvidence,
+  readKmsKeyEvidence,
+  readRdsInstanceEvidence,
+  readS3BucketEvidence,
+  type DynamoDbTableEvidence,
+  type IamRoleEvidence,
+  type KmsKeyEvidence,
+  type RdsInstanceEvidence,
+  type S3BucketEvidence,
+} from './state/index.js';
 import { getSupportedResourceTypes, getRecoverabilityTraced, hasDetailedTracing } from './resources/index.js';
 import { RecoverabilityTier } from './resources/types.js';
+import type { ConsequenceDecision } from './core/index.js';
 
 const program = new Command();
 
@@ -101,6 +128,370 @@ program
   });
 
 program
+  .command('evaluate')
+  .description('Evaluate a proposed mutation as a generic consequence report')
+  .argument('<source>', 'Mutation source to evaluate: terraform, shell, or mcp')
+  .argument('<input>', 'Path to input file for terraform, command string for shell, or JSON/file for mcp')
+  .option('-s, --state <file>', 'Path to Terraform state file (for terraform source)')
+  .option('--classifier', 'Use unknown-resource classifier where available')
+  .option('--actor <id>', 'Actor identity to include in the mutation report')
+  .option('--environment <name>', 'Environment name to include in the mutation report')
+  .option('--owner <name>', 'Owner name to include in the mutation report')
+  .option('--aws-s3-evidence <file>', 'Path to S3 evidence JSON from `recourse evidence aws-s3`')
+  .option('--aws-rds-evidence <file>', 'Path to RDS evidence JSON from `recourse evidence aws-rds`')
+  .option('--aws-dynamodb-evidence <file>', 'Path to DynamoDB evidence JSON from `recourse evidence aws-dynamodb`')
+  .option('--aws-iam-evidence <file>', 'Path to IAM evidence JSON from `recourse evidence aws-iam-role`')
+  .option('--aws-kms-evidence <file>', 'Path to KMS evidence JSON from `recourse evidence aws-kms-key`')
+  .option('--fail-on <decision>', 'Exit with code 1 if decision reaches: warn, escalate, block', 'block')
+  .action(async (source: string, input: string, options: {
+    state?: string;
+    classifier: boolean;
+    actor?: string;
+    environment?: string;
+    owner?: string;
+    awsS3Evidence?: string;
+    awsRdsEvidence?: string;
+    awsDynamodbEvidence?: string;
+    awsIamEvidence?: string;
+    awsKmsEvidence?: string;
+    failOn: string;
+  }) => {
+    try {
+      if (source !== 'terraform' && source !== 'shell' && source !== 'mcp') {
+        console.error(`Error: Unsupported evaluate source: ${source}`);
+        console.error('Supported sources: terraform, shell, mcp');
+        process.exit(1);
+      }
+
+      const adapterContext = {
+        actorId: options.actor,
+        environment: options.environment,
+        owner: options.owner,
+      };
+      const awsEvidence = {
+        ...(options.awsS3Evidence ? { s3Buckets: parseS3EvidenceFile(options.awsS3Evidence) } : {}),
+        ...(options.awsRdsEvidence ? { rdsInstances: parseRdsEvidenceFile(options.awsRdsEvidence) } : {}),
+        ...(options.awsDynamodbEvidence ? { dynamoDbTables: parseDynamoDbEvidenceFile(options.awsDynamodbEvidence) } : {}),
+        ...(options.awsIamEvidence ? { iamRoles: parseIamEvidenceFile(options.awsIamEvidence) } : {}),
+        ...(options.awsKmsEvidence ? { kmsKeys: parseKmsEvidenceFile(options.awsKmsEvidence) } : {}),
+      };
+
+      const report = source === 'terraform'
+        ? await evaluateTerraformInput(input, options.state, options.classifier, adapterContext)
+        : source === 'shell'
+          ? evaluateShellCommandConsequences(input, { adapterContext, awsEvidence })
+          : evaluateMcpToolCallConsequences(parseMcpInput(input), { adapterContext, awsEvidence });
+
+      console.log(formatConsequenceJson(report));
+
+      if (shouldFailOnDecision(report.decision, options.failOn)) {
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('evidence')
+  .description('Collect read-only live evidence for consequence analysis')
+  .argument('<provider>', 'Evidence provider: aws-s3, aws-rds, aws-dynamodb, aws-iam-role, or aws-kms-key')
+  .argument('<target>', 'Provider target, such as an S3 bucket, RDS DB, DynamoDB table, IAM role, or KMS key')
+  .option('--region <region>', 'AWS region for regional S3 endpoints', 'us-east-1')
+  .option('--profile <profile>', 'AWS profile to use when env credentials are not set')
+  .action(async (provider: string, target: string, options: {
+    region: string;
+    profile?: string;
+  }) => {
+    try {
+      if (
+        provider !== 'aws-s3'
+        && provider !== 'aws-rds'
+        && provider !== 'aws-dynamodb'
+        && provider !== 'aws-iam-role'
+        && provider !== 'aws-kms-key'
+      ) {
+        console.error(`Error: Unsupported evidence provider: ${provider}`);
+        console.error('Supported providers: aws-s3, aws-rds, aws-dynamodb, aws-iam-role, aws-kms-key');
+        process.exit(1);
+      }
+
+      const credentials = loadAwsCredentials(options.profile);
+      const client = new AwsSignedClient(credentials);
+
+      if (provider === 'aws-s3') {
+        const evidence = await readS3BucketEvidence(client, target, options.region);
+        const analysis = analyzeS3BucketDeletionEvidence(evidence);
+
+        console.log(JSON.stringify({
+          provider,
+          target,
+          collectedAt: new Date().toISOString(),
+          evidence,
+          analysis,
+        }, null, 2));
+        return;
+      }
+
+      if (provider === 'aws-dynamodb') {
+        const evidence = await readDynamoDbTableEvidence(client, target, options.region);
+        const analysis = analyzeDynamoDbTableDeletionEvidence(evidence);
+
+        console.log(JSON.stringify({
+          provider,
+          target,
+          collectedAt: new Date().toISOString(),
+          evidence,
+          analysis,
+        }, null, 2));
+        return;
+      }
+
+      if (provider === 'aws-iam-role') {
+        const evidence = await readIamRoleEvidence(client, target);
+        const analysis = analyzeIamRoleDeletionEvidence(evidence);
+
+        console.log(JSON.stringify({
+          provider,
+          target,
+          collectedAt: new Date().toISOString(),
+          evidence,
+          analysis,
+        }, null, 2));
+        return;
+      }
+
+      if (provider === 'aws-kms-key') {
+        const evidence = await readKmsKeyEvidence(client, target, options.region);
+        const analysis = analyzeKmsKeyDeletionEvidence(evidence);
+
+        console.log(JSON.stringify({
+          provider,
+          target,
+          collectedAt: new Date().toISOString(),
+          evidence,
+          analysis,
+        }, null, 2));
+        return;
+      }
+
+      const evidence = await readRdsInstanceEvidence(client, target, options.region);
+      const analysis = analyzeRdsInstanceDeletionEvidence(evidence);
+
+      console.log(JSON.stringify({
+        provider,
+        target,
+        collectedAt: new Date().toISOString(),
+        evidence,
+        analysis,
+      }, null, 2));
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+async function evaluateTerraformInput(
+  inputFile: string,
+  stateOption: string | undefined,
+  useClassifier: boolean,
+  adapterContext: {
+    actorId?: string;
+    environment?: string;
+    owner?: string;
+  }
+) {
+  if (!existsSync(inputFile)) {
+    console.error(`Error: Input file not found: ${inputFile}`);
+    process.exit(1);
+  }
+
+  const plan = await parsePlanFile(inputFile);
+
+  let state = null;
+  const stateFile = stateOption || 'terraform.tfstate';
+  if (existsSync(stateFile)) {
+    state = await parseStateFile(stateFile);
+  } else if (stateOption) {
+    console.error(`Error: State file not found: ${stateOption}`);
+    process.exit(1);
+  }
+
+  return evaluateTerraformPlanConsequences(plan, state, {
+    useClassifier,
+    adapterContext,
+  });
+}
+
+function parseMcpInput(input: string): McpToolCall {
+  const raw = existsSync(input)
+    ? readFileSync(input, 'utf8')
+    : input;
+
+  const parsed = JSON.parse(raw) as McpToolCall;
+  if (!parsed || typeof parsed.tool !== 'string') {
+    throw new Error('MCP input must be JSON with a string "tool" field');
+  }
+
+  return parsed;
+}
+
+function parseS3EvidenceFile(path: string): Record<string, S3BucketEvidence> {
+  if (!existsSync(path)) {
+    console.error(`Error: S3 evidence file not found: ${path}`);
+    process.exit(1);
+  }
+
+  const parsed = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+
+  if (isObject(parsed) && 's3Buckets' in parsed && isObject(parsed.s3Buckets)) {
+    return parsed.s3Buckets as Record<string, S3BucketEvidence>;
+  }
+
+  const evidence = isObject(parsed) && 'evidence' in parsed
+    ? parsed.evidence
+    : parsed;
+  if (!isS3BucketEvidence(evidence)) {
+    throw new Error('S3 evidence file must contain an evidence object with a bucket field');
+  }
+
+  return {
+    [evidence.bucket]: evidence,
+  };
+}
+
+function parseRdsEvidenceFile(path: string): Record<string, RdsInstanceEvidence> {
+  if (!existsSync(path)) {
+    console.error(`Error: RDS evidence file not found: ${path}`);
+    process.exit(1);
+  }
+
+  const parsed = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+
+  if (isObject(parsed) && 'rdsInstances' in parsed && isObject(parsed.rdsInstances)) {
+    return parsed.rdsInstances as Record<string, RdsInstanceEvidence>;
+  }
+
+  const evidence = isObject(parsed) && 'evidence' in parsed
+    ? parsed.evidence
+    : parsed;
+  if (!isRdsInstanceEvidence(evidence)) {
+    throw new Error('RDS evidence file must contain an evidence object with a dbInstanceIdentifier field');
+  }
+
+  return {
+    [evidence.dbInstanceIdentifier]: evidence,
+  };
+}
+
+function parseDynamoDbEvidenceFile(path: string): Record<string, DynamoDbTableEvidence> {
+  if (!existsSync(path)) {
+    console.error(`Error: DynamoDB evidence file not found: ${path}`);
+    process.exit(1);
+  }
+
+  const parsed = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+
+  if (isObject(parsed) && 'dynamoDbTables' in parsed && isObject(parsed.dynamoDbTables)) {
+    return parsed.dynamoDbTables as Record<string, DynamoDbTableEvidence>;
+  }
+
+  const evidence = isObject(parsed) && 'evidence' in parsed
+    ? parsed.evidence
+    : parsed;
+  if (!isDynamoDbTableEvidence(evidence)) {
+    throw new Error('DynamoDB evidence file must contain an evidence object with a tableName field');
+  }
+
+  return {
+    [evidence.tableName]: evidence,
+  };
+}
+
+function parseIamEvidenceFile(path: string): Record<string, IamRoleEvidence> {
+  if (!existsSync(path)) {
+    console.error(`Error: IAM evidence file not found: ${path}`);
+    process.exit(1);
+  }
+
+  const parsed = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+
+  if (isObject(parsed) && 'iamRoles' in parsed && isObject(parsed.iamRoles)) {
+    return parsed.iamRoles as Record<string, IamRoleEvidence>;
+  }
+
+  const evidence = isObject(parsed) && 'evidence' in parsed
+    ? parsed.evidence
+    : parsed;
+  if (!isIamRoleEvidence(evidence)) {
+    throw new Error('IAM evidence file must contain an evidence object with a roleName field');
+  }
+
+  return {
+    [evidence.roleName]: evidence,
+  };
+}
+
+function parseKmsEvidenceFile(path: string): Record<string, KmsKeyEvidence> {
+  if (!existsSync(path)) {
+    console.error(`Error: KMS evidence file not found: ${path}`);
+    process.exit(1);
+  }
+
+  const parsed = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+
+  if (isObject(parsed) && 'kmsKeys' in parsed && isObject(parsed.kmsKeys)) {
+    return parsed.kmsKeys as Record<string, KmsKeyEvidence>;
+  }
+
+  const evidence = isObject(parsed) && 'evidence' in parsed
+    ? parsed.evidence
+    : parsed;
+  if (!isKmsKeyEvidence(evidence)) {
+    throw new Error('KMS evidence file must contain an evidence object with a keyId field');
+  }
+
+  return {
+    [evidence.keyId]: evidence,
+  };
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isS3BucketEvidence(value: unknown): value is S3BucketEvidence {
+  return isObject(value)
+    && typeof value.bucket === 'string'
+    && value.bucket.length > 0;
+}
+
+function isRdsInstanceEvidence(value: unknown): value is RdsInstanceEvidence {
+  return isObject(value)
+    && typeof value.dbInstanceIdentifier === 'string'
+    && value.dbInstanceIdentifier.length > 0;
+}
+
+function isDynamoDbTableEvidence(value: unknown): value is DynamoDbTableEvidence {
+  return isObject(value)
+    && typeof value.tableName === 'string'
+    && value.tableName.length > 0;
+}
+
+function isIamRoleEvidence(value: unknown): value is IamRoleEvidence {
+  return isObject(value)
+    && typeof value.roleName === 'string'
+    && value.roleName.length > 0;
+}
+
+function isKmsKeyEvidence(value: unknown): value is KmsKeyEvidence {
+  return isObject(value)
+    && typeof value.keyId === 'string'
+    && value.keyId.length > 0;
+}
+
+program
   .command('explain')
   .description('Explain the classification for a specific resource')
   .argument('<plan-file>', 'Path to Terraform plan JSON file')
@@ -166,5 +557,21 @@ program
       process.exit(1);
     }
   });
+
+const decisionSeverity: Record<ConsequenceDecision, number> = {
+  allow: 0,
+  warn: 1,
+  escalate: 2,
+  block: 3,
+};
+
+function shouldFailOnDecision(
+  decision: ConsequenceDecision,
+  threshold: string
+): boolean {
+  const thresholdSeverity = decisionSeverity[threshold as ConsequenceDecision];
+  if (thresholdSeverity === undefined) return false;
+  return decisionSeverity[decision] >= thresholdSeverity;
+}
 
 export { program };

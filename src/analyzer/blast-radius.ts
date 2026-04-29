@@ -87,6 +87,7 @@ function buildSummary(changes: BlastRadiusChange[]): BlastRadiusSummary {
     [RecoverabilityTier.RECOVERABLE_WITH_EFFORT]: 0,
     [RecoverabilityTier.RECOVERABLE_FROM_BACKUP]: 0,
     [RecoverabilityTier.UNRECOVERABLE]: 0,
+    [RecoverabilityTier.NEEDS_REVIEW]: 0,
   };
 
   let cascadeImpactCount = 0;

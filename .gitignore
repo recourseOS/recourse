@@ -1,5 +1,12 @@
 node_modules/
 dist/
+docs/ARCHITECTURE.md
+docs/WHITEPAPER.md
+docs/REPOSITORY_STRATEGY.md
+docs/PRODUCTION_READINESS_CHECKLIST.md
+docs/production-readiness-checklist.md
+docs/TESTING_STRATEGY.md
+docs/testing-strategy.md
 *.log
 .DS_Store
 recourseOS_idea.md

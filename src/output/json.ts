@@ -9,6 +9,7 @@ export interface JsonOutput {
     recoverableFromBackup: number;
     recoverableWithEffort: number;
     reversible: number;
+    needsReview: number;
     cascadeImpactCount: number;
     hasUnrecoverable: boolean;
     worstTier: string;
@@ -53,6 +54,7 @@ export function toJsonOutput(report: BlastRadiusReport): JsonOutput {
       recoverableFromBackup: summary.byTier[RecoverabilityTier.RECOVERABLE_FROM_BACKUP],
       recoverableWithEffort: summary.byTier[RecoverabilityTier.RECOVERABLE_WITH_EFFORT],
       reversible: summary.byTier[RecoverabilityTier.REVERSIBLE],
+      needsReview: summary.byTier[RecoverabilityTier.NEEDS_REVIEW],
       cascadeImpactCount: summary.cascadeImpactCount,
       hasUnrecoverable: summary.hasUnrecoverable,
       worstTier: RecoverabilityLabels[worstTier],

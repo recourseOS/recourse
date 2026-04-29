@@ -4,6 +4,7 @@ export enum RecoverabilityTier {
   RECOVERABLE_WITH_EFFORT = 2,  // Can be recreated but requires work
   RECOVERABLE_FROM_BACKUP = 3,  // Requires backup/snapshot to restore
   UNRECOVERABLE = 4,        // Data is gone forever
+  NEEDS_REVIEW = 5,         // Evidence is insufficient or ambiguous
 }
 
 export const RecoverabilityLabels: Record<RecoverabilityTier, string> = {
@@ -11,6 +12,7 @@ export const RecoverabilityLabels: Record<RecoverabilityTier, string> = {
   [RecoverabilityTier.RECOVERABLE_WITH_EFFORT]: 'recoverable-with-effort',
   [RecoverabilityTier.RECOVERABLE_FROM_BACKUP]: 'recoverable-from-backup',
   [RecoverabilityTier.UNRECOVERABLE]: 'unrecoverable',
+  [RecoverabilityTier.NEEDS_REVIEW]: 'needs-review',
 };
 
 // Verdict source - where the classification came from
