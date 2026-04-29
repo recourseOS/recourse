@@ -166,7 +166,7 @@ Supported evidence providers: `aws-s3`, `aws-rds`, `aws-dynamodb`, `aws-iam-role
 recourse resources
 ```
 
-The generated coverage reference is in `docs/resource-coverage.md`.
+The generated coverage reference is in `docs/resource-coverage.md`, with the landing-page themed version at `docs/resource-coverage.html`.
 
 ## Multi-Cloud Coverage
 
@@ -263,6 +263,13 @@ npx vitest --run tests/multicloud-rules.test.ts
 npx vitest --run tests/semantic-unknown-classifier.test.ts
 npx vitest --run tests/golden-plan-fixtures.test.ts
 npx vitest --run tests/resource-coverage-doc.test.ts
+npx vitest --run tests/doc-pages.test.ts
+```
+
+Regenerate public documentation after changing resource handlers or Markdown-backed docs:
+
+```bash
+npm run docs:all
 ```
 
 ## Limitations

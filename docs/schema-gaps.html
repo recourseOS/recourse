@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>RecourseOS - Classifier Notes</title>
+<meta name="description" content="Feature schema gaps, semantic unknown-resource behavior, and the BitNet-compatible path." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f4f0e8;
+    --bg-deep: #ebe5d8;
+    --bg-card: rgba(255, 252, 245, 0.72);
+    --ink: #171717;
+    --ink-soft: #48443e;
+    --ink-faint: #8a8177;
+    --rule: #d8d0bf;
+    --accent: #c75032;
+    --accent-soft: #dd8060;
+    --term-bg: #11110e;
+    --term-ink: #ece8dc;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", system-ui, sans-serif;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(199, 80, 50, 0.13), transparent 34rem),
+      linear-gradient(180deg, #f8f4ec 0%, var(--bg) 42%, #eee7d9 100%);
+    color: var(--ink);
+    line-height: 1.65;
+    min-height: 100vh;
+  }
+  a { color: inherit; }
+  code { font-family: "JetBrains Mono", monospace; }
+  .container { max-width: 1040px; margin: 0 auto; padding: 0 32px; }
+  nav {
+    padding: 26px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .brand-mark { width: 46px; height: 46px; display: block; }
+  .brand-name {
+    font-family: "Fraunces", Georgia, serif;
+    font-size: 21px;
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: -0.035em;
+  }
+  .brand-name .os { color: var(--accent); font-weight: 500; }
+  nav .links { display: flex; align-items: center; gap: 18px; }
+  nav .links a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    padding-bottom: 2px;
+  }
+  nav .links a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+  header { padding: 76px 0 46px; border-bottom: 1px solid var(--rule); }
+  .eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 18px;
+  }
+  h1, h2, h3 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+  }
+  h1 { font-size: clamp(42px, 7vw, 72px); max-width: 12ch; margin-bottom: 20px; }
+  .lede { max-width: 68ch; color: var(--ink-soft); font-size: 18px; }
+  .doc-shell {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 44px;
+    padding: 46px 0 78px;
+  }
+  .toc {
+    position: sticky;
+    top: 22px;
+    align-self: start;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: var(--ink-faint);
+  }
+  .toc-title { color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
+  .toc a { display: block; color: var(--ink-soft); text-decoration: none; margin: 8px 0; }
+  .toc a:hover { color: var(--ink); }
+  article {
+    background: var(--bg-card);
+    border: 1px solid var(--rule);
+    border-radius: 18px;
+    padding: 34px;
+    box-shadow: 0 28px 80px -52px rgba(30, 22, 10, 0.42);
+  }
+  article h1 { display: none; }
+  article h2 { font-size: 32px; margin: 30px 0 14px; padding-top: 8px; }
+  article h2:first-child { margin-top: 0; }
+  article h3 { font-size: 22px; margin: 24px 0 10px; }
+  article p { color: var(--ink-soft); margin: 13px 0; }
+  article ul { margin: 10px 0 18px 24px; color: var(--ink-soft); }
+  article li { margin: 6px 0; }
+  article code {
+    background: rgba(17, 17, 14, 0.07);
+    border: 1px solid rgba(17, 17, 14, 0.08);
+    border-radius: 5px;
+    padding: 1px 5px;
+    font-size: 0.92em;
+    color: var(--ink);
+  }
+  pre {
+    background: var(--term-bg);
+    color: var(--term-ink);
+    border-radius: 12px;
+    padding: 18px;
+    overflow-x: auto;
+    margin: 18px 0;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  pre code { background: transparent; border: 0; color: inherit; padding: 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 24px;
+    background: rgba(255, 252, 245, 0.58);
+    border: 1px solid var(--rule);
+  }
+  th, td {
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--rule);
+    padding: 11px 12px;
+    font-size: 14px;
+  }
+  th {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+  }
+  tr:last-child td { border-bottom: 0; }
+  .source-note {
+    margin-top: 26px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    color: var(--ink-faint);
+    font-size: 13px;
+  }
+  @media (max-width: 820px) {
+    .container { padding: 0 22px; }
+    nav { align-items: flex-start; gap: 18px; }
+    nav .links { flex-wrap: wrap; justify-content: flex-end; gap: 12px; }
+    header { padding-top: 56px; }
+    .doc-shell { grid-template-columns: 1fr; gap: 22px; }
+    .toc { position: static; }
+    article { padding: 24px 20px; }
+    h1 { font-size: clamp(40px, 14vw, 58px); }
+  }
+</style>
+</head>
+<body>
+<nav class="container">
+  <a href="/" class="brand" aria-label="RecourseOS home">
+    <svg class="brand-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M50 5 L88.97 27.5 V72.5 L50 95 L11.03 72.5 V27.5 Z" fill="#14130f"/>
+      <path d="M50 9.8 L84.8 29.9 V70.1 L50 90.2 L15.2 70.1 V29.9 Z" stroke="#f4f0e8" stroke-width="5.6" stroke-linejoin="round"/>
+      <path d="M34 70 V30 H57.5 C67.2 30 74 36 74 44.6 C74 53.2 67.2 59.2 57.5 59.2 H34" stroke="#f4f0e8" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M55.5 59.5 L74 70.5" stroke="#f4f0e8" stroke-width="7" stroke-linecap="round"/>
+      <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#c75032" stroke-width="6.5" stroke-linecap="round"/>
+      <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#c75032" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span class="brand-name">Recourse<span class="os">OS</span></span>
+  </a>
+  <div class="links">
+    <a href="/">home</a>
+    <a href="/resource-coverage.html">coverage</a>
+    <a href="/golden-fixtures.html">fixtures</a>
+    <a href="https://github.com/recourseos/recourse">github</a>
+  </div>
+</nav>
+<header class="container">
+  <div class="eyebrow">public docs</div>
+  <h1>Classifier Notes</h1>
+  <p class="lede">Feature schema gaps, semantic unknown-resource behavior, and the BitNet-compatible path.</p>
+</header>
+<main class="container doc-shell">
+  <aside class="toc"><div class="toc-title">On this page</div><a href="#summary">Summary</a><a href="#test-results">Test Results</a><a href="#gap-categories">Gap Categories</a><a href="#proposed-schema-v2">Proposed Schema v2</a><a href="#derivation-rules">Derivation Rules</a><a href="#implications">Implications</a><a href="#recommended-next-steps">Recommended Next Steps</a><a href="#known-limits">Known Limits</a><a href="#bitnet-compatible-unknown-classifier">BitNet-Compatible Unknown Classifier</a><a href="#files">Files</a></aside>
+  <article>
+    <h1 id="feature-schema-gap-analysis">Feature Schema Gap Analysis</h1>
+<h2 id="summary">Summary</h2>
+<p>Testing the classifier against edge-case resource types revealed gaps in the feature schema and rule handlers. This validation found <strong>6 fixable bugs</strong> and <strong>4 documented limits</strong>.</p>
+<h3 id="what-was-fixed-v0-1">What Was Fixed (v0.1)</h3>
+<table><thead><tr><th>Fix</th><th>Category</th><th>Description</th></tr></thead><tbody><tr><td>IAM attachment handler</td><td>Rule bug</td><td>Handler returned <code>recoverable-with-effort</code> for attachment resources; now <code>reversible</code></td></tr><tr><td>Config-only detection</td><td>Schema addition</td><td>Resources ending in <code>_policy</code>, <code>_config</code>, <code>_rule</code> etc. now detected as <code>reversible</code></td></tr><tr><td>Attachment detection</td><td>Schema addition</td><td>Resources ending in <code>_attachment</code>, <code>_membership</code> now detected as <code>reversible</code></td></tr><tr><td>snapshot_retention_limit</td><td>Training gap</td><td>Added to backup attribute recognition (ElastiCache)</td></tr><tr><td>recovery_window_in_days</td><td>Training gap</td><td>Added to retention/window detection (Secrets Manager)</td></tr><tr><td>Secrets Manager window</td><td>Rule bug</td><td>recovery_window now detected via existing feature infrastructure</td></tr></tbody></table>
+<h3 id="what-remains-as-known-limits">What Remains as Known Limits</h3>
+<table><thead><tr><th>Limit</th><th>Why It's Hard</th><th>Mitigation</th></tr></thead><tbody><tr><td>Route53 record classification</td><td>Recoverability depends on out-of-band state (zone backups, IP ownership)</td><td>Document as limit; future: ask user for context</td></tr><tr><td>Multi-cloud suffix detection</td><td>AWS naming conventions don't transfer to GCP/Azure</td><td>Document; future: BitNet semantic classification plus structural detection</td></tr><tr><td>Classifier confidence on unknown types</td><td>72-100% confidence but sometimes wrong</td><td>Dual-verdict surfaces disagreements</td></tr></tbody></table>
+<p>---</p>
+<h2 id="test-results">Test Results</h2>
+<table><thead><tr><th>Resource Type</th><th>Expected</th><th>Actual</th><th>Confidence</th><th>Root Cause</th></tr></thead><tbody><tr><td>aws_lambda_function_event_invoke_config</td><td>reversible</td><td>recoverable-with-effort</td><td>100%</td><td>No signal for config-only resources</td></tr><tr><td>aws_iam_role_policy_attachment</td><td>reversible</td><td>recoverable-with-effort</td><td>100%</td><td>No signal for attachment resources</td></tr><tr><td>aws_s3_bucket_policy</td><td>reversible</td><td>recoverable-with-effort</td><td>100%</td><td>No signal for config-only resources</td></tr><tr><td>aws_route53_record</td><td>recoverable-with-effort</td><td>unrecoverable</td><td>72.7%</td><td>Training data bias + no reference signal</td></tr><tr><td>aws_secretsmanager_secret (with recovery)</td><td>reversible</td><td>recoverable-with-effort</td><td>100%</td><td>Missing recovery_window feature</td></tr><tr><td>aws_secretsmanager_secret (immediate)</td><td>unrecoverable</td><td>recoverable-with-effort</td><td>100%</td><td>Missing recovery_window feature</td></tr><tr><td>aws_elasticache_cluster (no snapshots)</td><td>unrecoverable</td><td>recoverable-with-effort</td><td>100%</td><td>snapshot_retention_limit not recognized</td></tr><tr><td>aws_elasticache_cluster (with snapshots)</td><td>recoverable-from-backup</td><td>recoverable-with-effort</td><td>100%</td><td>snapshot_retention_limit not recognized</td></tr><tr><td><strong>aws_neptune_cluster (protected)</strong></td><td><strong>reversible</strong></td><td><strong>reversible</strong></td><td><strong>100%</strong></td><td><strong>deletion_protection correctly detected</strong></td></tr></tbody></table>
+<h2 id="gap-categories">Gap Categories</h2>
+<h3 id="gap-1-no-distinction-between-data-and-config-resources">Gap 1: No distinction between data and config resources</h3>
+<p><strong>Problem</strong>: The schema treats all resources equally, but many AWS resources are pure configuration:</p>
+<ul><li><code>aws_s3_bucket_policy</code> - JSON policy attached to bucket</li><li><code>aws_s3_bucket_lifecycle_configuration</code> - Rules for object lifecycle</li><li><code>aws_lambda_function_event_invoke_config</code> - Async invocation settings</li><li><code>aws_iam_role_policy</code> - Inline policy on a role</li><li><code>aws_security_group_rule</code> - Single rule in a security group</li><li><code>aws_vpc_endpoint</code> - VPC endpoint configuration</li></ul>
+<p><strong>Impact</strong>: These should all be <code>reversible</code> (you can recreate the exact config), but they're classified as <code>recoverable-with-effort</code> because they have unknown resource type and no safety features.</p>
+<p><strong>Proposed feature</strong>: <code>is_config_only</code> or <code>stores_data</code></p>
+<h3 id="gap-2-no-distinction-for-attachment-relationship-resources">Gap 2: No distinction for attachment/relationship resources</h3>
+<p><strong>Problem</strong>: Some resources represent relationships between other resources:</p>
+<ul><li><code>aws_iam_role_policy_attachment</code> - Links policy to role</li><li><code>aws_iam_user_policy_attachment</code> - Links policy to user</li><li><code>aws_iam_group_membership</code> - Links user to group</li><li><code>aws_lb_target_group_attachment</code> - Links target to target group</li><li><code>aws_security_group</code> → <code>aws_network_interface_sg_attachment</code></li></ul>
+<p><strong>Impact</strong>: Deleting these doesn't destroy data - both parent resources still exist. Should be <code>reversible</code>.</p>
+<p><strong>Proposed feature</strong>: <code>is_attachment</code> or <code>is_relationship</code></p>
+<h3 id="gap-3-missing-recovery-window-semantics">Gap 3: Missing recovery window semantics</h3>
+<p><strong>Problem</strong>: Some resources have &quot;soft delete&quot; with configurable recovery:</p>
+<ul><li><code>aws_secretsmanager_secret</code> - <code>recovery_window_in_days</code> (7-30 days, or 0 for immediate)</li><li><code>aws_kms_key</code> - <code>deletion_window_in_days</code> (7-30 days)</li><li><code>aws_rds_cluster</code> - <code>delete_automated_backups</code> affects retention</li></ul>
+<p>We handle <code>deletion_window_in_days</code> for KMS but not <code>recovery_window_in_days</code> for Secrets Manager.</p>
+<p><strong>Proposed feature</strong>: <code>has_recovery_window</code> and/or unify these under a common pattern</p>
+<h3 id="gap-4-snapshot-retention-limit-not-recognized">Gap 4: Snapshot retention limit not recognized</h3>
+<p><strong>Problem</strong>: ElastiCache uses <code>snapshot_retention_limit</code> (0-35 days), not the standard snapshot attributes.</p>
+<pre><code>snapshot_retention_limit: 0  -&gt; no snapshots -&gt; unrecoverable
+snapshot_retention_limit: 7  -&gt; has snapshots -&gt; recoverable-from-backup</code></pre>
+<p><strong>Fix</strong>: Add <code>snapshot_retention_limit</code> to BACKUP_ATTRS or SNAPSHOT_ATTRS</p>
+<h2 id="proposed-schema-v2">Proposed Schema v2</h2>
+<p>Add these features:</p>
+<pre><code>interface ClassifierFeaturesV2 extends ClassifierFeatures {
+  // Resource category signals
+  is_config_only: number;      // 1 = pure config, 0 = stores data, -1 = unknown
+  is_attachment: number;       // 1 = relationship resource, 0 = standalone, -1 = unknown
+
+  // Recovery window (unified)
+  has_recovery_window: number; // 1 = has soft delete, 0 = immediate delete, -1 = unknown
+  recovery_window_days: number; // Normalized 0-1 (0-30 days)
+}</code></pre>
+<h2 id="derivation-rules">Derivation Rules</h2>
+<p>How to determine these features:</p>
+<h3 id="is-config-only">is_config_only</h3>
+<ul><li>Resource type ends with <code>_policy</code>, <code>_configuration</code>, <code>_config</code>, <code>_rule</code>, <code>_setting</code> → likely config</li><li>Resource has only <code>arn</code>, <code>id</code>, and config fields (no <code>size</code>, <code>count</code>, <code>instances</code>) → likely config</li><li>Known config resource types from documentation</li></ul>
+<h3 id="is-attachment">is_attachment</h3>
+<ul><li>Resource type ends with <code>_attachment</code>, <code>_membership</code>, <code>_association</code> → attachment</li><li>Resource has exactly 2 foreign key references (e.g., <code>role</code>, <code>policy_arn</code>) → attachment</li></ul>
+<h3 id="has-recovery-window">has_recovery_window</h3>
+<ul><li>Check for <code>recovery_window_in_days</code>, <code>deletion_window_in_days</code> attributes</li><li>Value &gt; 0 means soft delete is enabled</li></ul>
+<h2 id="implications">Implications</h2>
+<p>1. <strong>Cannot fix with training data alone</strong> - These are conceptual categories, not patterns in attributes 2. <strong>Need resource metadata</strong> - May need to consult Terraform provider schema 3. <strong>Heuristics vs lookup</strong> - Can use naming conventions as heuristics, but false positives exist</p>
+<h2 id="recommended-next-steps">Recommended Next Steps</h2>
+<p>1. <strong>Quick fix</strong>: Add <code>snapshot_retention_limit</code> to feature extractor (5 min) 2. <strong>Medium fix</strong>: Add name-based heuristics for config/attachment resources (1 hour) 3. <strong>Proper fix</strong>: Replace the semantic fallback with BitNet weights once model training and golden multi-cloud fixtures are ready</p>
+<h2 id="known-limits">Known Limits</h2>
+<h3 id="route53-record-classification">Route53 Record Classification</h3>
+<p>The classifier returns <code>unrecoverable</code> for Route53 record deletions at 72.7% confidence. This is arguably wrong — you can recreate a DNS record if you know the values — but the *actual* recoverability depends on factors outside the plan:</p>
+<ul><li>Do you have a zone backup or the record values documented?</li><li>For A records: is the IP address still assigned to you?</li><li>For ALIAS records: does the target resource still exist?</li></ul>
+<p>We've chosen to leave this as a documented limit rather than force a verdict. Future versions may ask the user for context.</p>
+<h3 id="multi-cloud-suffix-detection-updated-v0-1-2">Multi-Cloud Suffix Detection (Updated v0.1.2)</h3>
+<p>Cloud-specific suffix patterns have been added:</p>
+<table><thead><tr><th>Cloud</th><th>Config-only Suffixes</th><th>Attachment Suffixes</th></tr></thead><tbody><tr><td>AWS</td><td><code>_policy</code>, <code>_config</code>, <code>_rule</code>, <code>_setting</code>, <code>_endpoint</code></td><td><code>_attachment</code>, <code>_membership</code>, <code>_association</code></td></tr><tr><td>GCP</td><td><code>_iam_policy</code>, <code>_iam_binding</code>, <code>_iam_member</code>, <code>_access_level</code></td><td><code>_binding</code>, <code>_member</code></td></tr><tr><td>Azure</td><td><code>_diagnostic_setting</code></td><td><code>_assignment</code></td></tr></tbody></table>
+<p><strong>What's working:</strong></p>
+<ul><li><code>google_project_iam_binding</code> → reversible (suffix detection)</li><li><code>google_project_iam_member</code> → reversible (suffix detection)</li><li><code>azurerm_role_assignment</code> → reversible (suffix detection)</li></ul>
+<p><strong>What's not yet working:</strong> The patterns are still heuristics. For true multi-cloud support, suffix detection needs to be replaced with structural detection (does this resource type represent a relationship between two other resources, vs. owning data of its own).</p>
+<h3 id="abstract-feature-transfer">Abstract Feature Transfer</h3>
+<p><strong>Validated (v0.1.2):</strong></p>
+<table><thead><tr><th>Resource</th><th>Feature</th><th>Result</th></tr></thead><tbody><tr><td><code>google_sql_database_instance</code></td><td><code>deletion_protection: true</code></td><td><code>reversible</code> ✓</td></tr><tr><td><code>google_storage_bucket</code></td><td><code>versioning: { enabled: true }</code></td><td>Feature detected (<code>has_versioning: 1</code>)</td></tr></tbody></table>
+<p>The <code>google_sql_database_instance</code> test is significant: no GCP-specific code was written. The classifier recognized <code>deletion_protection</code> as an abstract safety pattern and applied it correctly.</p>
+<h3 id="decision-tree-gap-versioning-for-unknown-types">Decision Tree Gap: Versioning for Unknown Types</h3>
+<p><strong>Problem discovered in v0.1.2 testing:</strong></p>
+<p>The decision tree only checks <code>has_versioning</code> for resource types 16-20 (S3-related). Unknown types (<code>resource_type_encoded = -1</code>) fall through a different branch that ignores versioning entirely.</p>
+<pre><code>google_storage_bucket with versioning: { enabled: true }
+  → Feature extracted: has_versioning = 1
+  → Decision tree path: resource_type_encoded = -1 &lt; 6.5 → early branch
+  → Result: recoverable-with-effort (versioning ignored)
+  → Expected: recoverable-from-backup</code></pre>
+<p>Before the semantic unknown-resource classifier, both GCP buckets (with and without versioning) got <code>recoverable-with-effort</code> because the tree was trained only on known AWS types. The feature was detected but not used.</p>
+<p><strong>Current fix:</strong> <code>src/classifier/semantic-unknown.ts</code> now runs before the decision tree for unknown resource types. It recognizes storage versioning, backup retention, PITR, deletion protection, recovery/deletion windows, IAM relationships, DNS records, and credential material across providers. Low-evidence destructive resources return <code>needs-review</code>.</p>
+<p><strong>Remaining gap:</strong> This is a deterministic semantic scorer, not trained BitNet weights. It preserves the public contract and safety behavior that BitNet should eventually implement.</p>
+<h2 id="bitnet-compatible-unknown-classifier">BitNet-Compatible Unknown Classifier</h2>
+<p>BitNet is intended to replace the semantic scorer for recoverability classification of unknown resource types. It should not replace hand-written AWS, GCP, or Azure rules.</p>
+<p><strong>What is implemented now:</strong></p>
+<ul><li>Known resource handlers remain authoritative.</li><li>Unknown resources are classified by provider-neutral semantics before falling back to the legacy decision tree.</li><li>The unknown classifier can return <code>needs-review</code> when evidence is incomplete.</li><li>Output includes tier, confidence, and evidence strings.</li></ul>
+<p><strong>Why BitNet still helps later:</strong></p>
+<ul><li>Learns abstract patterns such as <code>deletion_protection=true</code> on any provider.</li><li>Treats semantically related attributes, such as <code>recovery_window_in_days</code> and <code>deletion_window_in_days</code>, as the same safety concept.</li><li>Classifies <code>aws_s3_bucket</code>, <code>google_storage_bucket</code>, and <code>azurerm_storage_account</code> through storage semantics instead of provider-specific type IDs.</li><li>Reduces reliance on suffix heuristics for config-only and attachment resources.</li></ul>
+<p><strong>Safety requirements:</strong></p>
+<ul><li>Known resource handlers remain authoritative.</li><li>Unknown resources can return <code>needs-review</code> when evidence is incomplete.</li><li>Model output must include tier, confidence, evidence, and missing evidence.</li><li>Golden fixtures must include false-safe cases where the classifier must avoid understating risk.</li></ul>
+<h2 id="files">Files</h2>
+<ul><li>Test file: <code>tests/schema-validation.test.ts</code></li><li>Unknown semantic classifier tests: <code>tests/semantic-unknown-classifier.test.ts</code></li><li>Feature extractor: <code>src/classifier/feature-extractor.ts</code></li><li>Semantic unknown classifier: <code>src/classifier/semantic-unknown.ts</code></li><li>Dual-verdict (config/attachment detection): <code>src/classifier/dual-verdict.ts</code></li></ul>
+    <p class="source-note">Generated from <code>docs/schema-gaps.md</code>. Markdown remains available for source review.</p>
+  </article>
+</main>
+</body>
+</html>
