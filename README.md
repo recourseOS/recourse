@@ -9,11 +9,35 @@ The public CLI is local-first. No account or cloud service is required.
 ## What It Does
 
 - Analyzes Terraform plan JSON before `terraform apply`.
+- Evaluates shell commands and MCP tool calls as mutation intents.
 - Classifies destructive AWS, GCP, and Azure resources with deterministic provider rules.
 - Uses a provider-neutral semantic classifier for unknown resource types when `--classifier` is enabled.
 - Produces human-readable blast-radius reports and machine-readable consequence JSON.
 - Can collect read-only AWS evidence for S3, RDS, DynamoDB, IAM roles, and KMS keys.
 - Can optionally submit local reports to a private Recourse Cloud control plane.
+
+## Why Not Just Terraform Plan?
+
+Terraform plan is a diff. Recourse is a consequence engine.
+
+Terraform tells you what will change:
+
+```text
+- aws_db_instance.main will be destroyed
+```
+
+Recourse tells you what that means:
+
+```text
+aws_db_instance.main
+recoverability: unrecoverable
+reason: skip_final_snapshot=true, backup_retention_period=0, deletion_protection=false
+decision: block
+```
+
+The difference is recoverability. Recourse answers the question Terraform does not: if this mutation happens, can we actually get it back?
+
+This is not limited to Terraform. Terraform plan is one input source. The same consequence report model also supports shell commands and MCP tool calls, so infrastructure changes from humans, CI jobs, and agents can be evaluated through the same recoverability policy.
 
 ## Install
 
