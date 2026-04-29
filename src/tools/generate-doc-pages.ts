@@ -38,12 +38,6 @@ const docPages: DocPage[] = [
     title: 'Agent Interface',
     description: 'MCP tool contract and consequence report semantics for agents that call RecourseOS before acting.',
   },
-  {
-    source: 'docs/public-boundaries.md',
-    output: 'docs/public-boundaries.html',
-    title: 'Public Boundaries',
-    description: 'Guidance for keeping public documentation useful without exposing sensitive product, customer, or model information.',
-  },
 ];
 
 export async function renderDocPages(pages = docPages): Promise<Array<{ output: string; html: string }>> {

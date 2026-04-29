@@ -36,6 +36,7 @@ import {
 import { getSupportedResourceTypes, getRecoverabilityTraced, hasDetailedTracing } from './resources/index.js';
 import { RecoverabilityTier } from './resources/types.js';
 import type { ConsequenceDecision } from './core/index.js';
+import { runMcpServer } from './mcp/server.js';
 
 const program = new Command();
 
@@ -126,6 +127,17 @@ program
       console.log(`  ${type}`);
     }
     console.log(`\nTotal: ${types.length} resource types`);
+  });
+
+const mcp = program
+  .command('mcp')
+  .description('Run RecourseOS agent integration commands');
+
+mcp
+  .command('serve')
+  .description('Start the RecourseOS MCP stdio server')
+  .action(() => {
+    runMcpServer();
   });
 
 program

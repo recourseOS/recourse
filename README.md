@@ -10,11 +10,12 @@ The public CLI is local-first. No account or cloud service is required.
 
 - Analyzes Terraform plan JSON before `terraform apply`.
 - Evaluates shell commands and MCP tool calls as mutation intents.
+- Runs as an MCP stdio server so agents can ask RecourseOS before they act.
 - Classifies destructive AWS, GCP, and Azure resources with deterministic provider rules.
 - Uses a provider-neutral semantic classifier for unknown resource types when `--classifier` is enabled.
 - Produces human-readable blast-radius reports and machine-readable consequence JSON.
 - Can collect read-only AWS evidence for S3, RDS, DynamoDB, IAM roles, and KMS keys.
-- Can optionally submit local reports to a private Recourse Cloud control plane.
+- Can optionally submit local reports to a configured Recourse Cloud endpoint.
 
 ## Why Not Just Terraform Plan?
 
@@ -150,9 +151,13 @@ recourse evaluate mcp '{"server":"aws","tool":"s3.delete_bucket","arguments":{"b
 
 ### Agent Interface
 
-RecourseOS is designed to become the consequence layer agents call before they act. The public MCP tool contract and agent decision semantics are documented in `docs/agent-interface.md`.
+RecourseOS can run as the consequence layer agents call before they act:
 
-Public documentation boundaries are documented in `docs/public-boundaries.md`; keep private strategy, credentials, model weights, proprietary datasets, telemetry, and hosted-service internals out of this repository.
+```bash
+recourse mcp serve
+```
+
+The MCP server exposes `recourse_evaluate_terraform`, `recourse_evaluate_shell`, `recourse_evaluate_mcp_call`, and `recourse_supported_resources`. The public MCP tool contract and agent decision semantics are documented in `docs/agent-interface.md`.
 
 ### Read-Only AWS Evidence
 
@@ -248,7 +253,7 @@ Cloud submission status is written to stderr so stdout stays parseable JSON. If 
 
 Configuration:
 
-- `RECOURSE_CLOUD_URL`: private API base URL.
+- `RECOURSE_CLOUD_URL`: Recourse Cloud API base URL.
 - `RECOURSE_ORGANIZATION_ID`: organization scope.
 - `RECOURSE_ACTOR_ID` or `--actor`: actor identity.
 - `RECOURSE_ENVIRONMENT` or `--environment`: optional environment label.

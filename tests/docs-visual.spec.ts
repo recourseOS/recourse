@@ -8,7 +8,6 @@ const pages = [
   '/live-aws-tests.html',
   '/schema-gaps.html',
   '/agent-interface.html',
-  '/public-boundaries.html',
 ];
 
 test.describe('public docs visual QA', () => {

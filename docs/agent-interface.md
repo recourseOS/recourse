@@ -2,6 +2,16 @@
 
 RecourseOS is an AI-ready consequence oracle for agents before they act. Agents submit a proposed mutation and receive a structured `ConsequenceReport` that tells them whether to proceed, warn, block, or ask a human for review.
 
+## Running the Server
+
+Start the MCP stdio server from the CLI:
+
+```bash
+recourse mcp serve
+```
+
+The server uses standard MCP JSON-RPC messages over stdio with `Content-Length` framing. It does not require a hosted account or network access.
+
 ## Agent Contract
 
 Agents should call Recourse before destructive or privileged actions, especially infrastructure, cloud, shell, MCP, or deployment operations.
@@ -10,18 +20,18 @@ Decision meanings:
 
 | Decision | Agent behavior |
 | --- | --- |
-| `allow` | Continue. The mutation is expected to be reversible. |
+| `allow` | Continue. The mutation is expected to be reversible or non-destructive. |
 | `warn` | Continue only after surfacing recovery requirements to the user. |
 | `block` | Do not execute unless the user changes the plan or policy. |
 | `escalate` | Ask a human for review; evidence is insufficient for safe automation. |
 
-## Proposed MCP Tools
+## MCP Tools
 
-The MCP server should expose small, explicit tools over the existing evaluator.
+The MCP server exposes small, explicit tools over the existing evaluator.
 
 ### `recourse_evaluate_terraform`
 
-Evaluates Terraform plan JSON.
+Evaluates Terraform plan JSON. The `plan` field accepts a Terraform plan object or JSON string from `terraform show -json`.
 
 Input:
 
@@ -45,8 +55,7 @@ Input:
 {
   "command": "aws s3 rb s3://prod-audit-logs --force",
   "actor": "agent/sre",
-  "environment": "production",
-  "evidence": {}
+  "environment": "production"
 }
 ```
 
@@ -66,10 +75,6 @@ Input:
   "actor": "agent/infra"
 }
 ```
-
-### `recourse_explain_verdict`
-
-Returns structured reasoning for one target in a prior report or plan. Agents should use this when explaining a block, warning, or escalation to a user.
 
 ### `recourse_supported_resources`
 
@@ -99,7 +104,7 @@ All evaluator tools return a `ConsequenceReport`.
 }
 ```
 
-The implementation currently returns the report shape without an explicit `schemaVersion`; MCP output should add `schemaVersion: "recourse.consequence.v1"` at the top level and keep backward-compatible field names.
+MCP tool responses include `schemaVersion: "recourse.consequence.v1"` at the top level. The existing CLI `evaluate` JSON remains backward-compatible and does not require agents to use MCP.
 
 ## Agent Instructions
 

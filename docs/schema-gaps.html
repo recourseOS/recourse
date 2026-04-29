@@ -222,108 +222,27 @@
   <p class="lede">Feature schema gaps, semantic unknown-resource behavior, and the BitNet-compatible path.</p>
 </header>
 <main class="container doc-shell">
-  <aside class="toc"><div class="toc-title">On this page</div><a href="#summary">Summary</a><a href="#baseline-test-results">Baseline Test Results</a><a href="#gap-categories">Gap Categories</a><a href="#implemented-semantic-profile-contract">Implemented Semantic Profile Contract</a><a href="#derivation-rules">Derivation Rules</a><a href="#implications">Implications</a><a href="#recommended-next-steps">Recommended Next Steps</a><a href="#known-limits">Known Limits</a><a href="#bitnet-compatible-unknown-classifier">BitNet-Compatible Unknown Classifier</a><a href="#files">Files</a></aside>
+  <aside class="toc"><div class="toc-title">On this page</div><a href="#public-contract">Public Contract</a><a href="#semantic-signals">Semantic Signals</a><a href="#known-limits">Known Limits</a><a href="#bitnet-path">BitNet Path</a><a href="#safety-requirements">Safety Requirements</a></aside>
   <article>
-    <h1 id="feature-schema-gap-analysis">Feature Schema Gap Analysis</h1>
-<h2 id="summary">Summary</h2>
-<p>Testing the classifier against edge-case resource types revealed gaps in the feature schema and rule handlers. This validation found fixable bugs that now drive deterministic handlers, semantic unknown-resource scoring, and golden fixtures.</p>
-<h3 id="what-was-fixed-v0-1">What Was Fixed (v0.1)</h3>
-<table><thead><tr><th>Fix</th><th>Category</th><th>Description</th></tr></thead><tbody><tr><td>IAM attachment handler</td><td>Rule bug</td><td>Handler returned <code>recoverable-with-effort</code> for attachment resources; now <code>reversible</code></td></tr><tr><td>Config-only detection</td><td>Schema addition</td><td>Resources ending in <code>_policy</code>, <code>_config</code>, <code>_rule</code> etc. now detected as <code>reversible</code></td></tr><tr><td>Attachment detection</td><td>Schema addition</td><td>Resources ending in <code>_attachment</code>, <code>_membership</code> now detected as <code>reversible</code></td></tr><tr><td>snapshot_retention_limit</td><td>Training gap</td><td>Added to backup attribute recognition (ElastiCache)</td></tr><tr><td>recovery_window_in_days</td><td>Training gap</td><td>Added to retention/window detection (Secrets Manager)</td></tr><tr><td>Secrets Manager window</td><td>Rule bug</td><td>recovery_window now detected via existing feature infrastructure</td></tr><tr><td>Secrets and key material handlers</td><td>Rule coverage</td><td>Added deterministic AWS Secrets Manager, GCP Secret Manager, and Azure Key Vault child-resource rules</td></tr><tr><td>ElastiCache and Neptune handlers</td><td>Rule coverage</td><td>Added deterministic AWS cache/graph database rules for snapshot retention, final snapshots, and deletion protection</td></tr></tbody></table>
-<h3 id="what-remains-as-known-limits">What Remains as Known Limits</h3>
-<table><thead><tr><th>Limit</th><th>Why It's Hard</th><th>Mitigation</th></tr></thead><tbody><tr><td>Route53 record classification</td><td>Recoverability depends on out-of-band state (zone backups, IP ownership)</td><td>Document as limit; future: ask user for context</td></tr><tr><td>Azure Key Vault child resources without recovery evidence</td><td>Child resources do not always expose parent vault retention settings in the same plan change</td><td>Return <code>needs-review</code> unless recovery-level or retention evidence is present</td></tr><tr><td>Multi-cloud suffix detection</td><td>AWS naming conventions don't transfer to every GCP/Azure resource</td><td>Semantic profile first; future BitNet/model-backed metadata for weaker names</td></tr><tr><td>Classifier confidence on unknown types</td><td>72-100% confidence but sometimes wrong</td><td>Dual-verdict surfaces disagreements</td></tr></tbody></table>
-<p>---</p>
-<h2 id="baseline-test-results">Baseline Test Results</h2>
-<p>These are the original classifier gaps that motivated the semantic profile and dual-verdict work.</p>
-<table><thead><tr><th>Resource Type</th><th>Expected</th><th>Original Actual</th><th>Confidence</th><th>Root Cause</th></tr></thead><tbody><tr><td>aws_lambda_function_event_invoke_config</td><td>reversible</td><td>recoverable-with-effort</td><td>100%</td><td>No signal for config-only resources</td></tr><tr><td>aws_iam_role_policy_attachment</td><td>reversible</td><td>recoverable-with-effort</td><td>100%</td><td>No signal for attachment resources</td></tr><tr><td>aws_s3_bucket_policy</td><td>reversible</td><td>recoverable-with-effort</td><td>100%</td><td>No signal for config-only resources</td></tr><tr><td>aws_route53_record</td><td>recoverable-with-effort</td><td>unrecoverable</td><td>72.7%</td><td>Training data bias + no reference signal</td></tr><tr><td>aws_secretsmanager_secret (with recovery)</td><td>reversible</td><td>recoverable-with-effort</td><td>100%</td><td>Missing recovery_window feature</td></tr><tr><td>aws_secretsmanager_secret (immediate)</td><td>unrecoverable</td><td>recoverable-with-effort</td><td>100%</td><td>Missing recovery_window feature</td></tr><tr><td>aws_elasticache_cluster (no snapshots)</td><td>unrecoverable</td><td>recoverable-with-effort</td><td>100%</td><td>snapshot_retention_limit not recognized</td></tr><tr><td>aws_elasticache_cluster (with snapshots)</td><td>recoverable-from-backup</td><td>recoverable-with-effort</td><td>100%</td><td>snapshot_retention_limit not recognized</td></tr><tr><td><strong>aws_neptune_cluster (protected)</strong></td><td><strong>reversible</strong></td><td><strong>reversible</strong></td><td><strong>100%</strong></td><td><strong>deletion_protection correctly detected</strong></td></tr></tbody></table>
-<h2 id="gap-categories">Gap Categories</h2>
-<h3 id="gap-1-no-distinction-between-data-and-config-resources">Gap 1: No distinction between data and config resources</h3>
-<p><strong>Problem</strong>: The schema treats all resources equally, but many AWS resources are pure configuration:</p>
-<ul><li><code>aws_s3_bucket_policy</code> - JSON policy attached to bucket</li><li><code>aws_s3_bucket_lifecycle_configuration</code> - Rules for object lifecycle</li><li><code>aws_lambda_function_event_invoke_config</code> - Async invocation settings</li><li><code>aws_iam_role_policy</code> - Inline policy on a role</li><li><code>aws_security_group_rule</code> - Single rule in a security group</li><li><code>aws_vpc_endpoint</code> - VPC endpoint configuration</li></ul>
-<p><strong>Impact</strong>: These should all be <code>reversible</code> (you can recreate the exact config), but they're classified as <code>recoverable-with-effort</code> because they have unknown resource type and no safety features.</p>
-<p><strong>Proposed feature</strong>: <code>is_config_only</code> or <code>stores_data</code></p>
-<h3 id="gap-2-no-distinction-for-attachment-relationship-resources">Gap 2: No distinction for attachment/relationship resources</h3>
-<p><strong>Problem</strong>: Some resources represent relationships between other resources:</p>
-<ul><li><code>aws_iam_role_policy_attachment</code> - Links policy to role</li><li><code>aws_iam_user_policy_attachment</code> - Links policy to user</li><li><code>aws_iam_group_membership</code> - Links user to group</li><li><code>aws_lb_target_group_attachment</code> - Links target to target group</li><li><code>aws_security_group</code> → <code>aws_network_interface_sg_attachment</code></li></ul>
-<p><strong>Impact</strong>: Deleting these doesn't destroy data - both parent resources still exist. Should be <code>reversible</code>.</p>
-<p><strong>Proposed feature</strong>: <code>is_attachment</code> or <code>is_relationship</code></p>
-<h3 id="gap-3-recovery-window-semantics">Gap 3: Recovery window semantics</h3>
-<p><strong>Problem</strong>: Some resources have &quot;soft delete&quot; with configurable recovery:</p>
-<ul><li><code>aws_secretsmanager_secret</code> - <code>recovery_window_in_days</code> (7-30 days, or 0 for immediate)</li><li><code>aws_kms_key</code> - <code>deletion_window_in_days</code> (7-30 days)</li><li><code>aws_rds_cluster</code> - <code>delete_automated_backups</code> affects retention</li></ul>
-<p><strong>Current status</strong>: Known AWS Secrets Manager rules now classify recovery-window deletes as <code>recoverable-with-effort</code> and immediate/forced deletes as <code>unrecoverable</code>. The semantic profile also normalizes <code>recovery_window_in_days</code> and <code>deletion_window_in_days</code> for unknown resources.</p>
-<p><strong>Remaining risk</strong>: Provider child resources do not always expose parent retention settings. Azure Key Vault secrets, keys, and certificates return <code>needs-review</code> unless the plan includes recovery-level, retention, or purge-protection evidence.</p>
-<h3 id="gap-4-snapshot-retention-limit-not-recognized">Gap 4: Snapshot retention limit not recognized</h3>
-<p><strong>Problem</strong>: ElastiCache uses <code>snapshot_retention_limit</code> (0-35 days), not the standard snapshot attributes.</p>
-<pre><code>snapshot_retention_limit: 0  -&gt; no snapshots -&gt; unrecoverable
-snapshot_retention_limit: 7  -&gt; has snapshots -&gt; recoverable-from-backup</code></pre>
-<p><strong>Current status</strong>: Known ElastiCache rules now classify Redis/Valkey deletes without snapshot evidence as <code>unrecoverable</code>, retained snapshots/final snapshots as <code>recoverable-from-backup</code>, and Memcached deletes as <code>recoverable-with-effort</code> because cache contents are ephemeral.</p>
-<h3 id="gap-5-neptune-cluster-semantics">Gap 5: Neptune cluster semantics</h3>
-<p><strong>Problem</strong>: Neptune is graph-database state, but the generic classifier only saw broad deletion-protection and backup-like features.</p>
-<p><strong>Current status</strong>: Known Neptune rules now honor <code>deletion_protection</code>, <code>skip_final_snapshot</code>, <code>final_snapshot_identifier</code>, and <code>backup_retention_period</code>. Protected deletes are blocked, unprotected deletes without snapshots/backups are <code>unrecoverable</code>, and backup/final-snapshot evidence is <code>recoverable-from-backup</code>.</p>
-<h2 id="implemented-semantic-profile-contract">Implemented Semantic Profile Contract</h2>
-<p>The public classifier still exposes the original feature vector, but unknown-resource scoring now builds a semantic profile first. This profile is the BitNet-ready contract:</p>
-<pre><code>interface SemanticResourceProfile {
-  kind: 'storage' | 'database' | 'disk' | 'iam' | 'dns' | 'credential' | 'config' | 'relationship' | 'unknown';
-  isConfigOnly: boolean;
-  isRelationship: boolean;
-  hasDeletionProtection: boolean;
-  hasVersioning: boolean;
-  hasBackup: boolean;
-  hasRecoveryWindow: boolean;
-  recoveryWindowDays: number;
-  skipsFinalSnapshot: boolean;
-  forceDeletes: boolean;
-  evidence: string[];
-}</code></pre>
-<h2 id="derivation-rules">Derivation Rules</h2>
-<p>How to determine these features:</p>
-<h3 id="is-config-only">is_config_only</h3>
-<ul><li>Resource type ends with <code>_policy</code>, <code>_configuration</code>, <code>_config</code>, <code>_rule</code>, <code>_setting</code> → likely config</li><li>Resource has only <code>arn</code>, <code>id</code>, and config fields (no <code>size</code>, <code>count</code>, <code>instances</code>) → likely config</li><li>Known config resource types from documentation</li></ul>
-<h3 id="is-relationship">is_relationship</h3>
-<ul><li>Resource type ends with <code>_attachment</code>, <code>_membership</code>, <code>_association</code> → attachment</li><li>Resource has exactly 2 foreign key references (e.g., <code>role</code>, <code>policy_arn</code>) → attachment</li></ul>
-<h3 id="has-recovery-window">has_recovery_window</h3>
-<ul><li>Check for <code>recovery_window_in_days</code>, <code>deletion_window_in_days</code> attributes</li><li>Value &gt; 0 means soft delete is enabled</li></ul>
-<h2 id="implications">Implications</h2>
-<p>1. <strong>Rules remain authoritative</strong> - Known handlers still decide first. 2. <strong>Unknown scoring is structured</strong> - The scorer reads a semantic profile instead of raw ad hoc attributes. 3. <strong>BitNet can replace the scorer</strong> - A compact model can consume the same profile while preserving tier, confidence, evidence, and abstention behavior.</p>
-<h2 id="recommended-next-steps">Recommended Next Steps</h2>
-<p>1. Add more golden unknown-resource fixtures for cloud-native resources that do not follow Terraform naming conventions. 2. Add provider-schema-derived metadata where static naming patterns are too weak. 3. Replace the deterministic semantic scorer with BitNet weights once the fixture corpus is broad enough to measure false-safe risk.</p>
+    <h1 id="classifier-notes">Classifier Notes</h1>
+<p>RecourseOS is rules-first. Deterministic handlers decide known AWS, GCP, Azure, and Azure AD resource types. The unknown-resource classifier only runs when a resource type does not have a known handler and <code>--classifier</code> is enabled.</p>
+<h2 id="public-contract">Public Contract</h2>
+<p>Classifier output uses the same recoverability tiers as deterministic rules:</p>
+<ul><li><code>reversible</code></li><li><code>recoverable-with-effort</code></li><li><code>recoverable-from-backup</code></li><li><code>unrecoverable</code></li><li><code>needs-review</code></li></ul>
+<p>Unknown-resource classification is conservative. When evidence is weak, ambiguous, or missing, RecourseOS should return <code>needs-review</code> instead of marking a destructive change safe.</p>
+<h2 id="semantic-signals">Semantic Signals</h2>
+<p>The classifier looks for provider-neutral safety signals that commonly affect recoverability:</p>
+<ul><li>deletion protection</li><li>versioning or soft delete</li><li>backups, snapshots, and point-in-time recovery</li><li>recovery or deletion windows</li><li>config-only resources</li><li>attachment or relationship resources</li><li>credential material that cannot be recovered after deletion</li></ul>
+<p>These signals help RecourseOS generalize across long-tail provider resources without relying only on cloud-specific type names.</p>
 <h2 id="known-limits">Known Limits</h2>
-<h3 id="route53-record-classification">Route53 Record Classification</h3>
-<p>The classifier returns <code>unrecoverable</code> for Route53 record deletions at 72.7% confidence. This is arguably wrong — you can recreate a DNS record if you know the values — but the *actual* recoverability depends on factors outside the plan:</p>
-<ul><li>Do you have a zone backup or the record values documented?</li><li>For A records: is the IP address still assigned to you?</li><li>For ALIAS records: does the target resource still exist?</li></ul>
-<p>We've chosen to leave this as a documented limit rather than force a verdict. Future versions may ask the user for context.</p>
-<h3 id="multi-cloud-suffix-detection-updated-v0-1-2">Multi-Cloud Suffix Detection (Updated v0.1.2)</h3>
-<p>Cloud-specific suffix patterns have been added:</p>
-<table><thead><tr><th>Cloud</th><th>Config-only Suffixes</th><th>Attachment Suffixes</th></tr></thead><tbody><tr><td>AWS</td><td><code>_policy</code>, <code>_config</code>, <code>_rule</code>, <code>_setting</code>, <code>_endpoint</code></td><td><code>_attachment</code>, <code>_membership</code>, <code>_association</code></td></tr><tr><td>GCP</td><td><code>_iam_policy</code>, <code>_iam_binding</code>, <code>_iam_member</code>, <code>_access_level</code></td><td><code>_binding</code>, <code>_member</code></td></tr><tr><td>Azure</td><td><code>_diagnostic_setting</code></td><td><code>_assignment</code></td></tr></tbody></table>
-<p><strong>What's working:</strong></p>
-<ul><li><code>google_project_iam_binding</code> → reversible (suffix detection)</li><li><code>google_project_iam_member</code> → reversible (suffix detection)</li><li><code>azurerm_role_assignment</code> → reversible (suffix detection)</li></ul>
-<p><strong>What's not yet working:</strong> The patterns are still heuristics. For true multi-cloud support, suffix detection needs to be replaced with structural detection (does this resource type represent a relationship between two other resources, vs. owning data of its own).</p>
-<h3 id="abstract-feature-transfer">Abstract Feature Transfer</h3>
-<p><strong>Validated (v0.1.2):</strong></p>
-<table><thead><tr><th>Resource</th><th>Feature</th><th>Result</th></tr></thead><tbody><tr><td><code>google_sql_database_instance</code></td><td><code>deletion_protection: true</code></td><td><code>reversible</code> ✓</td></tr><tr><td><code>google_storage_bucket</code></td><td><code>versioning: { enabled: true }</code></td><td>Feature detected (<code>has_versioning: 1</code>)</td></tr></tbody></table>
-<p>The <code>google_sql_database_instance</code> test is significant: no GCP-specific code was written. The classifier recognized <code>deletion_protection</code> as an abstract safety pattern and applied it correctly.</p>
-<h3 id="decision-tree-gap-versioning-for-unknown-types">Decision Tree Gap: Versioning for Unknown Types</h3>
-<p><strong>Problem discovered in v0.1.2 testing:</strong></p>
-<p>The decision tree only checks <code>has_versioning</code> for resource types 16-20 (S3-related). Unknown types (<code>resource_type_encoded = -1</code>) fall through a different branch that ignores versioning entirely.</p>
-<pre><code>google_storage_bucket with versioning: { enabled: true }
-  → Feature extracted: has_versioning = 1
-  → Decision tree path: resource_type_encoded = -1 &lt; 6.5 → early branch
-  → Result: recoverable-with-effort (versioning ignored)
-  → Expected: recoverable-from-backup</code></pre>
-<p>Before the semantic unknown-resource classifier, both GCP buckets (with and without versioning) got <code>recoverable-with-effort</code> because the tree was trained only on known AWS types. The feature was detected but not used.</p>
-<p><strong>Current fix:</strong> <code>src/classifier/semantic-profile.ts</code> builds a provider-neutral profile before <code>src/classifier/semantic-unknown.ts</code> scores unknown resource types. It recognizes storage versioning, backup retention, PITR, deletion protection, recovery/deletion windows, IAM relationships, DNS records, and credential material across providers. Low-evidence destructive resources return <code>needs-review</code>.</p>
-<p><strong>Remaining gap:</strong> This is a deterministic semantic scorer, not trained BitNet weights. It preserves the public contract and safety behavior that BitNet should eventually implement.</p>
-<h2 id="bitnet-compatible-unknown-classifier">BitNet-Compatible Unknown Classifier</h2>
-<p>BitNet is intended to replace the semantic scorer for recoverability classification of unknown resource types. It should not replace hand-written AWS, GCP, or Azure rules.</p>
-<p><strong>What is implemented now:</strong></p>
-<ul><li>Known resource handlers remain authoritative.</li><li>Unknown resources are classified by a provider-neutral semantic profile before falling back to the legacy decision tree.</li><li>The unknown classifier can return <code>needs-review</code> when evidence is incomplete.</li><li>Output includes tier, confidence, and evidence strings.</li></ul>
-<p><strong>Why BitNet still helps later:</strong></p>
-<ul><li>Learns abstract patterns such as <code>deletion_protection=true</code> on any provider.</li><li>Treats semantically related attributes, such as <code>recovery_window_in_days</code> and <code>deletion_window_in_days</code>, as the same safety concept.</li><li>Classifies <code>aws_s3_bucket</code>, <code>google_storage_bucket</code>, and <code>azurerm_storage_account</code> through storage semantics instead of provider-specific type IDs.</li><li>Reduces reliance on suffix heuristics for config-only and attachment resources.</li></ul>
-<p><strong>Safety requirements:</strong></p>
-<ul><li>Known resource handlers remain authoritative.</li><li>Unknown resources can return <code>needs-review</code> when evidence is incomplete.</li><li>Model output must include tier, confidence, evidence, and missing evidence.</li><li>Golden fixtures must include false-safe cases where the classifier must avoid understating risk.</li></ul>
-<p><strong>When BitNet becomes active:</strong></p>
-<p>BitNet should replace <code>src/classifier/semantic-unknown.ts</code> after the public fixture corpus includes enough known and unknown AWS, GCP, and Azure resources to evaluate false-safe risk. Known handlers for services such as EFS, BigQuery, Cosmos DB, Secrets Manager, Key Vault, ElastiCache, and Neptune should continue to run first.</p>
-<h2 id="files">Files</h2>
-<ul><li>Test file: <code>tests/schema-validation.test.ts</code></li><li>Unknown semantic classifier tests: <code>tests/semantic-unknown-classifier.test.ts</code></li><li>Feature extractor: <code>src/classifier/feature-extractor.ts</code></li><li>Semantic profile contract: <code>src/classifier/semantic-profile.ts</code></li><li>Semantic unknown classifier: <code>src/classifier/semantic-unknown.ts</code></li><li>Dual-verdict (rules-first orchestration): <code>src/classifier/dual-verdict.ts</code></li></ul>
+<p>Some resources require context that may not exist in a Terraform plan, shell command, or MCP tool call:</p>
+<ul><li>DNS record recovery can depend on out-of-band zone backups, IP ownership, and target resource state.</li><li>Secret, key, and certificate child resources may not include parent retention or purge-protection settings.</li><li>Unknown provider resources can look similar while having very different recovery behavior.</li><li>Live cloud state is only available when explicit evidence is supplied.</li></ul>
+<p>In these cases, RecourseOS should escalate or require review.</p>
+<h2 id="bitnet-path">BitNet Path</h2>
+<p>BitNet is planned for unknown-resource classification, not for replacing deterministic handlers. Known rules remain authoritative because they encode provider-specific recovery behavior.</p>
+<p>The public contract should not change when BitNet is introduced: agents and CI systems should continue to receive the same tiers, decisions, confidence, evidence, and missing-evidence fields.</p>
+<h2 id="safety-requirements">Safety Requirements</h2>
+<ul><li>Rules win for known resources.</li><li>Unknown destructive resources require evidence before they can be treated as safe.</li><li>Classifier output must include confidence and evidence.</li><li>Missing recovery evidence should be visible to users and agents.</li><li>False-safe outcomes are more dangerous than false-review outcomes.</li></ul>
     <p class="source-note">Generated from <code>docs/schema-gaps.md</code>. Markdown remains available for source review.</p>
   </article>
 </main>
