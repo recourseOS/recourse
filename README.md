@@ -156,6 +156,8 @@ Configuration:
 
 Run `recourse-cli resources` to see the full list.
 
+Golden provider fixtures live in `tests/fixtures/plans/` and are documented in `docs/golden-fixtures.md`. They cover AWS, GCP, Azure, and unknown provider semantics for stable local and future cloud ingestion tests.
+
 ### GCP & Azure
 
 GCP and Azure now have first-class deterministic handlers for common destructive resources. The unknown-resource classifier remains available for ambiguous resource types, but deterministic rules win when a provider-specific handler exists.

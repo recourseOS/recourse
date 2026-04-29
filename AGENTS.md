@@ -22,7 +22,7 @@ Use strict TypeScript with ES modules and explicit `.js` extensions in relative 
 
 ## Testing Guidelines
 
-Tests use Vitest and live in `tests/*.test.ts`. Name suites after the unit or behavior under test, such as `describe('analyzeBlastRadius', ...)`, and write fixtures that mirror Terraform JSON. Add tests for new handlers, parser behavior, or recoverability edge cases; use `tests/multicloud-rules.test.ts` for provider-specific GCP/Azure rules and `tests/semantic-unknown-classifier.test.ts` for provider-neutral unknown-resource behavior. Run `npm test` before opening a pull request; run `npm run build` when touching public types or CLI wiring.
+Tests use Vitest and live in `tests/*.test.ts`. Name suites after the unit or behavior under test, such as `describe('analyzeBlastRadius', ...)`, and write fixtures that mirror Terraform JSON. Add tests for new handlers, parser behavior, or recoverability edge cases; use `tests/multicloud-rules.test.ts` for provider-specific GCP/Azure rules, `tests/semantic-unknown-classifier.test.ts` for provider-neutral unknown-resource behavior, and `tests/golden-plan-fixtures.test.ts` for end-to-end provider fixture contracts. Run `npm test` before opening a pull request; run `npm run build` when touching public types or CLI wiring.
 
 ## Commit & Pull Request Guidelines
 
