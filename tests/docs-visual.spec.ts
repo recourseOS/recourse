@@ -7,6 +7,8 @@ const pages = [
   '/golden-fixtures.html',
   '/live-aws-tests.html',
   '/schema-gaps.html',
+  '/agent-interface.html',
+  '/public-boundaries.html',
 ];
 
 test.describe('public docs visual QA', () => {
@@ -16,6 +18,16 @@ test.describe('public docs visual QA', () => {
       page.on('console', message => {
         if (message.type() === 'error') consoleErrors.push(message.text());
       });
+      await page.route('https://fonts.googleapis.com/**', route => route.fulfill({
+        status: 200,
+        contentType: 'text/css',
+        body: '',
+      }));
+      await page.route('https://fonts.gstatic.com/**', route => route.fulfill({
+        status: 200,
+        contentType: 'font/woff2',
+        body: '',
+      }));
 
       await page.goto(path);
       await expect(page.locator('body')).toBeVisible();

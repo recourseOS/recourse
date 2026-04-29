@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>RecourseOS - Golden Evaluation Fixtures</title>
-<meta name="description" content="Stable public fixtures that validate evaluator and compiled CLI behavior." />
+<title>RecourseOS - Agent Interface</title>
+<meta name="description" content="MCP tool contract and consequence report semantics for agents that call RecourseOS before acting." />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -218,27 +218,85 @@
 </nav>
 <header class="container">
   <div class="eyebrow">public docs</div>
-  <h1>Golden Evaluation Fixtures</h1>
-  <p class="lede">Stable public fixtures that validate evaluator and compiled CLI behavior.</p>
+  <h1>Agent Interface</h1>
+  <p class="lede">MCP tool contract and consequence report semantics for agents that call RecourseOS before acting.</p>
 </header>
 <main class="container doc-shell">
-  <aside class="toc"><div class="toc-title">On this page</div><a href="#fixture-set">Fixture Set</a><a href="#run-locally">Run Locally</a><a href="#cloud-contract">Cloud Contract</a></aside>
+  <aside class="toc"><div class="toc-title">On this page</div><a href="#agent-contract">Agent Contract</a><a href="#proposed-mcp-tools">Proposed MCP Tools</a><a href="#output-schema">Output Schema</a><a href="#agent-instructions">Agent Instructions</a><a href="#error-behavior">Error Behavior</a><a href="#bitnet-placement">BitNet Placement</a></aside>
   <article>
-    <h1 id="golden-evaluation-fixtures">Golden Evaluation Fixtures</h1>
-<p>These fixtures are stable Terraform plan JSON inputs used to validate Recourse's public evaluator contract. They are intentionally small, provider-specific, and safe to share.</p>
-<h2 id="fixture-set">Fixture Set</h2>
-<table><thead><tr><th>Fixture</th><th>Purpose</th><th>Expected decision</th></tr></thead><tbody><tr><td><code>tests/fixtures/plans/aws-golden.json</code></td><td>AWS rule authority for RDS, S3 object recovery, Secrets Manager, ElastiCache, Neptune, and EFS</td><td><code>block</code></td></tr><tr><td><code>tests/fixtures/plans/gcp-golden.json</code></td><td>First-class GCP storage, Cloud SQL, IAM, Secret Manager, and BigQuery rules</td><td><code>block</code></td></tr><tr><td><code>tests/fixtures/plans/azure-golden.json</code></td><td>First-class Azure storage, database, Cosmos DB, role assignment, and Key Vault secret rules</td><td><code>block</code></td></tr><tr><td><code>tests/fixtures/plans/unknown-semantic-golden.json</code></td><td>Provider-neutral unknown-resource classifier behavior</td><td><code>escalate</code></td></tr></tbody></table>
-<h2 id="run-locally">Run Locally</h2>
-<pre><code>npm run build
-npx vitest --run tests/golden-plan-fixtures.test.ts
-npx vitest --run tests/cli-scenarios.test.ts</code></pre>
-<p>To inspect a fixture through the CLI:</p>
-<pre><code>node dist/index.js evaluate terraform tests/fixtures/plans/gcp-golden.json --classifier</code></pre>
-<h2 id="cloud-contract">Cloud Contract</h2>
-<p>These fixtures model the payload shape Recourse Cloud should ingest later: a local consequence report with deterministic recoverability tiers, evidence strings, policy decision, actor context, and mutation targets. Cloud can store, compare, and govern these reports without changing the local evaluator behavior.</p>
-<p>Known resource handlers remain authoritative. The unknown semantic fixture verifies that low-evidence destructive resources become <code>needs-review</code> instead of being marked safe.</p>
-<p>For the generated list of deterministic resource handlers, see <code>docs/resource-coverage.md</code>.</p>
-    <p class="source-note">Generated from <code>docs/golden-fixtures.md</code>. Markdown remains available for source review.</p>
+    <h1 id="agent-interface">Agent Interface</h1>
+<p>RecourseOS is an AI-ready consequence oracle for agents before they act. Agents submit a proposed mutation and receive a structured <code>ConsequenceReport</code> that tells them whether to proceed, warn, block, or ask a human for review.</p>
+<h2 id="agent-contract">Agent Contract</h2>
+<p>Agents should call Recourse before destructive or privileged actions, especially infrastructure, cloud, shell, MCP, or deployment operations.</p>
+<p>Decision meanings:</p>
+<table><thead><tr><th>Decision</th><th>Agent behavior</th></tr></thead><tbody><tr><td><code>allow</code></td><td>Continue. The mutation is expected to be reversible.</td></tr><tr><td><code>warn</code></td><td>Continue only after surfacing recovery requirements to the user.</td></tr><tr><td><code>block</code></td><td>Do not execute unless the user changes the plan or policy.</td></tr><tr><td><code>escalate</code></td><td>Ask a human for review; evidence is insufficient for safe automation.</td></tr></tbody></table>
+<h2 id="proposed-mcp-tools">Proposed MCP Tools</h2>
+<p>The MCP server should expose small, explicit tools over the existing evaluator.</p>
+<h3 id="recourse-evaluate-terraform"><code>recourse_evaluate_terraform</code></h3>
+<p>Evaluates Terraform plan JSON.</p>
+<p>Input:</p>
+<pre><code>{
+  &quot;plan&quot;: {},
+  &quot;state&quot;: {},
+  &quot;classifier&quot;: true,
+  &quot;actor&quot;: &quot;agent/deploy&quot;,
+  &quot;environment&quot;: &quot;production&quot;
+}</code></pre>
+<h3 id="recourse-evaluate-shell"><code>recourse_evaluate_shell</code></h3>
+<p>Evaluates a shell command before execution.</p>
+<p>Input:</p>
+<pre><code>{
+  &quot;command&quot;: &quot;aws s3 rb s3://prod-audit-logs --force&quot;,
+  &quot;actor&quot;: &quot;agent/sre&quot;,
+  &quot;environment&quot;: &quot;production&quot;,
+  &quot;evidence&quot;: {}
+}</code></pre>
+<h3 id="recourse-evaluate-mcp-call"><code>recourse_evaluate_mcp_call</code></h3>
+<p>Evaluates another MCP tool call before the agent invokes it.</p>
+<p>Input:</p>
+<pre><code>{
+  &quot;server&quot;: &quot;aws&quot;,
+  &quot;tool&quot;: &quot;s3.delete_bucket&quot;,
+  &quot;arguments&quot;: {
+    &quot;bucket&quot;: &quot;prod-audit-logs&quot;
+  },
+  &quot;actor&quot;: &quot;agent/infra&quot;
+}</code></pre>
+<h3 id="recourse-explain-verdict"><code>recourse_explain_verdict</code></h3>
+<p>Returns structured reasoning for one target in a prior report or plan. Agents should use this when explaining a block, warning, or escalation to a user.</p>
+<h3 id="recourse-supported-resources"><code>recourse_supported_resources</code></h3>
+<p>Returns deterministic resource coverage so agents can decide when a verdict came from a known rule versus the unknown-resource classifier.</p>
+<h2 id="output-schema">Output Schema</h2>
+<p>All evaluator tools return a <code>ConsequenceReport</code>.</p>
+<pre><code>{
+  &quot;schemaVersion&quot;: &quot;recourse.consequence.v1&quot;,
+  &quot;decision&quot;: &quot;block&quot;,
+  &quot;decisionReason&quot;: &quot;Recoverability is unrecoverable&quot;,
+  &quot;summary&quot;: {
+    &quot;totalMutations&quot;: 1,
+    &quot;needsReview&quot;: false,
+    &quot;hasUnrecoverable&quot;: true,
+    &quot;dependencyImpactCount&quot;: 0,
+    &quot;worstRecoverability&quot;: {
+      &quot;tier&quot;: 4,
+      &quot;label&quot;: &quot;unrecoverable&quot;,
+      &quot;reasoning&quot;: &quot;skip_final_snapshot=true, no backup retention&quot;
+    }
+  },
+  &quot;mutations&quot;: []
+}</code></pre>
+<p>The implementation currently returns the report shape without an explicit <code>schemaVersion</code>; MCP output should add <code>schemaVersion: &quot;recourse.consequence.v1&quot;</code> at the top level and keep backward-compatible field names.</p>
+<h2 id="agent-instructions">Agent Instructions</h2>
+<p>Agents consuming Recourse should follow these rules:</p>
+<ul><li>Never execute a mutation when <code>decision</code> is <code>block</code>.</li><li>Never silently continue when <code>decision</code> is <code>escalate</code>.</li><li>For <code>warn</code>, include the recovery requirement in the user-facing response.</li><li>Prefer structured fields over parsing <code>reasoning</code> strings.</li><li>Treat <code>recoverability.source: &quot;rules&quot;</code> as authoritative for known resources.</li><li>Treat classifier verdicts as useful but lower confidence than rules.</li><li>Preserve <code>missingEvidence</code> when asking a human for review.</li></ul>
+<p>Example response:</p>
+<pre><code>I checked this with RecourseOS. It blocks the deletion because the RDS instance has skip_final_snapshot=true and backup_retention_period=0, so the database would be unrecoverable. I will not apply this plan unless you enable a final snapshot, backups, or explicitly override policy.</code></pre>
+<h2 id="error-behavior">Error Behavior</h2>
+<p>MCP tools should fail closed:</p>
+<ul><li>Invalid input: return an MCP error with validation details.</li><li>Unsupported source: return <code>decision: &quot;escalate&quot;</code> when the action can be parsed but not classified.</li><li>Internal error: return an MCP error; do not return <code>allow</code>.</li><li>Missing evidence: return <code>needs-review</code> or <code>escalate</code>, not <code>allow</code>.</li></ul>
+<h2 id="bitnet-placement">BitNet Placement</h2>
+<p>BitNet should replace the unknown-resource semantic scorer, not deterministic handlers. Known rules remain first because they encode provider-specific recovery behavior. BitNet becomes active after the public fixture corpus is broad enough to measure false-safe risk across unknown AWS, GCP, Azure, and long-tail provider resources.</p>
+    <p class="source-note">Generated from <code>docs/agent-interface.md</code>. Markdown remains available for source review.</p>
   </article>
 </main>
 </body>

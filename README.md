@@ -148,6 +148,12 @@ recourse evaluate mcp '{"server":"aws","tool":"s3.delete_bucket","arguments":{"b
 
 `evaluate` emits a normalized consequence report for Terraform, shell, or MCP inputs. This is the public contract Recourse Cloud can ingest later.
 
+### Agent Interface
+
+RecourseOS is designed to become the consequence layer agents call before they act. The public MCP tool contract and agent decision semantics are documented in `docs/agent-interface.md`.
+
+Public documentation boundaries are documented in `docs/public-boundaries.md`; keep private strategy, credentials, model weights, proprietary datasets, telemetry, and hosted-service internals out of this repository.
+
 ### Read-Only AWS Evidence
 
 ```bash
