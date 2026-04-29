@@ -1,5 +1,6 @@
 node_modules/
 dist/
+docs/ARCHITECTURE.md
 *.log
 .DS_Store
 recourseOS_idea.md
