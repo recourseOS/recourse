@@ -1,0 +1,56 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.6.0",
+  "resource_changes": [
+    {
+      "address": "azurerm_mssql_database.unprotected",
+      "type": "azurerm_mssql_database",
+      "name": "unprotected",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "name": "prod-orders",
+          "server_id": "/subscriptions/000/resourceGroups/prod/providers/Microsoft.Sql/servers/prod-sql"
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "azurerm_storage_account.retained",
+      "type": "azurerm_storage_account",
+      "name": "retained",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "name": "prodauditlogs",
+          "blob_properties": [{
+            "versioning_enabled": true,
+            "delete_retention_policy": [{ "enabled": true, "days": 14 }],
+            "container_delete_retention_policy": [{ "enabled": true, "days": 14 }]
+          }]
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "azurerm_role_assignment.reader",
+      "type": "azurerm_role_assignment",
+      "name": "reader",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "scope": "/subscriptions/000/resourceGroups/prod",
+          "role_definition_name": "Reader",
+          "principal_id": "00000000-0000-0000-0000-000000000001"
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    }
+  ]
+}

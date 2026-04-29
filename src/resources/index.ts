@@ -18,6 +18,14 @@ import { snsHandler } from './aws/sns.js';
 import { sqsHandler } from './aws/sqs.js';
 import { cloudwatchHandler } from './aws/cloudwatch.js';
 import { kmsHandler } from './aws/kms.js';
+import { gcpStorageHandler } from './gcp/storage.js';
+import { gcpSqlHandler } from './gcp/sql.js';
+import { gcpIamHandler } from './gcp/iam.js';
+import { gcpCoreHandler } from './gcp/core.js';
+import { azureStorageHandler } from './azure/storage.js';
+import { azureSqlHandler } from './azure/sql.js';
+import { azureIamHandler } from './azure/iam.js';
+import { azureCoreHandler } from './azure/core.js';
 
 // Registry of all handlers
 const handlers: ResourceHandler[] = [
@@ -36,6 +44,14 @@ const handlers: ResourceHandler[] = [
   sqsHandler,
   cloudwatchHandler,
   kmsHandler,
+  gcpStorageHandler,
+  gcpSqlHandler,
+  gcpIamHandler,
+  gcpCoreHandler,
+  azureStorageHandler,
+  azureSqlHandler,
+  azureIamHandler,
+  azureCoreHandler,
 ];
 
 // Build a map from resource type to handler for O(1) lookup

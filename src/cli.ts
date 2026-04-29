@@ -7,6 +7,7 @@ import { formatReport } from './output/human.js';
 import { formatJson } from './output/json.js';
 import { formatConsequenceJson } from './output/consequence-json.js';
 import { formatExplain, formatExplainJson } from './output/explain.js';
+import { resolveCloudSubmitConfig, submitConsequenceReport } from './cloud/client.js';
 import {
   evaluateMcpToolCallConsequences,
   evaluateShellCommandConsequences,
@@ -142,6 +143,9 @@ program
   .option('--aws-dynamodb-evidence <file>', 'Path to DynamoDB evidence JSON from `recourse evidence aws-dynamodb`')
   .option('--aws-iam-evidence <file>', 'Path to IAM evidence JSON from `recourse evidence aws-iam-role`')
   .option('--aws-kms-evidence <file>', 'Path to KMS evidence JSON from `recourse evidence aws-kms-key`')
+  .option('--submit', 'Submit the consequence report to Recourse Cloud after local evaluation')
+  .option('--cloud-url <url>', 'Recourse Cloud base URL (defaults to RECOURSE_CLOUD_URL)')
+  .option('--cloud-timeout-ms <ms>', 'Recourse Cloud submission timeout in milliseconds', '5000')
   .option('--fail-on <decision>', 'Exit with code 1 if decision reaches: warn, escalate, block', 'block')
   .action(async (source: string, input: string, options: {
     state?: string;
@@ -154,6 +158,9 @@ program
     awsDynamodbEvidence?: string;
     awsIamEvidence?: string;
     awsKmsEvidence?: string;
+    submit?: boolean;
+    cloudUrl?: string;
+    cloudTimeoutMs: string;
     failOn: string;
   }) => {
     try {
@@ -183,6 +190,23 @@ program
           : evaluateMcpToolCallConsequences(parseMcpInput(input), { adapterContext, awsEvidence });
 
       console.log(formatConsequenceJson(report));
+
+      if (options.submit) {
+        try {
+          const submitted = await submitConsequenceReport(report, resolveCloudSubmitConfig({
+            cloudUrl: options.cloudUrl,
+            organizationId: process.env.RECOURSE_ORGANIZATION_ID,
+            actorId: options.actor ?? process.env.RECOURSE_ACTOR_ID,
+            environment: options.environment,
+            source,
+            timeoutMs: Number(options.cloudTimeoutMs),
+          }));
+          const policyAction = submitted.policyResult?.action ? ` policy=${submitted.policyResult.action}` : '';
+          console.error(`Recourse Cloud: submitted evaluation ${submitted.id}${policyAction}`);
+        } catch (error) {
+          console.error(`Recourse Cloud: submission failed: ${error instanceof Error ? error.message : error}`);
+        }
+      }
 
       if (shouldFailOnDecision(report.decision, options.failOn)) {
         process.exit(1);

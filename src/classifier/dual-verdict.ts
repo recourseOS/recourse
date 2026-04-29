@@ -21,13 +21,17 @@ import {
 import { getHandler, hasHandler } from '../resources/index.js';
 import { classifyFromFeatures, type ClassifierResult } from './decision-tree.js';
 import { extractFeatures, explainFeatures } from './feature-extractor.js';
+import { classifyUnknownResourceSemantically, type SemanticClassifierResult } from './semantic-unknown.js';
+
+type UnknownClassifierResult = ClassifierResult | SemanticClassifierResult;
 
 // Map classifier tier strings to enum
-const tierFromString: Record<string, RecoverabilityTier> = {
+const tierFromString: Record<UnknownClassifierResult['tier'], RecoverabilityTier> = {
   'reversible': RecoverabilityTier.REVERSIBLE,
   'recoverable-with-effort': RecoverabilityTier.RECOVERABLE_WITH_EFFORT,
   'recoverable-from-backup': RecoverabilityTier.RECOVERABLE_FROM_BACKUP,
   'unrecoverable': RecoverabilityTier.UNRECOVERABLE,
+  'needs-review': RecoverabilityTier.NEEDS_REVIEW,
 };
 
 // Minimum confidence threshold for classifier-only verdicts
@@ -242,8 +246,11 @@ export function getRecoverabilityDual(
 function getClassifierVerdict(
   change: ResourceChange,
   state: TerraformState | null
-): ClassifierResult {
+): UnknownClassifierResult {
   const features = extractFeatures(change, state);
+  if (features.resource_type_encoded === -1) {
+    return classifyUnknownResourceSemantically(change, state, features);
+  }
   return classifyFromFeatures(features);
 }
 
@@ -252,7 +259,7 @@ function getClassifierVerdict(
  */
 function buildClassifierReasoning(
   resourceType: string,
-  result: ClassifierResult,
+  result: UnknownClassifierResult,
   featureExplanation: string[]
 ): string {
   const confidencePct = (result.confidence * 100).toFixed(0);
@@ -261,12 +268,17 @@ function buildClassifierReasoning(
     : '';
 
   if (result.confidence >= 0.9) {
-    return `Classified as ${result.tier}${featureSummary}`;
+    return `Classified as ${result.tier}${featureSummary}${evidenceSummary(result)}`;
   } else if (result.confidence >= CONFIDENCE_THRESHOLD) {
-    return `Likely ${result.tier} (${confidencePct}% confidence)${featureSummary}`;
+    return `Likely ${result.tier} (${confidencePct}% confidence)${featureSummary}${evidenceSummary(result)}`;
   } else {
-    return `Uncertain: ${result.tier} (${confidencePct}% confidence) — limited training data for ${resourceType}`;
+    return `Uncertain: ${result.tier} (${confidencePct}% confidence) — limited training data for ${resourceType}${evidenceSummary(result)}`;
   }
+}
+
+function evidenceSummary(result: UnknownClassifierResult): string {
+  if (!('evidence' in result) || !result.evidence.length) return '';
+  return ` Evidence: ${result.evidence.slice(0, 3).join(', ')}`;
 }
 
 /**

@@ -136,7 +136,7 @@ How to determine these features:
 
 1. **Quick fix**: Add `snapshot_retention_limit` to feature extractor (5 min)
 2. **Medium fix**: Add name-based heuristics for config/attachment resources (1 hour)
-3. **Proper fix**: Replace decision-tree fallback with BitNet for unknown resources, backed by provider-schema metadata and golden multi-cloud fixtures
+3. **Proper fix**: Replace the semantic fallback with BitNet weights once model training and golden multi-cloud fixtures are ready
 
 ## Known Limits
 
@@ -193,17 +193,24 @@ google_storage_bucket with versioning: { enabled: true }
   → Expected: recoverable-from-backup
 ```
 
-Both GCP buckets (with and without versioning) currently get `recoverable-with-effort` because the tree was trained only on known AWS types. The feature is detected but not used.
+Before the semantic unknown-resource classifier, both GCP buckets (with and without versioning) got `recoverable-with-effort` because the tree was trained only on known AWS types. The feature was detected but not used.
 
-**Impact:** The classifier cannot distinguish dangerous from safe unknown storage resources based on versioning.
+**Current fix:** `src/classifier/semantic-unknown.ts` now runs before the decision tree for unknown resource types. It recognizes storage versioning, backup retention, PITR, deletion protection, recovery/deletion windows, IAM relationships, DNS records, and credential material across providers. Low-evidence destructive resources return `needs-review`.
 
-**Fix:** BitNet is the preferred replacement for this path. It should learn provider-neutral safety semantics instead of branching early on `resource_type_encoded`. A retrained decision tree can be a short-term baseline, but the durable fix is an unknown-resource classifier that understands abstract patterns like storage versioning, backup retention, soft-delete windows, and deletion protection across providers.
+**Remaining gap:** This is a deterministic semantic scorer, not trained BitNet weights. It preserves the public contract and safety behavior that BitNet should eventually implement.
 
-## BitNet Replacement Plan
+## BitNet-Compatible Unknown Classifier
 
-BitNet is intended to replace the decision tree for recoverability classification of unknown resource types. It should not replace hand-written AWS rules.
+BitNet is intended to replace the semantic scorer for recoverability classification of unknown resource types. It should not replace hand-written AWS, GCP, or Azure rules.
 
-**Why BitNet helps:**
+**What is implemented now:**
+
+- Known resource handlers remain authoritative.
+- Unknown resources are classified by provider-neutral semantics before falling back to the legacy decision tree.
+- The unknown classifier can return `needs-review` when evidence is incomplete.
+- Output includes tier, confidence, and evidence strings.
+
+**Why BitNet still helps later:**
 
 - Learns abstract patterns such as `deletion_protection=true` on any provider.
 - Treats semantically related attributes, such as `recovery_window_in_days` and `deletion_window_in_days`, as the same safety concept.
@@ -220,5 +227,7 @@ BitNet is intended to replace the decision tree for recoverability classificatio
 ## Files
 
 - Test file: `tests/schema-validation.test.ts`
+- Unknown semantic classifier tests: `tests/semantic-unknown-classifier.test.ts`
 - Feature extractor: `src/classifier/feature-extractor.ts`
+- Semantic unknown classifier: `src/classifier/semantic-unknown.ts`
 - Dual-verdict (config/attachment detection): `src/classifier/dual-verdict.ts`

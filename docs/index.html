@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>RecourseOS — Recoverability checks for Terraform</title>
-<meta name="description" content="Terraform plan tells you what will change. RecourseOS tells you what you can undo before you apply. Recoverability checks for Terraform plans." />
-<meta property="og:title" content="RecourseOS — Recoverability checks for Terraform" />
-<meta property="og:description" content="Know what you can undo before you apply." />
+<title>RecourseOS — Local consequence analysis for infrastructure changes</title>
+<meta name="description" content="RecourseOS classifies Terraform, shell, and MCP mutations by recoverability before destructive infrastructure changes land." />
+<meta property="og:title" content="RecourseOS — Local consequence analysis for infrastructure changes" />
+<meta property="og:description" content="Know what you cannot undo before a destructive change lands." />
 <meta property="og:type" content="website" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -590,12 +590,12 @@
 
 <header class="hero container">
   <div class="hero-copy">
-    <div class="eyebrow">v0.1.2 · Terraform · AWS-first</div>
+    <div class="eyebrow">v0.1.2 · Terraform · AWS · GCP · Azure</div>
     <h1>
-      Know what you can <span class="accent">undo</span> before you apply.
+      Know what you cannot <span class="accent">undo</span> before it lands.
     </h1>
     <p class="lede">
-      <strong>terraform plan</strong> tells you what will change. RecourseOS tells you what you can recover, what takes effort, and what may be gone forever before the change lands.
+      RecourseOS is a local consequence evaluator for Terraform plans, shell commands, and MCP tool calls. It classifies each mutation by recoverability before destructive infrastructure changes reach production.
     </p>
     <div class="hero-actions">
       <a class="button primary" href="#output">See sample output →</a>
@@ -620,7 +620,7 @@
         </svg>
         <div>
           <div class="lockup-name">Recourse<span class="os">OS</span></div>
-          <div class="lockup-tag">Know what you can <strong>undo</strong> before you apply.</div>
+          <div class="lockup-tag">Know what you cannot <strong>undo</strong> before it lands.</div>
         </div>
       </div>
 
@@ -633,23 +633,23 @@
         </div>
         <div class="verdict-row">
           <span class="red">✗</span>
-          <span>aws_s3_bucket.logs</span>
-          <span class="badge red">unrecoverable</span>
-        </div>
-        <div class="verdict-row">
-          <span class="amber">!</span>
-          <span>aws_kms_key.encryption</span>
-          <span class="badge amber">effort</span>
+          <span>google_storage_bucket.audit</span>
+          <span class="badge green">backup</span>
         </div>
         <div class="verdict-row">
           <span class="green">✓</span>
-          <span>aws_s3_object.archive[0]</span>
-          <span class="badge green">backup</span>
+          <span>azurerm_role_assignment.reader</span>
+          <span class="badge green">reversible</span>
+        </div>
+        <div class="verdict-row">
+          <span class="amber">!</span>
+          <span>acme_custom_resource.unknown</span>
+          <span class="badge amber">review</span>
         </div>
       </div>
 
       <p class="hero-note">
-        Deterministic local analysis. No agents. No SaaS. No signup. CI exits non-zero when a plan crosses the point of no return.
+        Deterministic local rules for known resources. Conservative semantic classification for unknown ones. Optional cloud submission stays separate from local decisions.
       </p>
     </div>
   </aside>
@@ -659,9 +659,9 @@
   <div class="container split">
     <div>
       <div class="section-label">Sample output</div>
-      <h2>Point-of-no-return checks for Terraform plans.</h2>
+      <h2>Point-of-no-return checks for infrastructure mutations.</h2>
       <p class="section-copy">
-        RecourseOS does not replace <code>terraform plan</code>. It reads the resulting plan and classifies destructive changes by recoverability, so reviewers know whether there is a safe path back.
+        RecourseOS does not replace <code>terraform plan</code>, shell guardrails, or MCP permissions. It turns proposed mutations into consequence reports so reviewers know whether there is a safe path back.
       </p>
     </div>
     <div class="terminal">
@@ -670,26 +670,26 @@
         <div class="title">~/infra · zsh</div>
       </div>
       <div class="terminal-body">
-        <div class="prompt-line"><span class="user">$</span> <span class="cmd">recourse plan terraform.tfplan</span></div>
+        <div class="prompt-line"><span class="user">$</span> <span class="cmd">recourse evaluate terraform plan.json --classifier</span></div>
 
         <div class="heading">DESTRUCTIVE CHANGES</div>
 
         <div class="row"><span class="marker red">✗</span><span class="body"><span class="red">DELETE</span> aws_db_instance.main</span></div>
         <div class="indent">recoverability: <span class="red">unrecoverable</span> · skip_final_snapshot=true, no backup retention</div>
 
-        <div class="row"><span class="marker red">✗</span><span class="body"><span class="red">DELETE</span> aws_s3_bucket.logs</span></div>
-        <div class="indent">recoverability: <span class="red">unrecoverable</span> · no versioning, object lock, replication, or external backup detected</div>
+        <div class="row"><span class="marker green">✓</span><span class="body"><span class="green">DELETE</span> google_storage_bucket.audit</span></div>
+        <div class="indent">recoverability: <span class="green">recoverable-from-backup</span> · GCS versioning enabled</div>
 
-        <div class="row"><span class="marker amber">!</span><span class="body"><span class="amber">DELETE</span> aws_kms_key.encryption</span></div>
-        <div class="indent">recoverability: <span class="amber">recoverable-with-effort</span> · deletion window can be cancelled before completion</div>
+        <div class="row"><span class="marker green">✓</span><span class="body"><span class="green">DELETE</span> azurerm_role_assignment.reader</span></div>
+        <div class="indent">recoverability: <span class="green">reversible</span> · config-only role assignment can be reapplied</div>
 
-        <div class="row"><span class="marker green">✓</span><span class="body"><span class="green">DELETE</span> aws_s3_object.archive[0]</span></div>
-        <div class="indent">recoverability: <span class="green">recoverable-from-backup</span> · versioning enabled, prior version retained</div>
+        <div class="row"><span class="marker amber">!</span><span class="body"><span class="amber">DELETE</span> acme_custom_resource.unknown</span></div>
+        <div class="indent">recoverability: <span class="amber">needs-review</span> · unknown resource semantics</div>
 
         <div class="summary">
           <div class="heading">SUMMARY</div>
-          <div><span class="red">●</span> unrecoverable: 2 &nbsp;·&nbsp; <span class="amber">●</span> recoverable-with-effort: 1 &nbsp;·&nbsp; <span class="green">●</span> recoverable-from-backup: 1</div>
-          <div class="exit">⚠ this plan contains unrecoverable changes · exit 1</div>
+          <div><span class="red">●</span> block: 1 &nbsp;·&nbsp; <span class="amber">●</span> escalate: 1 &nbsp;·&nbsp; <span class="green">●</span> warn/allow: 2</div>
+          <div class="exit">local report is authoritative · cloud submission optional</div>
         </div>
       </div>
     </div>
@@ -702,49 +702,49 @@
       <div class="section-label">Coverage</div>
       <h2>What it checks.</h2>
       <p class="section-copy">
-        AWS-first in v0.1, with resource-specific recoverability rules for destructive infrastructure changes. The goal is not generic “risk scoring”; it is a defensible answer to: <em>can we get this back?</em>
+        Known resources use deterministic provider rules. Unknown resource types use a conservative semantic classifier when enabled, so the evaluator can generalize without marking weak evidence as safe.
       </p>
     </div>
     <div class="coverage">
       <div class="coverage-item">
         <span class="num">01</span>
-        <span class="label">RDS</span>
-        <span class="desc">deletion protection, final snapshots, backup retention</span>
+        <span class="label">AWS data stores</span>
+        <span class="desc">RDS, DynamoDB, S3, EBS snapshots, backup retention</span>
       </div>
       <div class="coverage-item">
         <span class="num">02</span>
-        <span class="label">S3</span>
-        <span class="desc">versioning, MFA delete, object lock, replication</span>
+        <span class="label">AWS platform</span>
+        <span class="desc">EC2, Lambda, IAM, KMS, VPC, ELB, Route53, SNS/SQS</span>
       </div>
       <div class="coverage-item">
         <span class="num">03</span>
-        <span class="label">DynamoDB</span>
-        <span class="desc">PITR, deletion protection, table backups</span>
+        <span class="label">GCP storage</span>
+        <span class="desc">GCS buckets, objects, versioning, force destroy, bucket IAM</span>
       </div>
       <div class="coverage-item">
         <span class="num">04</span>
-        <span class="label">KMS</span>
-        <span class="desc">deletion windows and dependent encrypted resources</span>
+        <span class="label">GCP databases</span>
+        <span class="desc">Cloud SQL deletion protection, backups, PITR, users</span>
       </div>
       <div class="coverage-item">
         <span class="num">05</span>
-        <span class="label">EBS</span>
-        <span class="desc">snapshots, AMI backing, volume deletion behavior</span>
+        <span class="label">Azure storage</span>
+        <span class="desc">Storage accounts, blobs, containers, soft delete, versioning</span>
       </div>
       <div class="coverage-item">
         <span class="num">06</span>
-        <span class="label">CloudWatch Logs</span>
-        <span class="desc">retention, exports, loss windows</span>
+        <span class="label">Azure databases</span>
+        <span class="desc">SQL/MSSQL, PostgreSQL, MySQL, MariaDB retention signals</span>
       </div>
       <div class="coverage-item">
         <span class="num">07</span>
-        <span class="label">IAM</span>
-        <span class="desc">role, policy, and access-dependency impact</span>
+        <span class="label">Identity and secrets</span>
+        <span class="desc">IAM bindings, role assignments, service account keys, credentials</span>
       </div>
       <div class="coverage-item">
         <span class="num">08</span>
-        <span class="label">+ more</span>
-        <span class="desc">EC2, Lambda, VPC, ELB, Route53, SNS, SQS</span>
+        <span class="label">Unknown resources</span>
+        <span class="desc">semantic safety signals, BitNet-ready contract, needs-review fallback</span>
       </div>
     </div>
   </div>
@@ -761,15 +761,15 @@
       </div>
       <div class="principle">
         <div class="principle-title">No severity-by-vibes</div>
-        <div class="principle-body">Verdicts are factual: recoverable, recoverable-with-effort, recoverable-from-backup, unrecoverable, or blocked.</div>
+        <div class="principle-body">Verdicts are factual: reversible, recoverable-with-effort, recoverable-from-backup, unrecoverable, or needs-review.</div>
       </div>
       <div class="principle">
         <div class="principle-title">No moralizing your config</div>
         <div class="principle-body">It does not merely say “set deletion_protection.” It tells you what would change the recoverability verdict if you did.</div>
       </div>
       <div class="principle">
-        <div class="principle-title">No agents or SaaS</div>
-        <div class="principle-body">It runs as a CLI on your machine or in CI. No account, no external API, no plan data leaving the process.</div>
+        <div class="principle-title">Local first</div>
+        <div class="principle-body">It runs as a CLI on your machine or in CI. Optional cloud submission never changes the local report or local exit behavior.</div>
       </div>
     </div>
   </div>
@@ -779,13 +779,13 @@
   <div class="container split">
     <div>
       <div class="section-label">Honest limits</div>
-      <h2>What v0.1 does not cover.</h2>
+      <h2>What it does not pretend to know.</h2>
     </div>
     <div class="limits">
-      <p><strong>Terraform plans only.</strong> Not Pulumi, CloudFormation, or raw API calls yet.</p>
-      <p style="margin-top: 12px;"><strong>AWS-first.</strong> GCP and Azure are on the roadmap. The analysis framework can expand, but provider-specific resource libraries take time.</p>
-      <p style="margin-top: 12px;"><strong>Plan-file analysis, no live state.</strong> If a backup vault exists outside your Terraform configuration, RecourseOS cannot see it. <code>--live-state</code> is in development.</p>
-      <p style="margin-top: 12px;"><strong>Static analysis, not approvals.</strong> v0.1 flags and exits non-zero in CI on unrecoverable changes. Approval workflows come later, after the labels have earned trust.</p>
+      <p><strong>Evidence-bound.</strong> If an out-of-band backup exists but is not in the plan, state, or supplied evidence, RecourseOS will not pretend it verified recovery.</p>
+      <p style="margin-top: 12px;"><strong>Provider rules are incremental.</strong> AWS, GCP, and Azure have first-class coverage for common destructive resources, but long-tail services still need rules and fixtures.</p>
+      <p style="margin-top: 12px;"><strong>Unknown resources stay conservative.</strong> The semantic classifier can transfer safety patterns, but weak evidence becomes <code>needs-review</code>.</p>
+      <p style="margin-top: 12px;"><strong>Cloud is optional.</strong> The private control plane can ingest consequence reports later; the public CLI remains useful without signup, agents, or hosted state.</p>
     </div>
   </div>
 </section>

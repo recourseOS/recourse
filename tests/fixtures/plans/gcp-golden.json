@@ -1,0 +1,59 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.6.0",
+  "resource_changes": [
+    {
+      "address": "google_sql_database_instance.unprotected",
+      "type": "google_sql_database_instance",
+      "name": "unprotected",
+      "provider_name": "registry.terraform.io/hashicorp/google",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "name": "prod-orders",
+          "deletion_protection": false,
+          "settings": [{
+            "backup_configuration": [{
+              "enabled": false,
+              "point_in_time_recovery_enabled": false
+            }]
+          }]
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "google_storage_bucket.versioned",
+      "type": "google_storage_bucket",
+      "name": "versioned",
+      "provider_name": "registry.terraform.io/hashicorp/google",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "name": "prod-audit-logs",
+          "force_destroy": true,
+          "versioning": [{ "enabled": true }]
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "google_project_iam_binding.viewer",
+      "type": "google_project_iam_binding",
+      "name": "viewer",
+      "provider_name": "registry.terraform.io/hashicorp/google",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "project": "prod-platform",
+          "role": "roles/viewer",
+          "members": ["group:sre@example.com"]
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    }
+  ]
+}

@@ -20,6 +20,10 @@ export {
 } from './feature-extractor.js';
 
 export {
+  classifyUnknownResourceSemantically,
+} from './semantic-unknown.js';
+
+export {
   getRecoverabilityDual,
   isHighConfidence,
   isClassifierVerdict,
