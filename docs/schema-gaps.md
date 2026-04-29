@@ -15,6 +15,7 @@ Testing the classifier against edge-case resource types revealed gaps in the fea
 | recovery_window_in_days | Training gap | Added to retention/window detection (Secrets Manager) |
 | Secrets Manager window | Rule bug | recovery_window now detected via existing feature infrastructure |
 | Secrets and key material handlers | Rule coverage | Added deterministic AWS Secrets Manager, GCP Secret Manager, and Azure Key Vault child-resource rules |
+| ElastiCache and Neptune handlers | Rule coverage | Added deterministic AWS cache/graph database rules for snapshot retention, final snapshots, and deletion protection |
 
 ### What Remains as Known Limits
 
@@ -95,7 +96,13 @@ snapshot_retention_limit: 0  -> no snapshots -> unrecoverable
 snapshot_retention_limit: 7  -> has snapshots -> recoverable-from-backup
 ```
 
-**Fix**: `snapshot_retention_limit` is now recognized as backup evidence.
+**Current status**: Known ElastiCache rules now classify Redis/Valkey deletes without snapshot evidence as `unrecoverable`, retained snapshots/final snapshots as `recoverable-from-backup`, and Memcached deletes as `recoverable-with-effort` because cache contents are ephemeral.
+
+### Gap 5: Neptune cluster semantics
+
+**Problem**: Neptune is graph-database state, but the generic classifier only saw broad deletion-protection and backup-like features.
+
+**Current status**: Known Neptune rules now honor `deletion_protection`, `skip_final_snapshot`, `final_snapshot_identifier`, and `backup_retention_period`. Protected deletes are blocked, unprotected deletes without snapshots/backups are `unrecoverable`, and backup/final-snapshot evidence is `recoverable-from-backup`.
 
 ## Implemented Semantic Profile Contract
 

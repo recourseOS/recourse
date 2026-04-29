@@ -151,8 +151,81 @@ describe('multi-cloud deterministic recoverability rules', () => {
     }), null).tier).toBe(RecoverabilityTier.REVERSIBLE);
   });
 
+  it('classifies ElastiCache Redis deletes by snapshot evidence', () => {
+    expect(getRecoverability(change('aws_elasticache_cluster', {
+      cluster_id: 'prod-cache',
+      engine: 'redis',
+      snapshot_retention_limit: 0,
+    }), null).tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+    expect(getRecoverability(change('aws_elasticache_replication_group', {
+      replication_group_id: 'prod-cache-rg',
+      engine: 'redis',
+      snapshot_retention_limit: 7,
+    }), null).tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
+    expect(getRecoverability(change('aws_elasticache_cluster', {
+      cluster_id: 'prod-cache',
+      engine: 'redis',
+      final_snapshot_identifier: 'prod-cache-final',
+    }), null).tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
+  });
+
+  it('classifies Memcached cache deletion as recoverable with effort', () => {
+    expect(getRecoverability(change('aws_elasticache_cluster', {
+      cluster_id: 'prod-memcached',
+      engine: 'memcached',
+      snapshot_retention_limit: 0,
+    }), null).tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+  });
+
+  it('classifies ElastiCache snapshots as unrecoverable and config resources as reversible', () => {
+    expect(getRecoverability(change('aws_elasticache_snapshot', {
+      name: 'prod-cache-snapshot',
+    }), null).tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+    expect(getRecoverability(change('aws_elasticache_parameter_group', {
+      name: 'prod-cache-params',
+    }), null).tier).toBe(RecoverabilityTier.REVERSIBLE);
+    expect(getRecoverability(change('aws_elasticache_user_group_association', {
+      user_group_id: 'prod-cache-users',
+      user_id: 'app',
+    }), null).tier).toBe(RecoverabilityTier.REVERSIBLE);
+  });
+
+  it('classifies Neptune clusters by deletion protection and backup evidence', () => {
+    expect(getRecoverability(change('aws_neptune_cluster', {
+      cluster_identifier: 'prod-graph',
+      deletion_protection: true,
+      skip_final_snapshot: true,
+      backup_retention_period: 0,
+    }), null).tier).toBe(RecoverabilityTier.REVERSIBLE);
+    expect(getRecoverability(change('aws_neptune_cluster', {
+      cluster_identifier: 'prod-graph',
+      deletion_protection: false,
+      skip_final_snapshot: true,
+      backup_retention_period: 0,
+    }), null).tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+    expect(getRecoverability(change('aws_neptune_cluster', {
+      cluster_identifier: 'prod-graph',
+      deletion_protection: false,
+      skip_final_snapshot: true,
+      backup_retention_period: 7,
+    }), null).tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
+  });
+
+  it('classifies Neptune snapshots as unrecoverable and config resources as reversible', () => {
+    expect(getRecoverability(change('aws_neptune_cluster_snapshot', {
+      db_cluster_snapshot_identifier: 'prod-graph-snapshot',
+    }), null).tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+    expect(getRecoverability(change('aws_neptune_cluster_parameter_group', {
+      name: 'prod-graph-params',
+    }), null).tier).toBe(RecoverabilityTier.REVERSIBLE);
+  });
+
   it('registers first-class GCP and Azure resource handlers', () => {
     const types = getSupportedResourceTypes();
+    expect(types).toContain('aws_elasticache_cluster');
+    expect(types).toContain('aws_elasticache_replication_group');
+    expect(types).toContain('aws_neptune_cluster');
+    expect(types).toContain('aws_neptune_cluster_snapshot');
     expect(types).toContain('aws_secretsmanager_secret');
     expect(types).toContain('aws_secretsmanager_secret_version');
     expect(types).toContain('google_storage_bucket');

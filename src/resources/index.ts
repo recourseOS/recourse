@@ -19,6 +19,8 @@ import { sqsHandler } from './aws/sqs.js';
 import { cloudwatchHandler } from './aws/cloudwatch.js';
 import { kmsHandler } from './aws/kms.js';
 import { secretsManagerHandler } from './aws/secrets-manager.js';
+import { elasticacheHandler } from './aws/elasticache.js';
+import { neptuneHandler } from './aws/neptune.js';
 import { gcpStorageHandler } from './gcp/storage.js';
 import { gcpSqlHandler } from './gcp/sql.js';
 import { gcpIamHandler } from './gcp/iam.js';
@@ -48,6 +50,8 @@ const handlers: ResourceHandler[] = [
   cloudwatchHandler,
   kmsHandler,
   secretsManagerHandler,
+  elasticacheHandler,
+  neptuneHandler,
   gcpStorageHandler,
   gcpSqlHandler,
   gcpIamHandler,

@@ -2,7 +2,7 @@
 
 This document is generated from the public resource handler registry. Do not hand-edit the resource lists; run `npm run docs:coverage` after adding or removing handlers.
 
-Total deterministic resource types: 131
+Total deterministic resource types: 148
 
 Known resource handlers are authoritative. Unknown resource types can still be evaluated with `--classifier`, which uses provider-neutral semantic safety signals and returns `needs-review` when evidence is weak.
 
@@ -14,7 +14,7 @@ recourse evaluate terraform plan.json --classifier
 
 ## AWS
 
-Supported deterministic types: 74
+Supported deterministic types: 91
 
 ### Databases
 
@@ -24,6 +24,23 @@ Supported deterministic types: 74
 - `aws_dynamodb_global_table`
 - `aws_dynamodb_table`
 - `aws_dynamodb_table_item`
+- `aws_elasticache_cluster`
+- `aws_elasticache_global_replication_group`
+- `aws_elasticache_parameter_group`
+- `aws_elasticache_replication_group`
+- `aws_elasticache_serverless_cache`
+- `aws_elasticache_snapshot`
+- `aws_elasticache_subnet_group`
+- `aws_elasticache_user`
+- `aws_elasticache_user_group`
+- `aws_elasticache_user_group_association`
+- `aws_neptune_cluster`
+- `aws_neptune_cluster_instance`
+- `aws_neptune_cluster_parameter_group`
+- `aws_neptune_cluster_snapshot`
+- `aws_neptune_event_subscription`
+- `aws_neptune_parameter_group`
+- `aws_neptune_subnet_group`
 - `aws_rds_cluster`
 - `aws_rds_cluster_instance`
 

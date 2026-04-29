@@ -173,7 +173,7 @@ The generated coverage reference is in `docs/resource-coverage.md`, with the lan
 Known resources use hand-written deterministic rules and remain authoritative.
 
 AWS coverage includes:
-- Databases: RDS instances/clusters and DynamoDB tables.
+- Databases and caches: RDS instances/clusters, DynamoDB tables, ElastiCache, and Neptune.
 - Storage: S3 buckets/objects and EBS volumes/snapshots.
 - Compute: EC2 instances, Lambda functions, and AMIs.
 - Networking: VPCs, subnets, security groups, EIPs, load balancers, and Route53.

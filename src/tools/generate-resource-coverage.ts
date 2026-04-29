@@ -14,7 +14,7 @@ const providerGroups: ProviderGroup[] = [
     title: 'AWS',
     prefix: 'aws_',
     servicePatterns: [
-      ['Databases', ['db_', 'rds_', 'dynamodb']],
+      ['Databases', ['db_', 'rds_', 'dynamodb', 'elasticache', 'neptune']],
       ['Storage and Backups', ['s3_', 'ebs_', 'ami']],
       ['Compute', ['instance', 'lambda']],
       ['Networking', ['vpc', 'subnet', 'security_group', 'eip', 'lb', 'alb', 'nat_gateway', 'internet_gateway', 'route53']],

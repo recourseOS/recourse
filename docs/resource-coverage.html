@@ -213,15 +213,15 @@
   <article>
     <h1 id="resource-coverage">Resource Coverage</h1>
 <p>This document is generated from the public resource handler registry. Do not hand-edit the resource lists; run <code>npm run docs:coverage</code> after adding or removing handlers.</p>
-<p>Total deterministic resource types: 131</p>
+<p>Total deterministic resource types: 148</p>
 <p>Known resource handlers are authoritative. Unknown resource types can still be evaluated with <code>--classifier</code>, which uses provider-neutral semantic safety signals and returns <code>needs-review</code> when evidence is weak.</p>
 <pre><code>recourse resources
 recourse plan plan.json --classifier
 recourse evaluate terraform plan.json --classifier</code></pre>
 <h2 id="aws">AWS</h2>
-<p>Supported deterministic types: 74</p>
+<p>Supported deterministic types: 91</p>
 <h3 id="databases">Databases</h3>
-<ul><li><code>aws_db_cluster_snapshot</code></li><li><code>aws_db_instance</code></li><li><code>aws_db_snapshot</code></li><li><code>aws_dynamodb_global_table</code></li><li><code>aws_dynamodb_table</code></li><li><code>aws_dynamodb_table_item</code></li><li><code>aws_rds_cluster</code></li><li><code>aws_rds_cluster_instance</code></li></ul>
+<ul><li><code>aws_db_cluster_snapshot</code></li><li><code>aws_db_instance</code></li><li><code>aws_db_snapshot</code></li><li><code>aws_dynamodb_global_table</code></li><li><code>aws_dynamodb_table</code></li><li><code>aws_dynamodb_table_item</code></li><li><code>aws_elasticache_cluster</code></li><li><code>aws_elasticache_global_replication_group</code></li><li><code>aws_elasticache_parameter_group</code></li><li><code>aws_elasticache_replication_group</code></li><li><code>aws_elasticache_serverless_cache</code></li><li><code>aws_elasticache_snapshot</code></li><li><code>aws_elasticache_subnet_group</code></li><li><code>aws_elasticache_user</code></li><li><code>aws_elasticache_user_group</code></li><li><code>aws_elasticache_user_group_association</code></li><li><code>aws_neptune_cluster</code></li><li><code>aws_neptune_cluster_instance</code></li><li><code>aws_neptune_cluster_parameter_group</code></li><li><code>aws_neptune_cluster_snapshot</code></li><li><code>aws_neptune_event_subscription</code></li><li><code>aws_neptune_parameter_group</code></li><li><code>aws_neptune_subnet_group</code></li><li><code>aws_rds_cluster</code></li><li><code>aws_rds_cluster_instance</code></li></ul>
 <h3 id="storage-and-backups">Storage and Backups</h3>
 <ul><li><code>aws_ami</code></li><li><code>aws_ami_copy</code></li><li><code>aws_ebs_snapshot</code></li><li><code>aws_ebs_snapshot_copy</code></li><li><code>aws_ebs_volume</code></li><li><code>aws_s3_bucket</code></li><li><code>aws_s3_bucket_versioning</code></li><li><code>aws_s3_object</code></li></ul>
 <h3 id="compute">Compute</h3>
