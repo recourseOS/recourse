@@ -1,8 +1,8 @@
 # recourse
 
-Know what you cannot undo before a destructive change lands.
+AI-ready consequence analysis for infrastructure changes.
 
-Recourse is a local consequence evaluator for infrastructure changes. It reads Terraform plans, shell commands, or MCP tool calls and classifies each mutation by recoverability: reversible, recoverable with effort, recoverable from backup, unrecoverable, or needs review.
+Recourse is a rules-first, BitNet-ready consequence evaluator for infrastructure changes. It reads Terraform plans, shell commands, or MCP tool calls and classifies each mutation by recoverability: reversible, recoverable with effort, recoverable from backup, unrecoverable, or needs review.
 
 The public CLI is local-first. No account or cloud service is required.
 
