@@ -20,7 +20,7 @@ Testing the classifier against edge-case resource types revealed gaps in the fea
 | Limit | Why It's Hard | Mitigation |
 |-------|---------------|------------|
 | Route53 record classification | Recoverability depends on out-of-band state (zone backups, IP ownership) | Document as limit; future: ask user for context |
-| Multi-cloud suffix detection | AWS naming conventions don't transfer to GCP/Azure | Document; future: structural detection |
+| Multi-cloud suffix detection | AWS naming conventions don't transfer to GCP/Azure | Document; future: BitNet semantic classification plus structural detection |
 | Classifier confidence on unknown types | 72-100% confidence but sometimes wrong | Dual-verdict surfaces disagreements |
 
 ---
@@ -136,7 +136,7 @@ How to determine these features:
 
 1. **Quick fix**: Add `snapshot_retention_limit` to feature extractor (5 min)
 2. **Medium fix**: Add name-based heuristics for config/attachment resources (1 hour)
-3. **Proper fix**: Build resource metadata lookup from provider schemas (half day)
+3. **Proper fix**: Replace decision-tree fallback with BitNet for unknown resources, backed by provider-schema metadata and golden multi-cloud fixtures
 
 ## Known Limits
 
@@ -197,9 +197,25 @@ Both GCP buckets (with and without versioning) currently get `recoverable-with-e
 
 **Impact:** The classifier cannot distinguish dangerous from safe unknown storage resources based on versioning.
 
-**Fix:** Retrain the decision tree with:
-1. `resource_type_encoded = -1` as a valid training category
-2. Versioning checks that fire for any resource type, not just S3
+**Fix:** BitNet is the preferred replacement for this path. It should learn provider-neutral safety semantics instead of branching early on `resource_type_encoded`. A retrained decision tree can be a short-term baseline, but the durable fix is an unknown-resource classifier that understands abstract patterns like storage versioning, backup retention, soft-delete windows, and deletion protection across providers.
+
+## BitNet Replacement Plan
+
+BitNet is intended to replace the decision tree for recoverability classification of unknown resource types. It should not replace hand-written AWS rules.
+
+**Why BitNet helps:**
+
+- Learns abstract patterns such as `deletion_protection=true` on any provider.
+- Treats semantically related attributes, such as `recovery_window_in_days` and `deletion_window_in_days`, as the same safety concept.
+- Classifies `aws_s3_bucket`, `google_storage_bucket`, and `azurerm_storage_account` through storage semantics instead of provider-specific type IDs.
+- Reduces reliance on suffix heuristics for config-only and attachment resources.
+
+**Safety requirements:**
+
+- Known resource handlers remain authoritative.
+- Unknown resources can return `needs-review` when evidence is incomplete.
+- Model output must include tier, confidence, evidence, and missing evidence.
+- Golden fixtures must include false-safe cases where the classifier must avoid understating risk.
 
 ## Files
 

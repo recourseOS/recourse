@@ -10,6 +10,7 @@ const TIER_COLORS: Record<RecoverabilityTier, (text: string) => string> = {
   [RecoverabilityTier.RECOVERABLE_WITH_EFFORT]: chalk.yellow,
   [RecoverabilityTier.RECOVERABLE_FROM_BACKUP]: chalk.hex('#FFA500'), // Orange
   [RecoverabilityTier.UNRECOVERABLE]: chalk.red,
+  [RecoverabilityTier.NEEDS_REVIEW]: chalk.magenta,
 };
 
 const ACTION_SYMBOLS: Record<string, string> = {
@@ -160,6 +161,9 @@ export function formatReport(report: BlastRadiusReport): string {
   if (summary.byTier[RecoverabilityTier.UNRECOVERABLE] > 0) {
     lines.push(`  ${TIER_COLORS[RecoverabilityTier.UNRECOVERABLE]('Unrecoverable:')}  ${summary.byTier[RecoverabilityTier.UNRECOVERABLE]} resources`);
   }
+  if (summary.byTier[RecoverabilityTier.NEEDS_REVIEW] > 0) {
+    lines.push(`  ${TIER_COLORS[RecoverabilityTier.NEEDS_REVIEW]('Needs review:')}   ${summary.byTier[RecoverabilityTier.NEEDS_REVIEW]} resources`);
+  }
   if (summary.byTier[RecoverabilityTier.RECOVERABLE_FROM_BACKUP] > 0) {
     lines.push(`  ${TIER_COLORS[RecoverabilityTier.RECOVERABLE_FROM_BACKUP]('From backup:')}    ${summary.byTier[RecoverabilityTier.RECOVERABLE_FROM_BACKUP]} resources`);
   }
@@ -181,6 +185,9 @@ export function formatReport(report: BlastRadiusReport): string {
   if (summary.hasUnrecoverable) {
     lines.push(chalk.bgRed.white.bold(' WARNING ') + chalk.red(' This plan contains unrecoverable changes!'));
     lines.push('');
+  } else if (summary.byTier[RecoverabilityTier.NEEDS_REVIEW] > 0) {
+    lines.push(chalk.bgMagenta.white.bold(' REVIEW ') + chalk.magenta(' Some changes need human review.'));
+    lines.push('');
   } else if (summary.byTier[RecoverabilityTier.RECOVERABLE_FROM_BACKUP] > 0) {
     lines.push(chalk.bgYellow.black.bold(' CAUTION ') + chalk.yellow(' Some changes require backup to recover.'));
     lines.push('');
@@ -200,6 +207,9 @@ export function formatCompact(report: BlastRadiusReport): string {
 
   if (summary.byTier[RecoverabilityTier.UNRECOVERABLE] > 0) {
     parts.push(chalk.red(`${summary.byTier[RecoverabilityTier.UNRECOVERABLE]} unrecoverable`));
+  }
+  if (summary.byTier[RecoverabilityTier.NEEDS_REVIEW] > 0) {
+    parts.push(chalk.magenta(`${summary.byTier[RecoverabilityTier.NEEDS_REVIEW]} need review`));
   }
   if (summary.byTier[RecoverabilityTier.RECOVERABLE_FROM_BACKUP] > 0) {
     parts.push(chalk.hex('#FFA500')(`${summary.byTier[RecoverabilityTier.RECOVERABLE_FROM_BACKUP]} need backup`));

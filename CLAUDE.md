@@ -55,6 +55,8 @@ src/
 - `getRecoverability(change, state)` - Determines tier based on resource config
 - `getDependencies(resource, allResources)` - Finds implicit references
 
+**Unknown-resource classification**: `src/classifier/` currently ships a zero-dependency decision tree for unknown resource types. The decision tree is a baseline for abstract feature transfer, not the safety authority. The planned BitNet integration should replace the decision tree for unknown resources only; AWS handlers remain authoritative and should continue to provide traced, deterministic verdicts.
+
 **Adding a new resource type**: Create a handler in `src/resources/aws/`, implement the `ResourceHandler` interface, add it to the registry in `src/resources/index.ts`.
 
 ## Current Scope (v0.1)
@@ -62,4 +64,6 @@ src/
 - Terraform plan analysis only (AWS provider)
 - 70 AWS resource types supported
 - CLI tool (`blast plan`)
+- Experimental unknown-resource classifier for GCP/Azure patterns
+- BitNet is the intended future classifier for multi-cloud unknowns
 - No MCP server, CI/CD integration, or approval flows yet

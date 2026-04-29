@@ -1,6 +1,8 @@
 node_modules/
 dist/
 docs/ARCHITECTURE.md
+docs/WHITEPAPER.md
+docs/REPOSITORY_STRATEGY.md
 *.log
 .DS_Store
 recourseOS_idea.md

@@ -2,6 +2,8 @@
 
 These Terraform configurations create realistic dangerous infrastructure patterns for testing `blast`.
 
+They are also the seed corpus for classifier evaluation. AWS scenarios validate deterministic handlers; future GCP/Azure scenarios should validate BitNet's unknown-resource classification without adding provider-specific rules.
+
 ## Scenarios
 
 | Scenario | What it tests |
@@ -11,6 +13,17 @@ These Terraform configurations create realistic dangerous infrastructure pattern
 | `dynamodb-no-pitr/` | DynamoDB table without point-in-time recovery |
 | `cloudwatch-logs/` | Log groups with years of retention (audit/compliance logs) |
 | `kms-short-deletion/` | KMS key with 7-day deletion window + resources encrypted with it |
+
+## Classifier Fixtures
+
+When adding scenarios for unknown-resource classification, include both the risky and safer variants. For example:
+
+- Storage without versioning or soft delete should not be marked safe.
+- Storage with versioning should surface backup-based recovery evidence.
+- Databases with deletion protection should be blocked or reversible.
+- Soft-delete resources should distinguish recovery windows from immediate deletion.
+
+These cases are especially important for BitNet validation because the goal is to learn provider-neutral recoverability patterns, not memorize AWS resource type ranges.
 
 ## Usage
 

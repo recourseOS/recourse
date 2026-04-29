@@ -26,3 +26,11 @@ export {
   formatConfidence,
   type DualVerdictResult,
 } from './dual-verdict.js';
+
+export {
+  ConservativeUnknownClassifier,
+  conservativeUnknownClassifier,
+  type UnknownClassificationInput,
+  type UnknownClassificationResult,
+  type UnknownResourceClassifier,
+} from './unknown-resource.js';

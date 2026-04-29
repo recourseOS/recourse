@@ -136,7 +136,7 @@ Run `recourse-cli resources` to see the full list.
 
 ### GCP & Azure (Experimental)
 
-GCP and Azure resources are classified via a classifier that reads abstract safety patterns from your plans. The classifier learned from AWS rules and generalizes across clouds.
+GCP and Azure resources are classified via an experimental unknown-resource classifier that reads abstract safety patterns from your plans. The current release ships a zero-dependency TypeScript decision tree; the roadmap replaces that decision tree with BitNet for stronger semantic generalization across clouds.
 
 **What's tested (8 resource types):**
 - GCP: `google_project_iam_binding`, `google_sql_database_instance`, `google_storage_bucket`
@@ -152,6 +152,18 @@ GCP and Azure resources are classified via a classifier that reads abstract safe
 - Correct `unrecoverable` verdicts for storage without versioning/backups
 
 We're actively looking for testers. Run `recourse-cli plan` with `--classifier` on your GCP/Azure plans and tell us what we got wrong.
+
+## Classifier Roadmap
+
+Known AWS resources use hand-written rules and remain the source of truth. Unknown resources currently fall back to a small decision tree trained on AWS examples. This works for some abstract patterns, such as `deletion_protection=true`, but can miss features on unknown resource types; for example, `google_storage_bucket` versioning is detected but ignored by the tree.
+
+BitNet is the planned replacement for unknown-resource classification. It is intended to learn provider-neutral recoverability semantics such as:
+
+- `deletion_protection=true` on any managed resource means the apply is blocked or reversible.
+- `versioning=true` on storage resources means recovery may come from versioned data.
+- `recovery_window_in_days` and `deletion_window_in_days` are related soft-delete signals.
+
+The safety boundary does not change: deterministic rules win for known resources, and unknown destructive verdicts should remain conservative until backed by evidence.
 
 ## JSON Output
 
