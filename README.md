@@ -1,84 +1,12 @@
 # recourse
 
-AI-ready consequence analysis for infrastructure changes.
+Consequence layer for AI agents. Check recoverability before destructive actions.
 
-Recourse is a rules-first consequence evaluator for infrastructure changes, with a 1-bit quantized neural network classifier for unknown resources. It reads Terraform plans, shell commands, or MCP tool calls and classifies each mutation by recoverability: reversible, recoverable with effort, recoverable from backup, unrecoverable, or needs review.
+Recourse is an MCP server that evaluates Terraform plans, shell commands, and tool calls before execution. It returns a structured verdict — `allow`, `warn`, `escalate`, or `block` — with recoverability tier and evidence. Agents call Recourse before they act; humans see what the agent checked.
 
-The public CLI is local-first. No account or cloud service is required.
+## Add to Your Agent
 
-## What It Does
-
-- Analyzes Terraform plan JSON before `terraform apply`.
-- Evaluates shell commands and MCP tool calls as mutation intents.
-- Renders an operator-friendly terminal preflight view for humans reviewing agent actions.
-- Runs as an MCP stdio server so agents can ask RecourseOS before they act.
-- Classifies destructive AWS, GCP, and Azure resources with deterministic provider rules.
-- Uses a provider-neutral semantic classifier for unknown resource types when `--classifier` is enabled.
-- Produces human-readable blast-radius reports and machine-readable consequence JSON.
-- Can collect read-only AWS evidence for S3, RDS, DynamoDB, IAM roles, and KMS keys.
-- Can optionally submit local reports to a configured Recourse Cloud endpoint.
-
-## Why Not Just Terraform Plan?
-
-Terraform plan is a diff. Recourse is a consequence engine.
-
-Terraform tells you what will change:
-
-```text
-- aws_db_instance.main will be destroyed
-```
-
-Recourse tells you what that means:
-
-```text
-aws_db_instance.main
-recoverability: unrecoverable
-reason: skip_final_snapshot=true, backup_retention_period=0, deletion_protection=false
-decision: block
-```
-
-The difference is recoverability. Recourse answers the question Terraform does not: if this mutation happens, can we actually get it back?
-
-This is not limited to Terraform. Terraform plan is one input source. The same consequence report model also supports shell commands and MCP tool calls, so infrastructure changes from humans, CI jobs, and agents can be evaluated through the same recoverability policy.
-
-## Install
-
-Install the npm package named `recourse-cli`. It installs the terminal command named `recourse`.
-
-```bash
-npm install -g recourse-cli@latest
-recourse --version
-```
-
-Run a preflight check before a risky action:
-
-```bash
-recourse preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'
-```
-
-Open the interactive terminal UI:
-
-```bash
-recourse tui
-```
-
-Or run without installing:
-
-```bash
-npx -y recourse-cli@latest preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'
-```
-
-`preflight`, `evaluate`, and `mcp serve` require `recourse-cli` 0.1.3 or newer. `tui` requires 0.1.4 or newer. If an old npm cache offers `recourse-cli@0.1.2`, pin the current package:
-
-```bash
-npx recourse-cli@0.1.4 tui --source shell --input 'aws s3 rm s3://prod-audit-logs --recursive'
-```
-
-## MCP Server for AI Agents
-
-RecourseOS runs as an MCP server so AI agents can check consequences before they act.
-
-Add to your MCP client config (Claude Desktop, Claude Code, etc.):
+One config block. Works with Claude Desktop, Claude Code, Cursor, and any MCP-compatible client.
 
 ```json
 {
@@ -100,14 +28,63 @@ The server exposes four tools:
 | `recourse_evaluate_mcp_call` | Check other MCP tool calls before invocation |
 | `recourse_supported_resources` | List resources with deterministic rules |
 
-Each tool returns a structured consequence report with:
+Each tool returns:
 - **decision**: `allow`, `warn`, `escalate`, or `block`
 - **recoverability**: tier and reasoning
 - **evidence**: what was found, what's missing
 
 If decision is `block` or `escalate`, agents should not proceed without human approval.
 
-See `docs/mcp-setup.md` for full setup and `docs/agent-interface.md` for the schema reference.
+## What Agents Get
+
+Terraform plan says:
+
+```text
+- aws_db_instance.main will be destroyed
+```
+
+Recourse tells the agent what that means:
+
+```text
+aws_db_instance.main
+recoverability: unrecoverable
+reason: skip_final_snapshot=true, backup_retention_period=0, deletion_protection=false
+decision: block
+```
+
+The agent can now say: *"I checked with Recourse — this deletes the database with no backup. Blocking until you approve."*
+
+That's different from *"I deleted your production database."*
+
+## Example Agent Prompt
+
+```
+Before applying infrastructure changes, call RecourseOS.
+If the decision is block, stop.
+If the decision is escalate, ask me for review and include the missing evidence.
+If the decision is warn, summarize the recovery requirement before continuing.
+```
+
+## CLI Install
+
+For humans running preflight checks directly:
+
+```bash
+npm install -g recourse-cli@latest
+recourse --version
+```
+
+Run a preflight check:
+
+```bash
+recourse preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'
+```
+
+Or run without installing:
+
+```bash
+npx -y recourse-cli@latest preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'
+```
 
 ## Quick Start
 
@@ -118,32 +95,17 @@ terraform show -json plan.bin > plan.json
 recourse plan plan.json
 ```
 
-Open the product TUI for a proposed action:
+Open the interactive terminal UI:
 
 ```bash
 recourse tui
 recourse tui --source shell --input 'aws s3 rm s3://prod-audit-logs --recursive'
-recourse preflight terraform plan.json --classifier
-recourse preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'
-recourse preflight mcp '{"server":"aws","tool":"s3.delete_bucket","arguments":{"bucket":"prod-audit-logs"}}'
 ```
 
 Fail CI if a plan contains unrecoverable changes:
 
 ```bash
 recourse plan plan.json --fail-on unrecoverable
-```
-
-Use JSON output:
-
-```bash
-recourse plan plan.json --format json
-```
-
-Enable the unknown-resource classifier for provider types without deterministic rules:
-
-```bash
-recourse plan plan.json --classifier
 ```
 
 ## Example Output
@@ -182,6 +144,24 @@ SUMMARY
 | 4 | `unrecoverable` | Data, identity, key material, or recovery points may be permanently lost. |
 | 5 | `needs-review` | Evidence is insufficient to classify safely. |
 
+## Multi-Cloud Coverage
+
+Known resources use hand-written deterministic rules and remain authoritative.
+
+**AWS**: RDS, DynamoDB, S3, EBS, EFS, EC2, Lambda, AMIs, VPCs, security groups, EIPs, load balancers, Route53, IAM, KMS, Secrets Manager, SNS/SQS, CloudWatch logs, ElastiCache, Neptune.
+
+**GCP**: Cloud Storage (versioning), Cloud SQL (protection, backups), BigQuery, Secret Manager, IAM, service accounts, DNS, persistent disks, snapshots, KMS, GKE.
+
+**Azure**: Storage accounts (soft delete), Azure SQL/MSSQL, PostgreSQL/MySQL Flexible Server, MariaDB, Cosmos DB, Key Vault, role assignments, Azure AD, DNS, managed disks, AKS.
+
+For unknown resource types, Recourse uses a three-layer classification system:
+
+1. **Exact mappings**: ~180 manually verified resource → category mappings across AWS, GCP, Azure, and OCI.
+2. **BitNet classifier**: A 1-bit quantized neural network trained on 400+ resource types across 10+ cloud providers.
+3. **Pattern fallback**: Regex-based classification for the long tail.
+
+Production accuracy is **90.5%** on a held-out test set. Low-confidence classifications return `needs-review` rather than false approval.
+
 ## Commands
 
 ### Terraform Plan Analysis
@@ -193,16 +173,12 @@ recourse plan plan.json --format json
 recourse plan plan.json --classifier
 ```
 
-`plan` is optimized for Terraform plan JSON from `terraform show -json`. It uses prior state embedded in the plan when available, or an explicit state file when provided.
-
 ### Explain a Verdict
 
 ```bash
 recourse explain plan.json aws_db_instance.main
 recourse explain plan.json aws_db_instance.main --format json
 ```
-
-`explain` shows the checks, missing evidence, limitations, and counterfactuals behind a classification.
 
 ### Generic Consequence Reports
 
@@ -212,8 +188,6 @@ recourse evaluate shell 'aws s3 rm s3://prod-audit-logs --recursive'
 recourse evaluate mcp '{"server":"aws","tool":"s3.delete_bucket","arguments":{"bucket":"prod-audit-logs"}}'
 ```
 
-`evaluate` emits a normalized consequence report for Terraform, shell, or MCP inputs. The same report shape is used by the CLI, MCP server, and configured submission endpoints.
-
 ### Terminal Preflight
 
 ```bash
@@ -222,34 +196,21 @@ recourse preflight shell 'kubectl delete namespace payments'
 recourse preflight mcp mcp-call.json
 ```
 
-`preflight` is the human product surface. It renders a decision-first terminal report showing whether to run, warn, review, or block; what action and target were detected; why the decision was made; what evidence was found; what evidence is missing; and what to do next. Use `--format json` when you want the same command to emit the machine-readable consequence report.
-
 ### Interactive TUI
 
 ```bash
 recourse tui
 recourse tui --source shell --input 'aws s3 rm s3://prod-audit-logs --recursive'
 recourse tui --source terraform --input plan.json --classifier
-recourse tui --source mcp --input mcp-call.json --json
 ```
 
-`tui` is the interactive operator surface installed with the CLI. It adds color, ASCII branding, source selection, command examples, and optional JSON handoff while using the same evaluator as `preflight`.
-
-### Agent Interface
-
-RecourseOS can run as the consequence layer agents call before they act:
+### MCP Server
 
 ```bash
 recourse mcp serve
 ```
 
-The MCP server exposes `recourse_evaluate_terraform`, `recourse_evaluate_shell`, `recourse_evaluate_mcp_call`, and `recourse_supported_resources`. The public MCP tool contract and agent decision semantics are documented in `docs/agent-interface.md`.
-
-MCP client setup and smoke-test instructions are documented in `docs/mcp-setup.md`.
-
-```bash
-npm run mcp:smoke
-```
+See [docs/mcp-setup.md](docs/mcp-setup.md) for full setup and [docs/agent-interface.md](docs/agent-interface.md) for the schema reference.
 
 ### Read-Only AWS Evidence
 
@@ -261,95 +222,13 @@ recourse evaluate shell 'aws s3 rb s3://prod-audit-logs --force' \
   --aws-s3-evidence s3-evidence.json
 ```
 
-Supported evidence providers: `aws-s3`, `aws-rds`, `aws-dynamodb`, `aws-iam-role`, and `aws-kms-key`.
+Supported: `aws-s3`, `aws-rds`, `aws-dynamodb`, `aws-iam-role`, `aws-kms-key`.
 
 ### Supported Resource List
 
 ```bash
 recourse resources
 ```
-
-The coverage reference is in `docs/resource-coverage.md`, with the landing-page themed version at `docs/resource-coverage.html`.
-
-## Multi-Cloud Coverage
-
-Known resources use hand-written deterministic rules and remain authoritative.
-
-AWS coverage includes:
-- Databases and caches: RDS instances/clusters, DynamoDB tables, ElastiCache, and Neptune.
-- Storage: S3 buckets/objects, EBS volumes/snapshots, and EFS file systems.
-- Compute: EC2 instances, Lambda functions, and AMIs.
-- Networking: VPCs, subnets, security groups, EIPs, load balancers, and Route53.
-- IAM and platform services: IAM roles/policies/users, KMS, Secrets Manager, SNS/SQS, and CloudWatch logs.
-
-GCP coverage includes:
-- Storage: `google_storage_bucket`, bucket objects, and bucket IAM.
-- Databases and analytics: `google_sql_database_instance`, databases, users, and BigQuery datasets/tables.
-- IAM and secrets: project IAM, service accounts, service account keys, and Secret Manager secrets/versions/IAM.
-- Core: DNS records, persistent disks, snapshots, KMS keys, and GKE clusters/node pools.
-
-Azure coverage includes:
-- Storage: `azurerm_storage_account`, containers, blobs, shares, queues, and tables.
-- Databases: Azure SQL/MSSQL, PostgreSQL Flexible Server, MySQL Flexible Server, MariaDB, and Cosmos DB.
-- IAM: role assignments/definitions and Azure AD applications/service principals/passwords.
-- Core: DNS records, managed disks, snapshots, Key Vault vaults/keys/secrets/certificates/access policies, and AKS clusters/node pools.
-
-## Unknown Resources and Neural Classifier
-
-For known AWS, GCP, and Azure resources, deterministic rules win.
-
-For unknown resource types, Recourse uses a three-layer classification system:
-
-1. **Exact mappings** (100% accuracy): ~180 manually verified resource → category mappings for high-value resources across AWS, GCP, Azure, and OCI.
-
-2. **BitNet classifier**: A 1-bit quantized neural network trained on 400+ resource types across 10+ cloud providers. Handles unknown providers like Scaleway, UpCloud, Hetzner, and Exoscale.
-
-3. **Pattern fallback**: Regex-based classification for the very long tail.
-
-The classifier recognizes verification categories: databases with snapshots, NoSQL databases, block storage, file storage, object storage, cache clusters, search clusters, streaming data, message queues, container registries, secrets and keys, stateful compute, and config-only resources that need no verification.
-
-Production accuracy is **90.5%** on a held-out test set. If confidence is low, the classifier returns `needs-review` rather than marking the change safe. Deterministic rules remain authoritative for known resources.
-
-## Golden Fixtures
-
-Stable provider fixtures live in `tests/fixtures/plans/`:
-
-- `aws-golden.json`
-- `gcp-golden.json`
-- `azure-golden.json`
-- `unknown-semantic-golden.json`
-
-Run their contract tests with:
-
-```bash
-npm run build
-npx vitest --run tests/golden-plan-fixtures.test.ts
-```
-
-See `docs/golden-fixtures.md` for expected decisions and coverage.
-
-## Optional Recourse Cloud Submission
-
-Cloud is optional. Local evaluation remains authoritative.
-
-```bash
-RECOURSE_CLOUD_URL=https://recourse-cloud.example.com \
-RECOURSE_ORGANIZATION_ID=org_123 \
-RECOURSE_ACTOR_ID=agent/deploy \
-recourse evaluate terraform plan.json \
-  --environment production \
-  --classifier \
-  --submit
-```
-
-Cloud submission status is written to stderr so stdout stays parseable JSON. If submission fails, the local report still completes and the exit code is based on `--fail-on`.
-
-Configuration:
-
-- `RECOURSE_CLOUD_URL`: Recourse Cloud API base URL.
-- `RECOURSE_ORGANIZATION_ID`: organization scope.
-- `RECOURSE_ACTOR_ID` or `--actor`: actor identity.
-- `RECOURSE_ENVIRONMENT` or `--environment`: optional environment label.
 
 ## Development
 
@@ -358,22 +237,9 @@ npm install
 npm run build
 npm test
 npm run test:all
-npm run test:docs:visual
 ```
 
-Focused test suites:
-
-```bash
-npx vitest --run tests/multicloud-rules.test.ts
-npx vitest --run tests/semantic-unknown-classifier.test.ts
-npx vitest --run tests/golden-plan-fixtures.test.ts
-npx vitest --run tests/resource-coverage-doc.test.ts
-npx vitest --run tests/doc-pages.test.ts
-```
-
-`npm run test:docs:visual` runs Playwright against the generated docs site in desktop and mobile Chromium viewports and writes ignored screenshots to `docs-visual-screenshots/`. If Chromium is not installed yet, run `npx playwright install chromium` once.
-
-Regenerate public documentation after changing resource handlers or Markdown-backed docs:
+Regenerate docs after changing resource handlers:
 
 ```bash
 npm run docs:all
@@ -389,7 +255,7 @@ Recourse analyzes the plan, state, command, and evidence you provide. It cannot:
 - Predict races between planning and applying.
 - Replace human review for opaque destructive resources.
 
-The safety posture is conservative: when evidence is incomplete, Recourse should warn, block, or require review rather than understate risk.
+The safety posture is conservative: when evidence is incomplete, Recourse warns, blocks, or requires review rather than understating risk.
 
 ## License
 
