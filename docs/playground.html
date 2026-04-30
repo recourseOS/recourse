@@ -36,100 +36,147 @@
   </div>
 </nav>
 
-<header class="container product-hero">
-  <div>
-    <div class="eyebrow">RecourseOS Preflight</div>
-    <h1>Consequence dashboard for agent actions.</h1>
-    <p class="lede">This is the product surface: an agent proposes infrastructure work, Recourse evaluates the consequence, and the operator sees whether the action can continue.</p>
-  </div>
-  <div class="hero-metrics" aria-label="Preflight summary metrics">
-    <div><span>active run</span><strong>deploy-agent-42</strong></div>
-    <div><span>mode</span><strong>MCP local</strong></div>
-    <div><span>data</span><strong>sample only</strong></div>
-  </div>
-</header>
-
-<main class="container product-dashboard" id="sandbox">
-  <aside class="dash-sidebar" aria-label="Run queue">
-    <div class="sidebar-title">Preflight runs</div>
-    <button class="run-item active" type="button">
-      <span class="run-status block"></span>
-      <span><strong>deploy-agent-42</strong><small>prod infrastructure apply</small></span>
-    </button>
-    <button class="run-item" type="button">
-      <span class="run-status warn"></span>
-      <span><strong>storage-cleanup</strong><small>bucket lifecycle change</small></span>
-    </button>
-    <button class="run-item" type="button">
-      <span class="run-status allow"></span>
-      <span><strong>iam-maintainer</strong><small>role attachment update</small></span>
-    </button>
-    <div class="sidebar-card">
-      <div class="sidebar-card-label">Policy</div>
-      <p>Block unrecoverable actions. Escalate missing evidence. Surface recovery dependencies.</p>
-    </div>
-  </aside>
-
-  <section class="dash-main" aria-label="Preflight workspace">
-    <div class="dash-topbar">
-      <div>
-        <div class="panel-title">Proposed Action</div>
-        <p>Editable sample input. The browser preview mirrors the MCP request shape.</p>
+<main class="container app-shell" id="sandbox">
+  <div class="console-frame">
+    <aside class="console-sidebar" aria-label="Product navigation">
+      <div class="workspace-card">
+        <span>workspace</span>
+        <strong>production</strong>
+        <small>agent preflight</small>
       </div>
-      <div class="dash-controls">
-        <label>
-          Source
-          <select id="source-select" aria-label="Source">
-            <option value="terraform">Terraform</option>
-            <option value="shell">Shell</option>
-            <option value="mcp">MCP call</option>
-          </select>
-        </label>
-        <label>
-          Scenario
-          <select id="scenario-select" aria-label="Scenario"></select>
-        </label>
+      <nav class="console-menu">
+        <a class="active" href="#sandbox">Preflight</a>
+        <a href="#sandbox">Runs</a>
+        <a href="#sandbox">Policies</a>
+        <a href="#sandbox">Evidence</a>
+        <a href="#sandbox">Audit</a>
+      </nav>
+      <div class="policy-stack">
+        <div class="rail-title">Policy gates</div>
+        <div class="policy-row"><span>block</span><strong>unrecoverable</strong></div>
+        <div class="policy-row"><span>escalate</span><strong>missing evidence</strong></div>
+        <div class="policy-row"><span>warn</span><strong>backup recovery</strong></div>
       </div>
-    </div>
+    </aside>
 
-    <div class="dash-grid">
-      <section class="dash-panel action-panel">
-        <div class="panel-head compact">
-          <div class="panel-title">Action payload</div>
-          <div class="safe-note">No uploads. No API calls.</div>
+    <section class="console-workspace" aria-label="RecourseOS preflight dashboard">
+      <header class="console-topbar">
+        <div>
+          <div class="eyebrow">RecourseOS console</div>
+          <h1>Agent Preflight</h1>
+          <p>Evaluate proposed infrastructure actions before the agent executes them.</p>
         </div>
-        <textarea id="input" spellcheck="false" aria-label="Mutation input"></textarea>
-        <div class="actions">
-          <button id="evaluate" type="button">Run preflight</button>
-          <button id="reset" type="button" class="secondary">Reset sample</button>
+        <div class="app-controls">
+          <label>
+            Source
+            <select id="source-select" aria-label="Source">
+              <option value="terraform">Terraform</option>
+              <option value="shell">Shell</option>
+              <option value="mcp">MCP call</option>
+            </select>
+          </label>
+          <label>
+            Scenario
+            <select id="scenario-select" aria-label="Scenario"></select>
+          </label>
+          <div class="app-actions">
+            <button id="evaluate" type="button">Run preflight</button>
+            <button id="reset" type="button" class="secondary">Reset</button>
+          </div>
         </div>
-      </section>
+      </header>
 
-      <section class="dash-panel mcp-panel" aria-label="MCP tool call">
-        <div class="panel-head compact">
-          <div class="panel-title">MCP request</div>
-          <div class="safe-note">tools/call</div>
-        </div>
-        <pre id="mcp-call"></pre>
-      </section>
+      <div class="summary-strip">
+        <div><span>decision</span><strong id="summary-decision">escalate</strong></div>
+        <div><span>recoverability</span><strong id="summary-tier">needs-review</strong></div>
+        <div><span>source</span><strong id="summary-source">shell-adapter</strong></div>
+        <div><span>confidence</span><strong id="summary-confidence">72%</strong></div>
+      </div>
 
-      <section class="dash-panel agent-panel" aria-label="Agent response">
-        <div class="panel-head compact">
-          <div class="panel-title">Agent response</div>
-          <div class="safe-note">what gets said next</div>
-        </div>
-        <p id="agent-response"></p>
-      </section>
-    </div>
-  </section>
+      <div class="dashboard-grid">
+        <aside class="run-queue" aria-label="Preflight runs">
+          <div class="work-card-head">
+            <div class="panel-title">Run queue</div>
+            <span>live</span>
+          </div>
+          <button class="run-item active" type="button">
+            <span class="run-status block"></span>
+            <span><strong>deploy-agent-42</strong><small>prod apply · now</small></span>
+          </button>
+          <button class="run-item" type="button">
+            <span class="run-status warn"></span>
+            <span><strong>storage-cleanup</strong><small>bucket retention · 4m</small></span>
+          </button>
+          <button class="run-item" type="button">
+            <span class="run-status allow"></span>
+            <span><strong>iam-maintainer</strong><small>role binding · 9m</small></span>
+          </button>
+          <div class="queue-metrics" aria-label="Current run summary">
+            <div><span>mutations</span><strong>1</strong></div>
+            <div><span>target env</span><strong>prod</strong></div>
+          </div>
+          <div class="resource-stack">
+            <div class="rail-title">Touched surface</div>
+            <div class="resource-row"><span>resource</span><strong id="surface-resource">s3://prod-audit-logs</strong></div>
+            <div class="resource-row"><span>operation</span><strong id="surface-operation">recursive delete</strong></div>
+            <div class="resource-row"><span>owner</span><strong id="surface-owner">unknown</strong></div>
+          </div>
+        </aside>
 
-  <aside class="dash-inspector result" aria-label="Consequence report">
-    <div class="panel-head">
-      <div class="panel-title">Consequence Report</div>
-      <div class="safe-note">recourse.consequence.v1</div>
-    </div>
-    <div class="result-body" id="result"></div>
-  </aside>
+        <section class="workbench" aria-label="Preflight evaluation">
+          <section class="work-card action-card">
+            <div class="work-card-head">
+              <div>
+                <div class="panel-title">Proposed action</div>
+                <p>No uploads. The sample is evaluated in the browser.</p>
+              </div>
+            </div>
+            <textarea id="input" spellcheck="false" aria-label="Mutation input"></textarea>
+          </section>
+
+          <section class="work-card">
+            <div class="work-card-head">
+              <div class="panel-title">Evidence</div>
+            </div>
+            <div class="evidence-grid">
+              <div>
+                <h2>Observed</h2>
+                <ul id="evidence-list"></ul>
+              </div>
+              <div>
+                <h2>Missing</h2>
+                <ul id="missing-list"></ul>
+              </div>
+            </div>
+          </section>
+
+          <section class="work-card">
+            <div class="work-card-head">
+              <div class="panel-title">Agent response</div>
+            </div>
+            <p class="agent-copy" id="agent-response"></p>
+          </section>
+        </section>
+
+        <aside class="decision-inspector" aria-label="MCP and report inspector">
+          <section class="inspector-card result">
+            <div class="work-card-head">
+              <div class="panel-title">Consequence report</div>
+              <span>recourse.consequence.v1</span>
+            </div>
+            <div class="result-body" id="result"></div>
+          </section>
+          <section class="inspector-card">
+            <div class="work-card-head">
+              <div class="panel-title">MCP request</div>
+              <span>tools/call</span>
+            </div>
+            <pre id="mcp-call"></pre>
+          </section>
+        </aside>
+      </div>
+    </section>
+  </div>
 </main>
 
 <footer class="container">
@@ -295,6 +342,15 @@ const input = document.getElementById('input');
 const result = document.getElementById('result');
 const mcpCall = document.getElementById('mcp-call');
 const agentResponse = document.getElementById('agent-response');
+const summaryDecision = document.getElementById('summary-decision');
+const summaryTier = document.getElementById('summary-tier');
+const summarySource = document.getElementById('summary-source');
+const summaryConfidence = document.getElementById('summary-confidence');
+const evidenceList = document.getElementById('evidence-list');
+const missingList = document.getElementById('missing-list');
+const surfaceResource = document.getElementById('surface-resource');
+const surfaceOperation = document.getElementById('surface-operation');
+const surfaceOwner = document.getElementById('surface-owner');
 const evaluateButton = document.getElementById('evaluate');
 const resetButton = document.getElementById('reset');
 
@@ -375,6 +431,15 @@ function renderInvalid(message) {
   result.innerHTML = `<div class="invalid">${escapeHtml(message)}</div>`;
   mcpCall.textContent = '';
   agentResponse.textContent = 'The agent should stop and ask for valid input before calling Recourse.';
+  summaryDecision.textContent = 'invalid';
+  summaryTier.textContent = 'input-error';
+  summarySource.textContent = 'browser';
+  summaryConfidence.textContent = '0%';
+  evidenceList.innerHTML = '';
+  missingList.innerHTML = '<li>Valid input payload</li>';
+  surfaceResource.textContent = 'unknown';
+  surfaceOperation.textContent = 'invalid input';
+  surfaceOwner.textContent = 'browser';
 }
 
 function renderReport(report, source, value) {
@@ -404,6 +469,18 @@ function renderReport(report, source, value) {
   const invocation = buildMcpInvocation(source, value);
   mcpCall.textContent = JSON.stringify(invocation, null, 2);
   agentResponse.textContent = responseFor(report);
+  summaryDecision.textContent = report.decision;
+  summaryTier.textContent = report.tier;
+  summarySource.textContent = report.source;
+  summaryConfidence.textContent = `${Math.round(report.confidence * 100)}%`;
+  const surface = surfaceFor(source, value);
+  surfaceResource.textContent = surface.resource;
+  surfaceOperation.textContent = surface.operation;
+  surfaceOwner.textContent = surface.owner;
+  evidenceList.innerHTML = report.evidence.map(item => `<li>${escapeHtml(item)}</li>`).join('');
+  missingList.innerHTML = (report.missing.length ? report.missing : ['None for this sample.'])
+    .map(item => `<li>${escapeHtml(item)}</li>`)
+    .join('');
 
   result.innerHTML = `
     <div class="decision-card">
@@ -426,6 +503,30 @@ function renderReport(report, source, value) {
       <pre>${escapeHtml(JSON.stringify(payload, null, 2))}</pre>
     </div>
   `;
+}
+
+function surfaceFor(source, value) {
+  if (source === 'shell') {
+    const target = String(value).match(/s3:\/\/[^\s]+|namespace\s+([^\s]+)/i);
+    return {
+      resource: target ? target[0].replace(/^namespace\s+/i, 'namespace/') : 'shell target',
+      operation: 'command mutation',
+      owner: 'unknown'
+    };
+  }
+  if (source === 'mcp') {
+    return {
+      resource: value?.arguments?.bucket || value?.arguments?.roleName || value?.tool || 'mcp target',
+      operation: value?.tool || 'tool call',
+      owner: value?.server || 'mcp'
+    };
+  }
+  const change = value?.resource_changes?.[0];
+  return {
+    resource: change?.address || change?.type || 'terraform resource',
+    operation: change?.change?.actions?.join('+') || 'plan mutation',
+    owner: change?.provider_name?.split('/').pop() || 'terraform'
+  };
 }
 
 function buildMcpInvocation(source, value) {
