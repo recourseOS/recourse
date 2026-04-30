@@ -308,7 +308,9 @@ function loadScenario() {
 
 function evaluate() {
   const scenario = activeScenario();
-  render(scenario.report, sourceSelect.value, parseInput(sourceSelect.value, input.value));
+  const parsed = parseInput(sourceSelect.value, input.value);
+  const report = evaluatePreview(scenario.report, sourceSelect.value, parsed);
+  render(report, sourceSelect.value, parsed);
 }
 
 function parseInput(source, value) {
@@ -316,8 +318,258 @@ function parseInput(source, value) {
   try {
     return JSON.parse(value);
   } catch {
-    return value;
+    return { parseError: true, raw: value };
   }
+}
+
+function evaluatePreview(baseReport, source, value) {
+  if (value && value.parseError) {
+    return invalidReport('Input must be valid JSON for this source.');
+  }
+
+  if (source === 'shell') {
+    return evaluateShellPreview(value);
+  }
+
+  if (source === 'mcp') {
+    return evaluateMcpPreview(value);
+  }
+
+  return evaluateTerraformPreview(baseReport, value);
+}
+
+function evaluateShellPreview(command) {
+  if (!command) {
+    return invalidReport('Shell command is required.');
+  }
+
+  const s3Target = command.match(/\baws\s+s3\s+(?:rm|rb)\s+(s3:\/\/[^\s]+)/i);
+  if (s3Target) {
+    return {
+      decision: 'escalate',
+      tier: 'needs-review',
+      source: 'shell-adapter',
+      confidence: 0.72,
+      target: s3Target[1],
+      action: command.includes(' rb ') ? 'delete s3_bucket' : 'delete s3_object_or_prefix',
+      provider: 'aws-s3 / production',
+      reason: 'The command matches a destructive S3 deletion pattern, but no live bucket evidence was supplied.',
+      evidence: [`shell.command=${command}`, `shell.pattern=${command.includes(' rb ') ? 's3_bucket' : 's3_object_or_prefix'}`],
+      missing: ['Bucket versioning status', 'Lifecycle retention', 'Replication or backup evidence'],
+      next: 'Collect read-only S3 evidence or ask for human review.'
+    };
+  }
+
+  const kubectlDelete = command.match(/\bkubectl\s+delete\s+([^\s]+)\s+([^\s]+)/i);
+  if (kubectlDelete) {
+    return {
+      decision: 'escalate',
+      tier: 'needs-review',
+      source: 'shell-adapter',
+      confidence: 0.66,
+      target: `${kubectlDelete[1]}/${kubectlDelete[2]}`,
+      action: 'delete kubernetes_resource',
+      provider: 'kubernetes / production',
+      reason: 'The command deletes a Kubernetes resource, but workload state and recovery path are unknown.',
+      evidence: [`shell.command=${command}`, 'shell.pattern=kubernetes_resource'],
+      missing: ['Cluster backup evidence', 'Persistent volume recovery path', 'Deployment owner approval'],
+      next: 'Require review before deleting namespace-scoped workloads.'
+    };
+  }
+
+  if (/\b(rm|delete|drop|truncate|destroy|force)\b/i.test(command)) {
+    return {
+      decision: 'escalate',
+      tier: 'needs-review',
+      source: 'shell-adapter',
+      confidence: 0.5,
+      target: 'shell command',
+      action: 'execute unknown_mutation',
+      provider: 'shell / production',
+      reason: 'The command contains a destructive verb, but no specific adapter pattern or recovery evidence matched it.',
+      evidence: [`shell.command=${command}`, 'shell.pattern=unknown_destructive_verb'],
+      missing: ['Target type', 'Live state evidence', 'Recovery path'],
+      next: 'Ask for review or provide adapter-specific evidence.'
+    };
+  }
+
+  return {
+    decision: 'allow',
+    tier: 'reversible',
+    source: 'shell-adapter',
+    confidence: 0.6,
+    target: 'shell command',
+    action: 'execute shell_command',
+    provider: 'shell / production',
+    reason: 'No high-risk mutation pattern was recognized in this sample command.',
+    evidence: [`shell.command=${command}`, 'shell.pattern=no high-risk mutation'],
+    missing: [],
+    next: 'Continue under the normal agent permission policy.'
+  };
+}
+
+function evaluateMcpPreview(value) {
+  const tool = String(value?.tool || value?.name || '');
+  const args = value?.arguments || {};
+  const target = args.bucket || args.roleName || args.name || tool || 'mcp target';
+
+  if (!tool) {
+    return invalidReport('MCP input must include a tool field.');
+  }
+
+  if (/detach.*policy|attach.*policy|role_assignment/i.test(tool)) {
+    return {
+      decision: 'allow',
+      tier: 'reversible',
+      source: 'rules',
+      confidence: 0.86,
+      target,
+      action: `tool ${tool}`,
+      provider: `${value?.server || 'mcp'} / identity / production`,
+      reason: 'Relationship-style access changes can be reapplied if the target resources remain addressable.',
+      evidence: ['relationship-resource=true', 'target resources remain addressable'],
+      missing: [],
+      next: 'Continue if the access change is intended.'
+    };
+  }
+
+  if (/\b(delete|remove|destroy|drop|revoke)\b/i.test(tool)) {
+    return {
+      decision: 'escalate',
+      tier: 'needs-review',
+      source: 'mcp-adapter',
+      confidence: 0.74,
+      target,
+      action: `tool ${tool}`,
+      provider: `${value?.server || 'mcp'} / production`,
+      reason: 'The MCP call appears destructive, but live target evidence is absent in this sample.',
+      evidence: [`mcp.tool=${tool}`, `target=${target}`],
+      missing: ['Live target state', 'Backup or rollback evidence', 'Owner approval'],
+      next: 'Ask for review or provide target evidence before invoking the tool.'
+    };
+  }
+
+  return {
+    decision: 'allow',
+    tier: 'reversible',
+    source: 'mcp-adapter',
+    confidence: 0.62,
+    target,
+    action: `tool ${tool}`,
+    provider: `${value?.server || 'mcp'} / production`,
+    reason: 'The MCP call does not match a destructive tool pattern in this preview.',
+    evidence: [`mcp.tool=${tool}`],
+    missing: [],
+    next: 'Continue under the normal agent permission policy.'
+  };
+}
+
+function evaluateTerraformPreview(baseReport, value) {
+  const change = value?.resource_changes?.[0];
+  if (!change) {
+    return invalidReport('Terraform input must include at least one resource_changes entry.');
+  }
+
+  const before = change.change?.before || {};
+  const actions = change.change?.actions || [];
+  const type = change.type || 'terraform_resource';
+  const target = change.address || type;
+  const provider = providerLabel(change.provider_name, type);
+  const action = `${actions.join('+') || 'unknown'} ${type}`;
+
+  if (!actions.includes('delete')) {
+    return {
+      decision: 'allow',
+      tier: 'reversible',
+      source: 'rules',
+      confidence: 0.78,
+      target,
+      action,
+      provider,
+      reason: 'This preview did not find a destructive delete action in the Terraform change.',
+      evidence: [`actions=${actions.join(',') || 'none'}`],
+      missing: [],
+      next: 'Continue under the normal agent permission policy.'
+    };
+  }
+
+  if (before.deletion_protection === true) {
+    return {
+      decision: 'allow',
+      tier: 'reversible',
+      source: 'rules',
+      confidence: 0.92,
+      target,
+      action,
+      provider,
+      reason: 'Deletion protection is enabled, so the destructive change should not proceed unless protection is intentionally changed first.',
+      evidence: ['deletion_protection=true'],
+      missing: [],
+      next: 'Keep deletion protection enabled unless the operator intentionally changes it.'
+    };
+  }
+
+  if (type.includes('db_instance') && before.skip_final_snapshot === true && Number(before.backup_retention_period || 0) === 0) {
+    return {
+      decision: 'block',
+      tier: 'unrecoverable',
+      source: 'rules',
+      confidence: 0.99,
+      target,
+      action,
+      provider,
+      reason: 'Database deletion skips the final snapshot and has no backup retention.',
+      evidence: ['skip_final_snapshot=true', 'backup_retention_period=0'],
+      missing: [],
+      next: 'Enable a final snapshot, backup retention, or deletion protection before applying.'
+    };
+  }
+
+  if (type.includes('storage_bucket') && before.versioning?.enabled === true) {
+    return {
+      decision: 'warn',
+      tier: 'recoverable-from-backup',
+      source: 'rules',
+      confidence: 0.9,
+      target,
+      action,
+      provider,
+      reason: 'Bucket versioning is enabled, so object generations may be recoverable if retention allows it.',
+      evidence: ['versioning.enabled=true'],
+      missing: ['Confirm object retention policy and restore process.'],
+      next: 'Surface the recovery dependency before continuing.'
+    };
+  }
+
+  return {
+    ...baseReport,
+    target,
+    action,
+    provider
+  };
+}
+
+function invalidReport(message) {
+  return {
+    decision: 'escalate',
+    tier: 'needs-review',
+    source: 'browser-preview',
+    confidence: 0,
+    target: 'invalid input',
+    action: 'none',
+    provider: 'browser',
+    reason: message,
+    evidence: [],
+    missing: ['Valid input payload'],
+    next: 'Fix the input before calling Recourse.'
+  };
+}
+
+function providerLabel(providerName, type) {
+  if (providerName?.includes('/google')) return 'gcp / production';
+  if (providerName?.includes('/azurerm')) return 'azure / production';
+  if (providerName?.includes('/aws') || type.startsWith('aws_')) return 'aws / production';
+  return 'terraform / production';
 }
 
 function render(report, source, value) {
@@ -347,7 +599,7 @@ function renderTui(report, source) {
     padRow('RECOURSEOS PREFLIGHT', 'NORMALIZED MUTATION', 'DECISION'),
     divider,
     padRow(`input: ${source}`, `target: ${report.target}`, decision),
-    padRow(`plug: ${adapterName(source)}`, `action: ${report.action}`, `confidence: ${Math.round(report.confidence * 100)}%`),
+    padRow(`plug: ${adapterName(source)}`, `action: ${report.action}`, `confidence: ${confidenceLabel(report.confidence)}`),
     padRow('actor: agent/preflight', `provider: ${report.provider}`, `policy: ${policyAction(report.decision)}`),
     divider,
     padRow('ADAPTERS', 'EVALUATION PIPELINE', 'NEXT ACTION'),
@@ -419,9 +671,16 @@ function buildMcpInvocation(source, value) {
       name: toolName,
       arguments: source === 'shell'
         ? { actor: 'agent/preflight', environment: 'production', command: value }
-        : { actor: 'agent/preflight', environment: 'production', payload: value }
+        : source === 'mcp'
+          ? { actor: 'agent/preflight', environment: 'production', ...value }
+          : { actor: 'agent/preflight', environment: 'production', plan: value }
     }
   };
+}
+
+function confidenceLabel(confidence) {
+  const value = Math.round(Number(confidence || 0) * 100);
+  return value > 0 ? `${value}%` : 'needs evidence';
 }
 
 function adapterName(source) {
