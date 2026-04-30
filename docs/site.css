@@ -25,7 +25,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; overflow-x: hidden; }
 
 body {
   min-height: 100vh;
@@ -44,6 +44,8 @@ code, pre, textarea, select, button { font-family: "JetBrains Mono", ui-monospac
    Top Band (Dark Header Area)
    ───────────────────────────────────────────────────────────── */
 .top-band {
+  display: block;
+  width: 100%;
   background: linear-gradient(180deg, var(--night) 0%, var(--night-2) 100%);
   color: #f0fdf4;
 }
@@ -625,16 +627,22 @@ a.card:hover { border-color: var(--green); }
    Documentation Layout
    ───────────────────────────────────────────────────────────── */
 .doc-header, .play-header {
+  display: block;
   color: #f0fdf4;
-  padding: 80px 0 48px;
+  padding: 48px 0 32px;
 }
-.doc-header h1, .play-header h1 { margin: 16px 0 20px; }
+.doc-header h1, .play-header h1 {
+  margin: 12px 0 16px;
+  color: #f0fdf4;
+}
+.doc-header .eyebrow { color: var(--green); }
+.doc-header .lede { color: rgba(240, 253, 244, 0.7); }
 
 .doc-shell {
   display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 48px;
-  padding: 0 0 100px;
+  grid-template-columns: 200px 1fr;
+  gap: 40px;
+  padding: 48px 0 80px;
 }
 
 .toc {
@@ -667,6 +675,8 @@ article {
   border-radius: var(--radius-lg);
   padding: 40px;
   box-shadow: var(--shadow);
+  min-width: 0;
+  overflow-x: auto;
 }
 
 article h1 { display: none; }
@@ -696,6 +706,7 @@ pre {
   font-size: 13px;
   line-height: 1.6;
   overflow-x: auto;
+  max-width: 100%;
 }
 
 pre code {
