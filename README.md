@@ -56,16 +56,22 @@ Run a preflight check before a risky action:
 recourse preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'
 ```
 
+Open the interactive terminal UI:
+
+```bash
+recourse tui
+```
+
 Or run without installing:
 
 ```bash
 npx -y recourse-cli@latest preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'
 ```
 
-`preflight`, `evaluate`, and `mcp serve` require `recourse-cli` 0.1.3 or newer. If an old npm cache offers `recourse-cli@0.1.2`, pin the current package:
+`preflight`, `evaluate`, and `mcp serve` require `recourse-cli` 0.1.3 or newer. `tui` requires 0.1.4 or newer. If an old npm cache offers `recourse-cli@0.1.2`, pin the current package:
 
 ```bash
-npx recourse-cli@0.1.3 preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'
+npx recourse-cli@0.1.4 tui --source shell --input 'aws s3 rm s3://prod-audit-logs --recursive'
 ```
 
 ## Quick Start
@@ -80,6 +86,8 @@ recourse plan plan.json
 Open the product TUI for a proposed action:
 
 ```bash
+recourse tui
+recourse tui --source shell --input 'aws s3 rm s3://prod-audit-logs --recursive'
 recourse preflight terraform plan.json --classifier
 recourse preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'
 recourse preflight mcp '{"server":"aws","tool":"s3.delete_bucket","arguments":{"bucket":"prod-audit-logs"}}'
@@ -180,6 +188,17 @@ recourse preflight mcp mcp-call.json
 ```
 
 `preflight` is the human product surface. It renders a decision-first terminal report showing whether to run, warn, review, or block; what action and target were detected; why the decision was made; what evidence was found; what evidence is missing; and what to do next. Use `--format json` when you want the same command to emit the machine-readable consequence report.
+
+### Interactive TUI
+
+```bash
+recourse tui
+recourse tui --source shell --input 'aws s3 rm s3://prod-audit-logs --recursive'
+recourse tui --source terraform --input plan.json --classifier
+recourse tui --source mcp --input mcp-call.json --json
+```
+
+`tui` is the interactive operator surface installed with the CLI. It adds color, ASCII branding, source selection, command examples, and optional JSON handoff while using the same evaluator as `preflight`.
 
 ### Agent Interface
 

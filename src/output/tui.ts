@@ -3,6 +3,8 @@ import type { AnalyzedMutation, ConsequenceReport } from '../core/index.js';
 export interface TuiOptions {
   source: string;
   inputLabel?: string;
+  color?: boolean;
+  ascii?: boolean;
 }
 
 const width = 88;
@@ -10,22 +12,24 @@ const width = 88;
 export function formatTui(report: ConsequenceReport, options: TuiOptions): string {
   const primary = report.mutations[0];
   const source = normalizeSource(options.source);
+  const color = options.color === true;
   const confidence = Math.round((report.summary.worstRecoverability.confidence ?? 1) * 100);
   const confidenceLabel = confidence > 0 ? `${confidence}%` : 'needs evidence';
   const evidence = primary?.evidence.map(item => `${item.key}: ${stringifyValue(item.value, item.present)}`) ?? [];
   const missingEvidence = primary?.missingEvidence.map(item => `${item.key}: ${item.description}`) ?? [];
 
   const lines = [
-    'RecourseOS Preflight',
+    ...(options.ascii ? asciiHeader(color) : []),
+    paint('RecourseOS Preflight', 'cyan', color),
     '',
     ...keyValueRows('Command', options.inputLabel ?? source),
     keyValue('Source', source),
     keyValue('Actor', actorLine(primary)),
     '',
-    decisionTitle(report.decision),
+    paint(decisionTitle(report.decision), decisionColor(report.decision), color),
     decisionSummary(report),
     '',
-    keyValue('Decision', report.decision),
+    keyValue('Decision', paint(report.decision, decisionColor(report.decision), color)),
     keyValue('Recoverability', report.summary.worstRecoverability.label),
     keyValue('Confidence', confidenceLabel),
     keyValue('Policy', policyAction(report.decision)),
@@ -49,6 +53,18 @@ export function formatTui(report: ConsequenceReport, options: TuiOptions): strin
   ];
 
   return lines.join('\n');
+}
+
+function asciiHeader(color: boolean): string[] {
+  return [
+    paint(' ____                                      ___  ____', 'green', color),
+    paint('|  _ \\ ___  ___ ___  _   _ _ __ ___ ___ / _ \\/ ___|', 'green', color),
+    paint('| |_) / _ \\/ __/ _ \\| | | |  __/ __/ _ \\ | | \\___ \\', 'green', color),
+    paint('|  _ <  __/ (_| (_) | |_| | | | (_|  __/ |_| |___) |', 'green', color),
+    paint('|_| \\_\\___|\\___\\___/ \\__,_|_|  \\___\\___|\\___/|____/', 'green', color),
+    paint('consequence preflight for infrastructure actions', 'muted', color),
+    '',
+  ];
 }
 
 function section(value: string): string {
@@ -149,6 +165,34 @@ function decisionTitle(decision: ConsequenceReport['decision']): string {
     escalate: 'REVIEW REQUIRED',
     block: 'DO NOT RUN',
   }[decision];
+}
+
+function decisionColor(decision: ConsequenceReport['decision']): ColorName {
+  const colors: Record<ConsequenceReport['decision'], ColorName> = {
+    allow: 'green',
+    warn: 'yellow',
+    escalate: 'yellow',
+    block: 'red',
+  };
+  return colors[decision];
+}
+
+type ColorName = 'cyan' | 'green' | 'yellow' | 'red' | 'muted';
+
+function paint(value: string, color: ColorName, enabled: boolean): string {
+  if (!enabled) {
+    return value;
+  }
+
+  const colors: Record<ColorName, string> = {
+    cyan: '\x1b[36m',
+    green: '\x1b[32m',
+    yellow: '\x1b[33m',
+    red: '\x1b[31m',
+    muted: '\x1b[2m',
+  };
+
+  return `${colors[color]}${value}\x1b[0m`;
 }
 
 function decisionSummary(report: ConsequenceReport): string {

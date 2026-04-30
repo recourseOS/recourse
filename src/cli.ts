@@ -38,6 +38,7 @@ import { getSupportedResourceTypes, getRecoverabilityTraced, hasDetailedTracing 
 import { RecoverabilityTier } from './resources/types.js';
 import type { ConsequenceDecision } from './core/index.js';
 import { runMcpServer } from './mcp/server.js';
+import { runInteractiveTui } from './tui/interactive.js';
 
 const program = new Command();
 
@@ -66,7 +67,7 @@ interface CloudEvaluationOptions extends EvaluationOptions {
 program
   .name('recourse')
   .description('Know what you can\'t undo before you terraform apply')
-  .version('0.1.3');
+  .version('0.1.4');
 
 program
   .command('plan')
@@ -199,6 +200,42 @@ program
       }
 
       if (shouldFailOnDecision(report.decision, options.failOn)) {
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('tui')
+  .description('Open the interactive RecourseOS terminal preflight UI')
+  .option('--source <source>', 'Mutation source to evaluate: terraform, shell, or mcp')
+  .option('--input <input>', 'Input for scripted TUI mode: plan path, shell command, or MCP JSON/file')
+  .option('-s, --state <file>', 'Path to Terraform state file (for terraform source)')
+  .option('--classifier', 'Use unknown-resource classifier where available')
+  .option('--actor <id>', 'Actor identity to include in the mutation report')
+  .option('--environment <name>', 'Environment name to include in the mutation report')
+  .option('--owner <name>', 'Owner name to include in the mutation report')
+  .option('--json', 'Print the machine-readable consequence report after the TUI report')
+  .option('--no-color', 'Disable ANSI color output')
+  .option('--fail-on <decision>', 'Exit with code 1 if decision reaches: warn, escalate, block', 'block')
+  .action(async (options: {
+    source?: string;
+    input?: string;
+    state?: string;
+    classifier?: boolean;
+    actor?: string;
+    environment?: string;
+    owner?: string;
+    json?: boolean;
+    color?: boolean;
+    failOn: string;
+  }) => {
+    try {
+      const report = await runInteractiveTui(options);
+      if (report && shouldFailOnDecision(report.decision, options.failOn)) {
         process.exit(1);
       }
     } catch (error) {

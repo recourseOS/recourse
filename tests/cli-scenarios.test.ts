@@ -76,6 +76,38 @@ describe('compiled CLI scenario matrix', () => {
     expect(result.stdout).toContain('Next Steps');
   });
 
+  it('runs the installed TUI in scripted mode for shell mutations', () => {
+    expect(existsSync(distCli), 'dist/index.js must exist; run npm run build before CLI scenarios').toBe(true);
+
+    const result = spawnSync(process.execPath, [
+      distCli,
+      'tui',
+      '--source',
+      'shell',
+      '--input',
+      'aws s3 rm s3://prod-audit-logs --recursive',
+      '--actor',
+      'agent/tui',
+      '--environment',
+      'production',
+      '--no-color',
+      '--json',
+      '--fail-on',
+      'block',
+    ], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+    });
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('____');
+    expect(result.stdout).toContain('RecourseOS Preflight');
+    expect(result.stdout).toContain('REVIEW REQUIRED');
+    expect(result.stdout).toContain('"version": "0.1.0"');
+    expect(result.stdout).toContain('"decision": "escalate"');
+  });
+
   it.each(goldenPlanScenarios)('evaluates golden Terraform fixture: $name', scenario => {
     expect(existsSync(distCli), 'dist/index.js must exist; run npm run build before CLI scenarios').toBe(true);
 
