@@ -188,28 +188,40 @@ h3 { font-size: 24px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
 .install-line {
   margin-top: 22px;
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  max-width: 100%;
+  width: min(100%, 820px);
   border: 1px solid rgba(236, 247, 239, 0.14);
-  border-radius: 999px;
+  border-radius: 22px;
   background: rgba(236, 247, 239, 0.06);
-  padding: 9px 10px 9px 16px;
+  padding: 12px;
   color: rgba(236, 247, 239, 0.86);
   font-family: "JetBrains Mono", monospace;
   font-size: 12px;
 }
+.install-line > span {
+  min-width: 0;
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+}
 .install-line .prompt { color: var(--green); }
-.install-line .cmd { white-space: nowrap; }
+.install-line .cmd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
 .install-line button {
   border: 1px solid rgba(236, 247, 239, 0.18);
   border-radius: 999px;
   background: transparent;
   color: rgba(236, 247, 239, 0.72);
-  padding: 6px 9px;
+  padding: 8px 11px;
   font-size: 10px;
   cursor: pointer;
+  justify-self: end;
 }
 .install-line button.copied { color: var(--green); border-color: var(--green); }
 
@@ -1516,8 +1528,9 @@ footer a:hover { color: var(--ink); border-bottom-color: #2b856b; }
   h1 { font-size: clamp(42px, 14vw, 62px); }
   h2 { font-size: clamp(32px, 10vw, 46px); }
   .hero, .doc-header, .play-header { padding-top: 56px; }
-  .install-line { width: 100%; overflow-x: auto; border-radius: 16px; align-items: flex-start; }
+  .install-line { width: 100%; grid-template-columns: 1fr; border-radius: 16px; align-items: flex-start; }
   .install-line .cmd { font-size: 11px; }
+  .install-line button { justify-self: start; }
   .signal-grid, .card-grid, .control-row, .facts, .facts.three, .workflow, .hero-metrics, .dash-controls { grid-template-columns: 1fr; }
   .product-hero { padding-top: 56px; }
   .app-shell { padding: 28px 22px 58px; }
