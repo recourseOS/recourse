@@ -42,18 +42,18 @@
 </nav>
 
 <header class="hero hero-simple container">
-  <div class="eyebrow">Consequence layer for infrastructure</div>
-  <h1>Know what breaks <span class="accent">before it breaks.</span></h1>
+  <div class="eyebrow">Consequence oracle for AI agents</div>
+  <h1>The layer agents call <span class="accent">before they act.</span></h1>
   <p class="lede">
-    Run <code>recourse preflight</code> before destructive changes. Get a clear decision: run, warn, review, or block.
+    Pass a proposed action, get back what it would actually do. Structured consequence reports for any agent that touches infrastructure.
   </p>
   <div class="hero-actions">
-    <a class="button primary" href="/playground.html">Try it</a>
-    <a class="button secondary" href="https://github.com/recourseOS/recourse">View on GitHub</a>
+    <a class="button primary" href="/mcp-setup.html">Wire MCP server</a>
+    <a class="button secondary" href="/playground.html">Try it</a>
   </div>
   <div class="hero-command">
-    <code>npx recourse-cli preflight shell 'aws s3 rm s3://prod --recursive'</code>
-    <button type="button" data-copy="npx recourse-cli preflight shell 'aws s3 rm s3://prod --recursive'" aria-label="Copy command">Copy</button>
+    <code>recourse.evaluate({ source: "shell", input: "aws s3 rm s3://prod --recursive" })</code>
+    <button type="button" data-copy='recourse.evaluate({ source: "shell", input: "aws s3 rm s3://prod --recursive" })' aria-label="Copy command">Copy</button>
   </div>
 </header>
 
