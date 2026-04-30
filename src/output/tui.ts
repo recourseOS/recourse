@@ -5,10 +5,7 @@ export interface TuiOptions {
   inputLabel?: string;
 }
 
-const leftWidth = 31;
-const centerWidth = 43;
-const rightWidth = 34;
-const width = leftWidth + centerWidth + rightWidth + 10;
+const width = 88;
 
 export function formatTui(report: ConsequenceReport, options: TuiOptions): string {
   const primary = report.mutations[0];
@@ -16,65 +13,75 @@ export function formatTui(report: ConsequenceReport, options: TuiOptions): strin
   const decision = report.decision.toUpperCase();
   const confidence = Math.round((report.summary.worstRecoverability.confidence ?? 1) * 100);
   const confidenceLabel = confidence > 0 ? `${confidence}%` : 'needs evidence';
+  const evidence = primary?.evidence.map(item => `${item.key}: ${stringifyValue(item.value, item.present)}`) ?? [];
+  const missingEvidence = primary?.missingEvidence.map(item => `${item.key}: ${item.description}`) ?? [];
+
   const lines = [
-    top(),
-    row('RECOURSEOS PREFLIGHT', 'NORMALIZED MUTATION', 'CONSEQUENCE DECISION'),
-    sep(),
-    row(`input: ${source}`, targetLine(primary), `${decision}  ${report.summary.worstRecoverability.label}`),
-    row(`plug: ${adapterName(options.source)}`, actionLine(primary), `confidence: ${confidenceLabel}`),
-    row(`actor: ${actorLine(primary)}`, providerLine(primary), `policy: ${policyAction(report.decision)}`),
-    sep(),
-    row('ADAPTERS', 'EVALUATION PIPELINE', 'NEXT ACTION'),
-    row(adapterState(options.source, 'terraform'), '1. parse action into MutationIntent', nextAction(report.decision)),
-    row(adapterState(options.source, 'shell'), '2. match known resource rules first', reviewState(report)),
-    row(adapterState(options.source, 'mcp'), '3. use semantic unknown fallback', ''),
-    row(adapterState(options.source, 'future'), '4. return structured report + TUI', ''),
-    sep(),
-    full('EVIDENCE'),
-    ...bulletRows(primary?.evidence.map(item => `${item.key}: ${stringifyValue(item.value, item.present)}`) ?? ['none']),
-    full('MISSING EVIDENCE'),
-    ...bulletRows(primary?.missingEvidence.map(item => `${item.key}: ${item.description}`) ?? ['none']),
-    full('AGENT-SAFE RESPONSE'),
-    ...wrappedRows(agentResponse(report), width - 4).map(line => `| ${line.padEnd(width - 4)} |`),
-    bottom(),
+    'RECOURSEOS PREFLIGHT',
+    '='.repeat(20),
+    keyValue('input', source),
+    keyValue('adapter', adapterName(options.source)),
+    keyValue('actor', actorLine(primary)),
+    keyValue('supported inputs', 'Terraform plans, Shell / cloud CLIs, MCP tool calls'),
+    '',
+    section('CONSEQUENCE DECISION'),
+    keyValue('verdict', `${decision} (${report.summary.worstRecoverability.label})`),
+    keyValue('policy', policyAction(report.decision)),
+    keyValue('confidence', confidenceLabel),
+    ...keyValueRows('reason', report.decisionReason),
+    '',
+    section('NORMALIZED MUTATION'),
+    keyValue('target', targetValue(primary)),
+    keyValue('action', actionValue(primary)),
+    keyValue('provider', providerValue(primary)),
+    '',
+    section('EVIDENCE'),
+    ...bulletRows(evidence, 'present'),
+    '',
+    section('MISSING EVIDENCE'),
+    ...bulletRows(missingEvidence, 'needed'),
+    '',
+    section('EVALUATION PATH'),
+    `1. ${adapterName(options.source)} parsed input into MutationIntent`,
+    '2. Known resource rules checked first',
+    '3. Semantic unknown fallback handles long-tail resource types',
+    `4. Next action: ${nextAction(report.decision)} (${reviewState(report)})`,
+    '',
+    section('AGENT-SAFE RESPONSE'),
+    ...wrapped(agentResponse(report), width),
   ];
 
   return lines.join('\n');
 }
 
-function top(): string {
-  return `+${'-'.repeat(width - 2)}+`;
+function section(value: string): string {
+  return `${value}\n${'-'.repeat(value.length)}`;
 }
 
-function sep(): string {
-  return `+${'-'.repeat(leftWidth + 2)}+${'-'.repeat(centerWidth + 2)}+${'-'.repeat(rightWidth + 2)}+`;
+function keyValue(key: string, value: string): string {
+  return `${key.padEnd(16)} ${value}`;
 }
 
-function bottom(): string {
-  return top();
+function keyValueRows(key: string, value: string): string[] {
+  const [first = '', ...rest] = wrapped(value, width - 17);
+  return [
+    keyValue(key, first),
+    ...rest.map(line => `${' '.repeat(17)}${line}`),
+  ];
 }
 
-function row(left: string, center: string, right: string): string {
-  return `| ${cell(left, leftWidth)} | ${cell(center, centerWidth)} | ${cell(right, rightWidth)} |`;
-}
-
-function full(value: string): string {
-  return `| ${value.padEnd(width - 4)} |`;
-}
-
-function cell(value: string, size: number): string {
-  const clean = value.replace(/\s+/g, ' ').trim();
-  return clean.length > size ? `${clean.slice(0, size - 3)}...` : clean.padEnd(size);
-}
-
-function bulletRows(items: string[]): string[] {
+function bulletRows(items: string[], label: string): string[] {
   const normalized = items.length > 0 ? items : ['none'];
   return normalized.flatMap(item =>
-    wrappedRows(`- ${item}`, width - 4).map(line => `| ${line.padEnd(width - 4)} |`)
+    wrappedWithIndent(`- [${label}] ${item}`, '  ')
   );
 }
 
-function wrappedRows(value: string, size: number): string[] {
+function wrapped(value: string, size: number): string[] {
+  return wrappedWithIndent(value, '', size);
+}
+
+function wrappedWithIndent(value: string, indent: string, size = width): string[] {
   const words = value.split(/\s+/);
   const lines: string[] = [];
   let line = '';
@@ -86,7 +93,7 @@ function wrappedRows(value: string, size: number): string[] {
       line = `${line} ${word}`;
     } else {
       lines.push(line);
-      line = word;
+      line = `${indent}${word}`;
     }
   }
 
@@ -97,28 +104,28 @@ function wrappedRows(value: string, size: number): string[] {
   return lines.length > 0 ? lines : [''];
 }
 
-function targetLine(mutation: AnalyzedMutation | undefined): string {
+function targetValue(mutation: AnalyzedMutation | undefined): string {
   if (!mutation) {
-    return 'target: none';
+    return 'none';
   }
-  return `target: ${mutation.intent.target.id}`;
+  return mutation.intent.target.id;
 }
 
-function actionLine(mutation: AnalyzedMutation | undefined): string {
+function actionValue(mutation: AnalyzedMutation | undefined): string {
   if (!mutation) {
-    return 'action: none';
+    return 'none';
   }
-  return `action: ${mutation.intent.action} ${mutation.intent.target.type}`;
+  return `${mutation.intent.action} ${mutation.intent.target.type}`;
 }
 
-function providerLine(mutation: AnalyzedMutation | undefined): string {
+function providerValue(mutation: AnalyzedMutation | undefined): string {
   if (!mutation) {
-    return 'provider: unknown';
+    return 'unknown';
   }
 
   const target = mutation.intent.target;
   const parts = [target.provider, target.service, target.environment].filter(Boolean);
-  return parts.length > 0 ? `provider: ${parts.join(' / ')}` : 'provider: unknown';
+  return parts.length > 0 ? parts.join(' / ') : 'unknown';
 }
 
 function actorLine(mutation: AnalyzedMutation | undefined): string {
