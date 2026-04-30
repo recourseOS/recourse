@@ -37,50 +37,90 @@
 </nav>
 
 <header class="container play-header">
-  <div class="eyebrow">browser-only sandbox</div>
-  <h1>Try consequence analysis.</h1>
-  <p class="lede">Choose a sample Terraform, shell, or MCP mutation and see the structured report an agent receives before acting. The playground uses sample data only and never uploads input.</p>
+  <div class="eyebrow">agent preflight console</div>
+  <h1>See what an agent checks before it acts.</h1>
+  <p class="lede">Choose a proposed Terraform, shell, or MCP mutation. The console shows the Recourse MCP tool call, the consequence verdict, the evidence, and the response an agent should give next. Sample data only; nothing leaves the browser.</p>
 </header>
 
-<main class="container sandbox" id="sandbox">
-  <section class="panel" aria-label="Mutation input">
-    <div class="panel-head">
-      <div class="panel-title">Mutation</div>
-      <div class="safe-note">No uploads. No API calls. Sample evaluation only.</div>
-    </div>
-    <div class="controls">
-      <div class="control-row">
-        <label>
-          Source
-          <select id="source-select" aria-label="Source">
-            <option value="terraform">Terraform</option>
-            <option value="shell">Shell</option>
-            <option value="mcp">MCP call</option>
-          </select>
-        </label>
-        <label>
-          Scenario
-          <select id="scenario-select" aria-label="Scenario"></select>
-        </label>
+<main class="container preflight-console" id="sandbox">
+  <div class="preflight-stack">
+    <section class="panel" aria-label="Agent preflight workflow">
+      <div class="panel-head">
+        <div class="panel-title">Product Loop</div>
+        <div class="safe-note">Agent proposes action. Recourse returns consequence.</div>
       </div>
-      <label>
-        Input
-        <textarea id="input" spellcheck="false" aria-label="Mutation input"></textarea>
-      </label>
-      <div class="actions">
-        <button id="evaluate" type="button">Evaluate</button>
-        <button id="reset" type="button" class="secondary">Reset sample</button>
+      <div class="workflow">
+        <div class="workflow-step">
+          <div class="workflow-index">01</div>
+          <div class="workflow-title">Proposed action</div>
+          <div class="workflow-copy">An agent prepares a mutation across Terraform, shell, or another MCP server.</div>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-index">02</div>
+          <div class="workflow-title">Recourse check</div>
+          <div class="workflow-copy">The agent calls Recourse through MCP before executing the action.</div>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-index">03</div>
+          <div class="workflow-title">Act or stop</div>
+          <div class="workflow-copy">The agent follows the structured verdict instead of guessing from text.</div>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="panel result" aria-label="Consequence report">
+    <section class="panel" aria-label="Mutation input">
+      <div class="panel-head">
+        <div class="panel-title">Proposed Action</div>
+        <div class="safe-note">Editable sample input. No uploads.</div>
+      </div>
+      <div class="controls">
+        <div class="control-row">
+          <label>
+            Source
+            <select id="source-select" aria-label="Source">
+              <option value="terraform">Terraform</option>
+              <option value="shell">Shell</option>
+              <option value="mcp">MCP call</option>
+            </select>
+          </label>
+          <label>
+            Scenario
+            <select id="scenario-select" aria-label="Scenario"></select>
+          </label>
+        </div>
+        <label>
+          Input
+          <textarea id="input" spellcheck="false" aria-label="Mutation input"></textarea>
+        </label>
+        <div class="actions">
+          <button id="evaluate" type="button">Run preflight</button>
+          <button id="reset" type="button" class="secondary">Reset sample</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="MCP tool call">
+      <div class="panel-head">
+        <div class="panel-title">MCP Tool Call</div>
+        <div class="safe-note">What the agent sends to Recourse.</div>
+      </div>
+      <div class="mcp-preview">
+        <pre id="mcp-call"></pre>
+        <div class="agent-response">
+          <div class="agent-response-title">Agent response</div>
+          <p id="agent-response"></p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <aside class="panel result" aria-label="Consequence report">
     <div class="panel-head">
       <div class="panel-title">Consequence Report</div>
       <div class="safe-note">schemaVersion recourse.consequence.v1</div>
     </div>
     <div class="result-body" id="result"></div>
-  </section>
+  </aside>
 </main>
 
 <footer class="container">
@@ -244,6 +284,8 @@ const sourceSelect = document.getElementById('source-select');
 const scenarioSelect = document.getElementById('scenario-select');
 const input = document.getElementById('input');
 const result = document.getElementById('result');
+const mcpCall = document.getElementById('mcp-call');
+const agentResponse = document.getElementById('agent-response');
 const evaluateButton = document.getElementById('evaluate');
 const resetButton = document.getElementById('reset');
 
@@ -269,7 +311,7 @@ function populateScenarios() {
 
 function loadScenario() {
   input.value = formatInput(activeScenario().input);
-  renderReport(activeScenario().report, sourceSelect.value);
+  renderReport(activeScenario().report, sourceSelect.value, activeScenario().input);
 }
 
 function evaluate() {
@@ -279,7 +321,7 @@ function evaluate() {
     renderInvalid(parsed.message);
     return;
   }
-  renderReport(adjustReport(scenario.report, sourceSelect.value, parsed.value), sourceSelect.value);
+  renderReport(adjustReport(scenario.report, sourceSelect.value, parsed.value), sourceSelect.value, parsed.value);
 }
 
 function parseInput(source, value) {
@@ -322,9 +364,11 @@ function adjustReport(base, source, value) {
 
 function renderInvalid(message) {
   result.innerHTML = `<div class="invalid">${escapeHtml(message)}</div>`;
+  mcpCall.textContent = '';
+  agentResponse.textContent = 'The agent should stop and ask for valid input before calling Recourse.';
 }
 
-function renderReport(report, source) {
+function renderReport(report, source, value) {
   const payload = {
     schemaVersion: 'recourse.consequence.v1',
     decision: report.decision,
@@ -348,6 +392,9 @@ function renderReport(report, source) {
       }
     ]
   };
+  const invocation = buildMcpInvocation(source, value);
+  mcpCall.textContent = JSON.stringify(invocation, null, 2);
+  agentResponse.textContent = responseFor(report);
 
   result.innerHTML = `
     <div class="decision-card">
@@ -356,9 +403,10 @@ function renderReport(report, source) {
         <div class="decision-pill ${escapeHtml(report.decision)}">${escapeHtml(report.tier)}</div>
       </div>
       <p class="decision-reason">${escapeHtml(report.reason)}</p>
-      <div class="facts">
+      <div class="facts three">
         <div class="fact"><div class="fact-key">source</div><div class="fact-value">${escapeHtml(report.source)}</div></div>
         <div class="fact"><div class="fact-key">confidence</div><div class="fact-value">${Math.round(report.confidence * 100)}%</div></div>
+        <div class="fact"><div class="fact-key">agent action</div><div class="fact-value">${escapeHtml(actionFor(report.decision))}</div></div>
       </div>
     </div>
     ${listSection('Evidence', report.evidence)}
@@ -369,6 +417,57 @@ function renderReport(report, source) {
       <pre>${escapeHtml(JSON.stringify(payload, null, 2))}</pre>
     </div>
   `;
+}
+
+function buildMcpInvocation(source, value) {
+  const base = {
+    actor: 'agent/preflight',
+    environment: 'production'
+  };
+
+  const toolName = {
+    terraform: 'recourse_evaluate_terraform',
+    shell: 'recourse_evaluate_shell',
+    mcp: 'recourse_evaluate_mcp_call'
+  }[source];
+
+  const args = source === 'terraform'
+    ? { ...base, classifier: true, plan: value }
+    : source === 'shell'
+      ? { ...base, command: value }
+      : { ...base, ...value };
+
+  return {
+    jsonrpc: '2.0',
+    id: 'preflight-1',
+    method: 'tools/call',
+    params: {
+      name: toolName,
+      arguments: args
+    }
+  };
+}
+
+function actionFor(decision) {
+  return {
+    allow: 'continue',
+    warn: 'surface recovery requirement',
+    block: 'do not execute',
+    escalate: 'ask for review'
+  }[decision] || 'ask for review';
+}
+
+function responseFor(report) {
+  if (report.decision === 'block') {
+    return `I checked this with RecourseOS. It blocks the action because ${report.reason} I will not execute it unless the recovery posture changes or policy is explicitly overridden.`;
+  }
+  if (report.decision === 'escalate') {
+    return `I checked this with RecourseOS. It needs human review because ${report.reason} Missing evidence: ${report.missing.join(', ')}.`;
+  }
+  if (report.decision === 'warn') {
+    return `I checked this with RecourseOS. The action can continue only after surfacing the recovery requirement: ${report.reason}`;
+  }
+  return `I checked this with RecourseOS. The action is classified as reversible, so I can continue under the normal permission policy.`;
 }
 
 function listSection(title, items) {
