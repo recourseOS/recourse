@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>RecourseOS - MCP Setup</title>
-<meta name="description" content="Connect RecourseOS to MCP clients and verify the local stdio server." />
+<meta name="description" content="Add RecourseOS to your agent's tool list in one config block." />
 <link rel="icon" href="favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -37,15 +37,15 @@
   </div>
 </nav>
 <header class="container doc-header">
-  <div class="eyebrow">public docs</div>
+  <div class="eyebrow">agent integration</div>
   <h1>MCP Setup</h1>
-  <p class="lede">Connect RecourseOS to MCP clients and verify the local stdio server.</p>
+  <p class="lede">Add RecourseOS to your agent's tool list. One config block, then your agent can call <code>recourse.evaluate</code> before any destructive action.</p>
 </header>
 <main class="container doc-shell">
   <aside class="toc"><div class="toc-title">On this page</div><a href="#start-the-server">Start the Server</a><a href="#mcp-client-config">MCP Client Config</a><a href="#verify-the-wiring">Verify the Wiring</a><a href="#available-tools">Available Tools</a><a href="#agent-behavior">Agent Behavior</a><a href="#example-agent-prompt">Example Agent Prompt</a></aside>
   <article>
     <h1 id="mcp-setup">MCP Setup</h1>
-<p>RecourseOS runs as a local MCP stdio server. Agents can call it before executing Terraform, shell, or tool mutations.</p>
+<p>RecourseOS exposes <code>recourse.evaluate</code> as an MCP tool. Any MCP-compatible agent gains consequence data with one config block.</p>
 <h2 id="start-the-server">Start the Server</h2>
 <p>For an installed CLI:</p>
 <pre><code>recourse mcp serve</code></pre>

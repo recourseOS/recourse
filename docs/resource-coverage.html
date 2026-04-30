@@ -37,16 +37,16 @@
   </div>
 </nav>
 <header class="container doc-header">
-  <div class="eyebrow">public docs</div>
+  <div class="eyebrow">coverage reference</div>
   <h1>Resource Coverage</h1>
-  <p class="lede">Generated deterministic resource handler coverage for AWS, GCP, Azure, and Azure AD.</p>
+  <p class="lede">Which resources get deterministic rules vs semantic fallback. Agents can check <code>recourse.source</code> to know which verdict type they received.</p>
 </header>
 <main class="container doc-shell">
   <aside class="toc"><div class="toc-title">On this page</div><a href="#aws">AWS</a><a href="#gcp">GCP</a><a href="#azure">Azure</a><a href="#azure-ad">Azure AD</a><a href="#coverage-notes">Coverage Notes</a></aside>
   <article>
     <h1 id="resource-coverage">Resource Coverage</h1>
 <p>Total deterministic resource types: 175</p>
-<p>Known resource handlers are authoritative. Unknown resource types can still be evaluated with <code>--classifier</code>, which uses provider-neutral semantic safety signals and returns <code>needs-review</code> when evidence is weak.</p>
+<p>Known handlers return <code>source: "rules"</code> — authoritative verdicts agents can trust. Unknown types return <code>source: "semantic-unknown"</code> with conservative classification that defaults to <code>needs-review</code> when evidence is weak.</p>
 <pre><code>recourse resources
 recourse plan plan.json --classifier
 recourse evaluate terraform plan.json --classifier</code></pre>

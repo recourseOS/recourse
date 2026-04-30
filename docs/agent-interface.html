@@ -37,15 +37,15 @@
   </div>
 </nav>
 <header class="container doc-header">
-  <div class="eyebrow">public docs</div>
+  <div class="eyebrow">schema reference</div>
   <h1>Agent Interface</h1>
-  <p class="lede">MCP tool contract and consequence report semantics for agents that call RecourseOS before acting.</p>
+  <p class="lede">The consequence report schema agents consume. Structured fields, example prompts, and reasoning patterns.</p>
 </header>
 <main class="container doc-shell">
   <aside class="toc"><div class="toc-title">On this page</div><a href="#running-the-server">Running the Server</a><a href="#agent-contract">Agent Contract</a><a href="#mcp-tools">MCP Tools</a><a href="#output-schema">Output Schema</a><a href="#agent-instructions">Agent Instructions</a><a href="#error-behavior">Error Behavior</a><a href="#bitnet-placement">BitNet Placement</a></aside>
   <article>
     <h1 id="agent-interface">Agent Interface</h1>
-<p>RecourseOS is an AI-ready consequence oracle for agents before they act. Agents submit a proposed mutation and receive a structured <code>ConsequenceReport</code> that tells them whether to proceed, warn, block, or ask a human for review.</p>
+<p>RecourseOS is the consequence oracle agents call before they act. Submit a proposed mutation, get back a structured <code>ConsequenceReport</code> with a machine-readable decision: allow, warn, block, or escalate.</p>
 <h2 id="running-the-server">Running the Server</h2>
 <p>Start the MCP stdio server from the CLI:</p>
 <pre><code>recourse mcp serve</code></pre>
