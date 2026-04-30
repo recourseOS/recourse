@@ -1,6 +1,6 @@
 # MCP Setup
 
-RecourseOS runs as a local MCP stdio server. Agents can call it before executing Terraform, shell, or tool mutations.
+RecourseOS runs as an MCP server so AI agents can check consequences before they act. One config block, and your agent knows what's recoverable before it touches infrastructure.
 
 ## Start the Server
 
@@ -39,7 +39,7 @@ If the CLI is not installed globally, use `npx`:
   "mcpServers": {
     "recourseos": {
       "command": "npx",
-      "args": ["-y", "recourse-cli@0.1.4", "mcp", "serve"]
+      "args": ["-y", "recourse-cli@latest", "mcp", "serve"]
     }
   }
 }

@@ -48,7 +48,7 @@
   <aside class="toc"><div class="toc-title">On this page</div><a href="#start-the-server">Start the Server</a><a href="#mcp-client-config">MCP Client Config</a><a href="#verify-the-wiring">Verify the Wiring</a><a href="#available-tools">Available Tools</a><a href="#agent-behavior">Agent Behavior</a><a href="#example-agent-prompt">Example Agent Prompt</a></aside>
   <article>
     <h1 id="mcp-setup">MCP Setup</h1>
-<p>RecourseOS runs as a local MCP stdio server. Agents can call it before executing Terraform, shell, or tool mutations.</p>
+<p>RecourseOS runs as an MCP server so AI agents can check consequences before they act. One config block, and your agent knows what's recoverable before it touches infrastructure.</p>
 <h2 id="start-the-server">Start the Server</h2>
 <p>For an installed CLI:</p>
 <pre><code>recourse mcp serve</code></pre>
@@ -70,7 +70,7 @@ node dist/index.js mcp serve</code></pre>
   &quot;mcpServers&quot;: {
     &quot;recourseos&quot;: {
       &quot;command&quot;: &quot;npx&quot;,
-      &quot;args&quot;: [&quot;-y&quot;, &quot;recourse-cli@0.1.4&quot;, &quot;mcp&quot;, &quot;serve&quot;]
+      &quot;args&quot;: [&quot;-y&quot;, &quot;recourse-cli@latest&quot;, &quot;mcp&quot;, &quot;serve&quot;]
     }
   }
 }</code></pre>
