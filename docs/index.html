@@ -32,8 +32,8 @@
     </span>
   </a>
   <div class="links">
+    <a href="#how-agents-use-it">how it works</a>
     <a href="#platform">platform</a>
-    <a href="#difference">difference</a>
     <a href="#coverage">coverage</a>
     <a href="/console.html">console</a>
     <a href="#docs">docs</a>
@@ -155,6 +155,10 @@
       </p>
       <div class="architecture-diagram">
         <div class="arch-row arch-inputs">
+          <div class="arch-node input highlight">
+            <span>MCP</span>
+            <strong>tool call</strong>
+          </div>
           <div class="arch-node input">
             <span>Terraform</span>
             <strong>plan JSON</strong>
@@ -162,10 +166,6 @@
           <div class="arch-node input">
             <span>Shell</span>
             <strong>command string</strong>
-          </div>
-          <div class="arch-node input">
-            <span>MCP</span>
-            <strong>tool call</strong>
           </div>
         </div>
         <div class="arch-arrow-row">
@@ -231,17 +231,64 @@
           </svg>
         </div>
         <div class="arch-row arch-outputs">
+          <div class="arch-node surface highlight">
+            <span>MCP Server</span>
+            <strong>Agent integration</strong>
+          </div>
           <div class="arch-node surface">
             <span>CLI</span>
             <strong>Terminal · CI/CD</strong>
           </div>
           <div class="arch-node surface">
-            <span>MCP Server</span>
-            <strong>Agent integration</strong>
-          </div>
-          <div class="arch-node surface">
             <span>Future</span>
             <strong>Local app · Dashboard</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="how-agents-use-it">
+    <div class="container">
+      <div class="section-label">How agents use it</div>
+      <h2 style="max-width: 28ch; margin-bottom: 18px;">The preflight check pattern.</h2>
+      <p class="section-copy" style="margin-bottom: 42px;">
+        Before executing any destructive action, the agent calls RecourseOS. The response tells it exactly what to do next.
+      </p>
+      <div class="flow-steps">
+        <div class="flow-step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <div class="step-title">Agent receives destructive task</div>
+            <div class="step-body">"Delete the old staging database" or <code>terraform apply</code> with deletions</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <div class="step-title">Agent calls RecourseOS first</div>
+            <div class="step-body"><code>recourse_evaluate_terraform</code> or <code>recourse_evaluate_shell</code> — before executing anything</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <div class="step-title">Agent routes on decision</div>
+            <div class="step-body">
+              <div class="decision-grid">
+                <div class="decision-item allow"><strong>allow</strong><span>Execute the action</span></div>
+                <div class="decision-item warn"><strong>warn</strong><span>Surface recovery requirements, then execute</span></div>
+                <div class="decision-item escalate"><strong>escalate</strong><span>Ask human for review with missing evidence</span></div>
+                <div class="decision-item block"><strong>block</strong><span>Refuse to execute, explain why</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <div class="step-title">Agent explains with evidence</div>
+            <div class="step-body">"Blocked because skip_final_snapshot=true and backup_retention_period=0 — database would be unrecoverable."</div>
           </div>
         </div>
       </div>

@@ -623,6 +623,118 @@ a.card:hover { border-color: var(--green); }
   background: var(--paper-soft);
 }
 
+.arch-node.highlight {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Flow Steps (How agents use it)
+   ───────────────────────────────────────────────────────────── */
+.flow-steps {
+  max-width: 720px;
+  margin: 0 auto;
+  display: grid;
+  gap: 24px;
+}
+
+.flow-step {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.step-number {
+  width: 48px;
+  height: 48px;
+  background: var(--green);
+  color: var(--night);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.step-content {
+  background: var(--paper-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+}
+
+.step-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.step-body {
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.step-body code {
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.9em;
+  color: var(--green-dark);
+}
+
+.decision-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.decision-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: var(--paper-soft);
+  border-radius: 8px;
+  border-left: 3px solid var(--line);
+}
+
+.decision-item strong {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.decision-item span {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.decision-item.allow { border-left-color: var(--green); }
+.decision-item.allow strong { color: var(--green-dark); }
+
+.decision-item.warn { border-left-color: var(--amber); }
+.decision-item.warn strong { color: var(--amber); }
+
+.decision-item.escalate { border-left-color: var(--blue); }
+.decision-item.escalate strong { color: var(--blue); }
+
+.decision-item.block { border-left-color: var(--red); }
+.decision-item.block strong { color: var(--red); }
+
+@media (max-width: 680px) {
+  .flow-step { grid-template-columns: 1fr; }
+  .step-number { width: 36px; height: 36px; font-size: 16px; }
+  .decision-grid { grid-template-columns: 1fr; }
+}
+
 /* ─────────────────────────────────────────────────────────────
    Documentation Layout
    ───────────────────────────────────────────────────────────── */
