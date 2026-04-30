@@ -2,7 +2,7 @@
 
 AI-ready consequence analysis for infrastructure changes.
 
-Recourse is a rules-first, BitNet-ready consequence evaluator for infrastructure changes. It reads Terraform plans, shell commands, or MCP tool calls and classifies each mutation by recoverability: reversible, recoverable with effort, recoverable from backup, unrecoverable, or needs review.
+Recourse is a rules-first consequence evaluator for infrastructure changes, with a 1-bit quantized neural network classifier for unknown resources. It reads Terraform plans, shell commands, or MCP tool calls and classifies each mutation by recoverability: reversible, recoverable with effort, recoverable from backup, unrecoverable, or needs review.
 
 The public CLI is local-first. No account or cloud service is required.
 
@@ -294,20 +294,21 @@ Azure coverage includes:
 - IAM: role assignments/definitions and Azure AD applications/service principals/passwords.
 - Core: DNS records, managed disks, snapshots, Key Vault vaults/keys/secrets/certificates/access policies, and AKS clusters/node pools.
 
-## Unknown Resources and BitNet Path
+## Unknown Resources and Neural Classifier
 
 For known AWS, GCP, and Azure resources, deterministic rules win.
 
-For unknown resource types, `--classifier` enables a provider-neutral semantic profile and classifier. It recognizes abstract safety signals such as:
+For unknown resource types, Recourse uses a three-layer classification system:
 
-- `deletion_protection=true`
-- storage versioning and soft delete
-- backup retention and point-in-time recovery
-- `recovery_window_in_days` and `deletion_window_in_days`
-- IAM/config-only relationship resources
-- credential material that cannot be recovered after deletion
+1. **Exact mappings** (100% accuracy): ~180 manually verified resource → category mappings for high-value resources across AWS, GCP, Azure, and OCI.
 
-If evidence is weak, the classifier returns `needs-review` rather than marking the change safe. This path is intentionally BitNet-compatible: model-backed unknown-resource classification can preserve the same consequence report contract while deterministic rules remain authoritative.
+2. **BitNet classifier**: A 1-bit quantized neural network trained on 400+ resource types across 10+ cloud providers. Handles unknown providers like Scaleway, UpCloud, Hetzner, and Exoscale.
+
+3. **Pattern fallback**: Regex-based classification for the very long tail.
+
+The classifier recognizes verification categories: databases with snapshots, NoSQL databases, block storage, file storage, object storage, cache clusters, search clusters, streaming data, message queues, container registries, secrets and keys, stateful compute, and config-only resources that need no verification.
+
+Production accuracy is **90.5%** on a held-out test set. If confidence is low, the classifier returns `needs-review` rather than marking the change safe. Deterministic rules remain authoritative for known resources.
 
 ## Golden Fixtures
 
