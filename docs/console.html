@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>RecourseOS Console</title>
+<meta name="description" content="Evaluate proposed actions and see consequence reports. The dashboard for agent builders." />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="site.css" />
+<style>
+.console-page { min-height: 100vh; background: var(--paper); }
+
+.console-header {
+  background: var(--night);
+  border-bottom: 1px solid rgba(240, 253, 244, 0.1);
+  padding: 16px 0;
+}
+.console-header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.console-header .brand-name { color: #f0fdf4; }
+.console-header .links a { color: rgba(240, 253, 244, 0.6); font-size: 13px; }
+.console-header .links a:hover { color: #fff; }
+
+.console-body { padding: 32px 0 64px; }
+
+.console-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.console-panel {
+  background: var(--paper-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper-soft);
+}
+
+.panel-title {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.source-tabs {
+  display: flex;
+  gap: 4px;
+}
+.source-tab {
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.source-tab:hover { border-color: var(--green); color: var(--green); }
+.source-tab.active { background: var(--green); border-color: var(--green); color: var(--night); }
+
+.panel-body { padding: 20px; }
+
+.input-area {
+  width: 100%;
+  min-height: 280px;
+  padding: 16px;
+  background: var(--night);
+  border: 1px solid rgba(240, 253, 244, 0.1);
+  border-radius: var(--radius);
+  color: rgba(240, 253, 244, 0.85);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+}
+.input-area:focus { outline: 2px solid var(--green); outline-offset: 2px; }
+
+.panel-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--line);
+  background: var(--paper-soft);
+}
+
+.evaluate-btn {
+  padding: 10px 20px;
+  background: var(--green);
+  border: none;
+  border-radius: 8px;
+  color: var(--night);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.evaluate-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+
+.input-hint {
+  color: var(--ink-faint);
+  font-size: 12px;
+}
+
+/* Result panel */
+.result-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  color: var(--ink-faint);
+  text-align: center;
+}
+.result-empty-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+.result-empty p { font-size: 14px; max-width: 240px; }
+
+.result-content { display: none; }
+.result-content.visible { display: block; }
+
+.decision-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px;
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+}
+.decision-banner.allow { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); }
+.decision-banner.warn { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); }
+.decision-banner.block { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); }
+.decision-banner.escalate { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); }
+
+.decision-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 4px;
+}
+.decision-value {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.decision-banner.allow .decision-value { color: var(--green); }
+.decision-banner.warn .decision-value { color: var(--amber); }
+.decision-banner.block .decision-value { color: var(--red); }
+.decision-banner.escalate .decision-value { color: var(--amber); }
+
+.tier-pill {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.tier-pill.reversible { background: var(--green); color: var(--night); }
+.tier-pill.recoverable { background: var(--green-dark); color: #fff; }
+.tier-pill.backup { background: var(--amber); color: var(--night); }
+.tier-pill.unrecoverable { background: var(--red); color: #fff; }
+.tier-pill.review { background: var(--amber); color: var(--night); }
+
+.result-section { margin-bottom: 20px; }
+.result-section:last-child { margin-bottom: 0; }
+
+.result-section-title {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--green-dark);
+  margin-bottom: 8px;
+}
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+.result-row:last-child { border-bottom: none; }
+.result-key { color: var(--ink-soft); }
+.result-value { color: var(--ink); font-weight: 500; font-family: "JetBrains Mono", monospace; font-size: 12px; }
+
+.evidence-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.evidence-list li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.evidence-list li:last-child { border-bottom: none; }
+.evidence-list li::before { content: ""; display: inline-block; width: 6px; height: 6px; background: var(--green); border-radius: 50%; margin-right: 10px; }
+.evidence-list.missing li::before { background: var(--amber); }
+
+.reason-text {
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* MCP Config section */
+.mcp-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.mcp-config {
+  background: var(--night);
+  border: 1px solid rgba(240, 253, 244, 0.1);
+  border-radius: var(--radius);
+  padding: 16px;
+  position: relative;
+}
+.mcp-config pre {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: rgba(240, 253, 244, 0.85);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.mcp-copy {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(240, 253, 244, 0.15);
+  border-radius: 5px;
+  color: rgba(240, 253, 244, 0.6);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mcp-copy:hover { border-color: var(--green); color: var(--green); }
+
+/* JSON output toggle */
+.json-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.json-toggle:hover { border-color: var(--green); color: var(--green); }
+
+.json-output {
+  display: none;
+  margin-top: 20px;
+}
+.json-output.visible { display: block; }
+.json-output pre {
+  margin: 0;
+  max-height: 300px;
+  overflow: auto;
+}
+
+@media (max-width: 900px) {
+  .console-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body class="console-page">
+
+<header class="console-header">
+  <div class="container">
+    <a href="/" class="brand" aria-label="RecourseOS home">
+      <svg class="brand-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M50 5 L88.97 27.5 V72.5 L50 95 L11.03 72.5 V27.5 Z" fill="#06110e"/>
+        <path d="M50 9.8 L84.8 29.9 V70.1 L50 90.2 L15.2 70.1 V29.9 Z" stroke="#effbf3" stroke-width="5.6" stroke-linejoin="round"/>
+        <path d="M34 70 V30 H57.5 C67.2 30 74 36 74 44.6 C74 53.2 67.2 59.2 57.5 59.2 H34" stroke="#effbf3" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M55.5 59.5 L74 70.5" stroke="#effbf3" stroke-width="7" stroke-linecap="round"/>
+        <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round"/>
+        <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-name">Recourse<span class="os">OS</span> Console</span>
+    </a>
+    <div class="links">
+      <a href="/">Home</a>
+      <a href="/mcp-setup.html">MCP Setup</a>
+      <a href="/agent-interface.html">Schema</a>
+      <a href="https://github.com/recourseOS/recourse">GitHub</a>
+    </div>
+  </div>
+</header>
+
+<main class="console-body">
+  <div class="container">
+    <div class="console-grid">
+
+      <!-- Input Panel -->
+      <div class="console-panel">
+        <div class="panel-header">
+          <span class="panel-title">Input</span>
+          <div class="source-tabs">
+            <button class="source-tab active" data-source="terraform">Terraform</button>
+            <button class="source-tab" data-source="shell">Shell</button>
+            <button class="source-tab" data-source="mcp">MCP</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <textarea id="input" class="input-area" spellcheck="false" placeholder="Paste Terraform plan JSON, shell command, or MCP tool call..."></textarea>
+        </div>
+        <div class="panel-footer">
+          <span class="input-hint" id="input-hint">Paste a Terraform plan JSON</span>
+          <button class="evaluate-btn" id="evaluate">Evaluate</button>
+        </div>
+      </div>
+
+      <!-- Result Panel -->
+      <div class="console-panel">
+        <div class="panel-header">
+          <span class="panel-title">Consequence Report</span>
+          <button class="json-toggle" id="json-toggle">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/>
+            </svg>
+            JSON
+          </button>
+        </div>
+        <div class="panel-body">
+          <div class="result-empty" id="result-empty">
+            <svg class="result-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            <p>Enter an action and click Evaluate to see the consequence report</p>
+          </div>
+
+          <div class="result-content" id="result-content">
+            <div class="decision-banner" id="decision-banner">
+              <div>
+                <div class="decision-label">Decision</div>
+                <div class="decision-value" id="decision-value">block</div>
+              </div>
+              <span class="tier-pill" id="tier-pill">unrecoverable</span>
+            </div>
+
+            <div class="result-section">
+              <div class="result-section-title">Target</div>
+              <div class="result-row">
+                <span class="result-key">Resource</span>
+                <span class="result-value" id="target-resource">aws_db_instance.main</span>
+              </div>
+              <div class="result-row">
+                <span class="result-key">Action</span>
+                <span class="result-value" id="target-action">delete</span>
+              </div>
+              <div class="result-row">
+                <span class="result-key">Provider</span>
+                <span class="result-value" id="target-provider">aws</span>
+              </div>
+            </div>
+
+            <div class="result-section">
+              <div class="result-section-title">Reasoning</div>
+              <p class="reason-text" id="reason-text">Database deletion skips the final snapshot and has no backup retention.</p>
+            </div>
+
+            <div class="result-section">
+              <div class="result-section-title">Evidence Found</div>
+              <ul class="evidence-list" id="evidence-found"></ul>
+            </div>
+
+            <div class="result-section" id="evidence-missing-section">
+              <div class="result-section-title">Evidence Needed</div>
+              <ul class="evidence-list missing" id="evidence-missing"></ul>
+            </div>
+          </div>
+
+          <div class="json-output" id="json-output">
+            <pre id="json-content"></pre>
+          </div>
+        </div>
+
+        <div class="mcp-section">
+          <div class="result-section-title">MCP Config</div>
+          <div class="mcp-config">
+            <button class="mcp-copy" data-copy='{"mcpServers":{"recourseos":{"command":"npx","args":["-y","recourse-cli@latest","mcp","serve"]}}}'>Copy</button>
+            <pre>{
+  "mcpServers": {
+    "recourseos": {
+      "command": "npx",
+      "args": ["-y", "recourse-cli@latest", "mcp", "serve"]
+    }
+  }
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const sourceTabs = document.querySelectorAll('.source-tab');
+const inputArea = document.getElementById('input');
+const inputHint = document.getElementById('input-hint');
+const evaluateBtn = document.getElementById('evaluate');
+const resultEmpty = document.getElementById('result-empty');
+const resultContent = document.getElementById('result-content');
+const jsonToggle = document.getElementById('json-toggle');
+const jsonOutput = document.getElementById('json-output');
+const jsonContent = document.getElementById('json-content');
+
+let activeSource = 'terraform';
+
+const hints = {
+  terraform: 'Paste a Terraform plan JSON',
+  shell: 'Enter a shell command (e.g., aws s3 rm s3://bucket --recursive)',
+  mcp: 'Paste an MCP tool call JSON'
+};
+
+const examples = {
+  terraform: JSON.stringify({
+    resource_changes: [{
+      address: 'aws_db_instance.main',
+      type: 'aws_db_instance',
+      provider_name: 'registry.terraform.io/hashicorp/aws',
+      change: {
+        actions: ['delete'],
+        before: {
+          identifier: 'prod-main',
+          skip_final_snapshot: true,
+          backup_retention_period: 0,
+          deletion_protection: false
+        },
+        after: null
+      }
+    }]
+  }, null, 2),
+  shell: "aws s3 rm s3://prod-audit-logs --recursive",
+  mcp: JSON.stringify({
+    server: 'aws',
+    tool: 's3.delete_bucket',
+    arguments: { bucket: 'prod-audit-logs' }
+  }, null, 2)
+};
+
+sourceTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    sourceTabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    activeSource = tab.dataset.source;
+    inputHint.textContent = hints[activeSource];
+    inputArea.placeholder = hints[activeSource] + '...';
+    inputArea.value = examples[activeSource];
+  });
+});
+
+// Load initial example
+inputArea.value = examples.terraform;
+
+evaluateBtn.addEventListener('click', () => {
+  const input = inputArea.value.trim();
+  if (!input) return;
+
+  const report = evaluate(activeSource, input);
+  renderResult(report);
+});
+
+jsonToggle.addEventListener('click', () => {
+  jsonOutput.classList.toggle('visible');
+  resultContent.style.display = jsonOutput.classList.contains('visible') ? 'none' : 'block';
+});
+
+document.querySelectorAll('[data-copy]').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(btn.dataset.copy);
+    const original = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = original, 1500);
+  });
+});
+
+function evaluate(source, input) {
+  if (source === 'shell') return evaluateShell(input);
+  if (source === 'mcp') return evaluateMcp(input);
+  return evaluateTerraform(input);
+}
+
+function evaluateTerraform(input) {
+  try {
+    const plan = JSON.parse(input);
+    const change = plan.resource_changes?.[0];
+    if (!change) return errorReport('No resource_changes found');
+
+    const before = change.change?.before || {};
+    const actions = change.change?.actions || [];
+
+    if (!actions.includes('delete')) {
+      return {
+        decision: 'allow',
+        tier: 'reversible',
+        target: change.address,
+        action: actions.join('+'),
+        provider: 'terraform',
+        reason: 'No destructive action detected',
+        evidence: [`actions=${actions.join(',')}`],
+        missing: []
+      };
+    }
+
+    if (before.deletion_protection === true) {
+      return {
+        decision: 'allow',
+        tier: 'reversible',
+        target: change.address,
+        action: 'delete',
+        provider: extractProvider(change.provider_name),
+        reason: 'Deletion protection is enabled',
+        evidence: ['deletion_protection=true'],
+        missing: []
+      };
+    }
+
+    if (change.type?.includes('db_instance') && before.skip_final_snapshot === true) {
+      return {
+        decision: 'block',
+        tier: 'unrecoverable',
+        target: change.address,
+        action: 'delete',
+        provider: extractProvider(change.provider_name),
+        reason: 'Database deletion skips the final snapshot and has no backup retention',
+        evidence: ['skip_final_snapshot=true', `backup_retention_period=${before.backup_retention_period || 0}`],
+        missing: []
+      };
+    }
+
+    return {
+      decision: 'escalate',
+      tier: 'needs-review',
+      target: change.address,
+      action: 'delete',
+      provider: extractProvider(change.provider_name),
+      reason: 'Destructive action detected but recovery evidence is insufficient',
+      evidence: [`type=${change.type}`],
+      missing: ['Backup configuration', 'Recovery path']
+    };
+  } catch (e) {
+    return errorReport('Invalid JSON: ' + e.message);
+  }
+}
+
+function evaluateShell(input) {
+  const s3Match = input.match(/aws\s+s3\s+(rm|rb)\s+(s3:\/\/[^\s]+)/i);
+  if (s3Match) {
+    return {
+      decision: 'escalate',
+      tier: 'needs-review',
+      target: s3Match[2],
+      action: s3Match[1] === 'rb' ? 'delete bucket' : 'delete objects',
+      provider: 'aws/s3',
+      reason: 'Destructive S3 command detected but bucket state is unknown',
+      evidence: [`command=${input}`],
+      missing: ['Bucket versioning status', 'Replication configuration']
+    };
+  }
+
+  if (/\b(rm|delete|drop|destroy)\b/i.test(input)) {
+    return {
+      decision: 'escalate',
+      tier: 'needs-review',
+      target: 'shell',
+      action: 'execute',
+      provider: 'shell',
+      reason: 'Destructive command pattern detected',
+      evidence: [`command=${input}`],
+      missing: ['Target resource state', 'Recovery path']
+    };
+  }
+
+  return {
+    decision: 'allow',
+    tier: 'reversible',
+    target: 'shell',
+    action: 'execute',
+    provider: 'shell',
+    reason: 'No destructive pattern detected',
+    evidence: [`command=${input}`],
+    missing: []
+  };
+}
+
+function evaluateMcp(input) {
+  try {
+    const call = JSON.parse(input);
+    const tool = call.tool || call.name || '';
+    const target = call.arguments?.bucket || call.arguments?.name || tool;
+
+    if (/delete|remove|destroy/i.test(tool)) {
+      return {
+        decision: 'escalate',
+        tier: 'needs-review',
+        target,
+        action: `tool ${tool}`,
+        provider: call.server || 'mcp',
+        reason: 'Destructive MCP tool call detected',
+        evidence: [`tool=${tool}`],
+        missing: ['Target resource state', 'Recovery evidence']
+      };
+    }
+
+    return {
+      decision: 'allow',
+      tier: 'reversible',
+      target,
+      action: `tool ${tool}`,
+      provider: call.server || 'mcp',
+      reason: 'No destructive pattern detected',
+      evidence: [`tool=${tool}`],
+      missing: []
+    };
+  } catch (e) {
+    return errorReport('Invalid JSON: ' + e.message);
+  }
+}
+
+function errorReport(message) {
+  return {
+    decision: 'escalate',
+    tier: 'needs-review',
+    target: 'input',
+    action: 'parse',
+    provider: 'console',
+    reason: message,
+    evidence: [],
+    missing: ['Valid input']
+  };
+}
+
+function extractProvider(providerName) {
+  if (providerName?.includes('aws')) return 'aws';
+  if (providerName?.includes('google')) return 'gcp';
+  if (providerName?.includes('azurerm')) return 'azure';
+  return 'terraform';
+}
+
+function renderResult(report) {
+  resultEmpty.style.display = 'none';
+  resultContent.classList.add('visible');
+  jsonOutput.classList.remove('visible');
+
+  const banner = document.getElementById('decision-banner');
+  banner.className = `decision-banner ${report.decision}`;
+  document.getElementById('decision-value').textContent = report.decision;
+
+  const tierPill = document.getElementById('tier-pill');
+  tierPill.textContent = report.tier;
+  tierPill.className = 'tier-pill ' + getTierClass(report.tier);
+
+  document.getElementById('target-resource').textContent = report.target;
+  document.getElementById('target-action').textContent = report.action;
+  document.getElementById('target-provider').textContent = report.provider;
+  document.getElementById('reason-text').textContent = report.reason;
+
+  const evidenceFound = document.getElementById('evidence-found');
+  evidenceFound.innerHTML = report.evidence.map(e => `<li>${escapeHtml(e)}</li>`).join('') || '<li>None</li>';
+
+  const evidenceMissing = document.getElementById('evidence-missing');
+  const missingSection = document.getElementById('evidence-missing-section');
+  if (report.missing.length) {
+    missingSection.style.display = 'block';
+    evidenceMissing.innerHTML = report.missing.map(e => `<li>${escapeHtml(e)}</li>`).join('');
+  } else {
+    missingSection.style.display = 'none';
+  }
+
+  jsonContent.textContent = JSON.stringify({
+    schemaVersion: 'recourse.consequence.v1',
+    decision: report.decision,
+    summary: {
+      worstRecoverability: { label: report.tier }
+    },
+    mutations: [{
+      target: report.target,
+      action: report.action,
+      provider: report.provider,
+      recoverability: report.tier,
+      evidence: report.evidence,
+      missingEvidence: report.missing
+    }]
+  }, null, 2);
+}
+
+function getTierClass(tier) {
+  if (tier === 'reversible') return 'reversible';
+  if (tier === 'recoverable-with-effort') return 'recoverable';
+  if (tier === 'recoverable-from-backup') return 'backup';
+  if (tier === 'unrecoverable') return 'unrecoverable';
+  return 'review';
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+</script>
+</body>
+</html>
