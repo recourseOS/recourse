@@ -12,39 +12,51 @@ const docPages: DocPage[] = [
     source: 'docs/resource-coverage.md',
     output: 'docs/resource-coverage.html',
     title: 'Resource Coverage',
-    description: 'Generated deterministic resource handler coverage for AWS, GCP, Azure, and Azure AD.',
+    description: 'Which resources get deterministic rules vs semantic fallback. Agents can check source to know which verdict type they received.',
   },
   {
     source: 'docs/golden-fixtures.md',
     output: 'docs/golden-fixtures.html',
     title: 'Golden Evaluation Fixtures',
-    description: 'Stable public fixtures that validate evaluator and compiled CLI behavior.',
+    description: 'Stable fixtures that validate the consequence contract. Use these to verify agent integration.',
   },
   {
     source: 'docs/live-aws-tests.md',
     output: 'docs/live-aws-tests.html',
     title: 'Live AWS Tests',
-    description: 'Opt-in read-only AWS evidence collection and live validation notes.',
+    description: 'Collect read-only AWS evidence to give agents accurate recovery data. No mutations, just reads.',
   },
   {
     source: 'docs/schema-gaps.md',
     output: 'docs/schema-gaps.html',
     title: 'Classifier Notes',
-    description: 'Feature schema gaps, semantic unknown-resource behavior, and the BitNet-compatible path.',
+    description: 'How unknown resources get classified. Agents should check source to distinguish rules from semantic fallback.',
   },
   {
     source: 'docs/agent-interface.md',
     output: 'docs/agent-interface.html',
     title: 'Agent Interface',
-    description: 'MCP tool contract and consequence report semantics for agents that call RecourseOS before acting.',
+    description: 'The consequence report schema agents consume. Structured fields, example prompts, and reasoning patterns.',
   },
   {
     source: 'docs/mcp-setup.md',
     output: 'docs/mcp-setup.html',
     title: 'MCP Setup',
-    description: 'Connect RecourseOS to MCP clients and verify the local stdio server.',
+    description: 'Add RecourseOS to your agent tool list. One config block, then your agent can call recourse.evaluate before any destructive action.',
   },
 ];
+
+function getEyebrow(output: string): string {
+  const eyebrows: Record<string, string> = {
+    'docs/resource-coverage.html': 'coverage reference',
+    'docs/golden-fixtures.html': 'test fixtures',
+    'docs/live-aws-tests.html': 'evidence collection',
+    'docs/schema-gaps.html': 'classifier behavior',
+    'docs/agent-interface.html': 'schema reference',
+    'docs/mcp-setup.html': 'agent integration',
+  };
+  return eyebrows[output] || 'documentation';
+}
 
 export async function renderDocPages(pages = docPages): Promise<Array<{ output: string; html: string }>> {
   const rendered = [];
@@ -73,6 +85,7 @@ export function renderDocPage(page: DocPage, markdown: string): string {
 <link rel="stylesheet" href="site.css" />
 </head>
 <body>
+<div class="top-band">
 <nav class="container site-nav">
   <a href="/" class="brand" aria-label="RecourseOS home">
     ${brandSvg()}
@@ -91,10 +104,11 @@ export function renderDocPage(page: DocPage, markdown: string): string {
   </div>
 </nav>
 <header class="container doc-header">
-  <div class="eyebrow">public docs</div>
+  <div class="eyebrow">${getEyebrow(page.output)}</div>
   <h1>${escapeHtml(page.title)}</h1>
   <p class="lede">${escapeHtml(page.description)}</p>
 </header>
+</div>
 <main class="container doc-shell">
   ${renderToc(markdown)}
   <article>

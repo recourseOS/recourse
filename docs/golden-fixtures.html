@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>RecourseOS - Golden Evaluation Fixtures</title>
-<meta name="description" content="Stable public fixtures that validate evaluator and compiled CLI behavior." />
+<meta name="description" content="Stable fixtures that validate the consequence contract. Use these to verify agent integration." />
 <link rel="icon" href="favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -47,7 +47,7 @@
   <aside class="toc"><div class="toc-title">On this page</div><a href="#fixture-set">Fixture Set</a><a href="#run-locally">Run Locally</a><a href="#consequence-contract">Consequence Contract</a></aside>
   <article>
     <h1 id="golden-evaluation-fixtures">Golden Evaluation Fixtures</h1>
-<p>Stable inputs that validate the consequence report contract agents depend on. Small, provider-specific, safe to share. Use these to test your agent's integration with RecourseOS.</p>
+<p>These fixtures are stable Terraform plan JSON inputs used to validate Recourse's public evaluator contract. They are intentionally small, provider-specific, and safe to share.</p>
 <h2 id="fixture-set">Fixture Set</h2>
 <table><thead><tr><th>Fixture</th><th>Purpose</th><th>Expected decision</th></tr></thead><tbody><tr><td><code>tests/fixtures/plans/aws-golden.json</code></td><td>AWS rule authority for RDS, S3 object recovery, Secrets Manager, ElastiCache, Neptune, and EFS</td><td><code>block</code></td></tr><tr><td><code>tests/fixtures/plans/gcp-golden.json</code></td><td>First-class GCP storage, Cloud SQL, IAM, Secret Manager, and BigQuery rules</td><td><code>block</code></td></tr><tr><td><code>tests/fixtures/plans/azure-golden.json</code></td><td>First-class Azure storage, database, Cosmos DB, role assignment, and Key Vault secret rules</td><td><code>block</code></td></tr><tr><td><code>tests/fixtures/plans/unknown-semantic-golden.json</code></td><td>Provider-neutral unknown-resource classifier behavior</td><td><code>escalate</code></td></tr></tbody></table>
 <h2 id="run-locally">Run Locally</h2>

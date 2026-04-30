@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>RecourseOS - Classifier Notes</title>
-<meta name="description" content="Feature schema gaps, semantic unknown-resource behavior, and the BitNet-compatible path." />
+<meta name="description" content="How unknown resources get classified. Agents should check source to distinguish rules from semantic fallback." />
 <link rel="icon" href="favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -40,14 +40,14 @@
 <header class="container doc-header">
   <div class="eyebrow">classifier behavior</div>
   <h1>Classifier Notes</h1>
-  <p class="lede">How unknown resources get classified. Agents should check <code>source</code> to distinguish rules from semantic fallback.</p>
+  <p class="lede">How unknown resources get classified. Agents should check source to distinguish rules from semantic fallback.</p>
 </header>
 </div>
 <main class="container doc-shell">
   <aside class="toc"><div class="toc-title">On this page</div><a href="#public-contract">Public Contract</a><a href="#semantic-signals">Semantic Signals</a><a href="#known-limits">Known Limits</a><a href="#bitnet-path">BitNet Path</a><a href="#safety-requirements">Safety Requirements</a></aside>
   <article>
     <h1 id="classifier-notes">Classifier Notes</h1>
-<p>RecourseOS is rules-first. Agents receive <code>source: "rules"</code> for known AWS, GCP, Azure, and Azure AD types — authoritative verdicts. Unknown types get <code>source: "semantic-unknown"</code> with conservative classification.</p>
+<p>RecourseOS is rules-first. Deterministic handlers decide known AWS, GCP, Azure, and Azure AD resource types. The unknown-resource classifier only runs when a resource type does not have a known handler and <code>--classifier</code> is enabled.</p>
 <h2 id="public-contract">Public Contract</h2>
 <p>Classifier output uses the same recoverability tiers as deterministic rules:</p>
 <ul><li><code>reversible</code></li><li><code>recoverable-with-effort</code></li><li><code>recoverable-from-backup</code></li><li><code>unrecoverable</code></li><li><code>needs-review</code></li></ul>
