@@ -1,7 +1,7 @@
 {
   "name": "recourse-cli",
-  "version": "0.1.4",
-  "description": "AI-ready consequence analysis for infrastructure changes",
+  "version": "0.1.5",
+  "description": "MCP server for AI agents to evaluate consequences before destructive actions. Analyzes Terraform plans, shell commands, and MCP tool calls.",
   "main": "dist/index.js",
   "bin": {
     "recourse": "./bin/recourse"
@@ -26,10 +26,17 @@
     "preview": "wrangler dev"
   },
   "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "ai-agents",
     "terraform",
-    "blast-radius",
     "infrastructure",
-    "safety"
+    "consequence-analysis",
+    "blast-radius",
+    "safety",
+    "claude",
+    "llm"
   ],
   "author": "",
   "repository": {

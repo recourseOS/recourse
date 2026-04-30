@@ -74,6 +74,41 @@ npx -y recourse-cli@latest preflight shell 'aws s3 rm s3://prod-audit-logs --rec
 npx recourse-cli@0.1.4 tui --source shell --input 'aws s3 rm s3://prod-audit-logs --recursive'
 ```
 
+## MCP Server for AI Agents
+
+RecourseOS runs as an MCP server so AI agents can check consequences before they act.
+
+Add to your MCP client config (Claude Desktop, Claude Code, etc.):
+
+```json
+{
+  "mcpServers": {
+    "recourseos": {
+      "command": "npx",
+      "args": ["-y", "recourse-cli@latest", "mcp", "serve"]
+    }
+  }
+}
+```
+
+The server exposes four tools:
+
+| Tool | Purpose |
+|------|---------|
+| `recourse_evaluate_terraform` | Check Terraform plans before `terraform apply` |
+| `recourse_evaluate_shell` | Check shell commands before execution |
+| `recourse_evaluate_mcp_call` | Check other MCP tool calls before invocation |
+| `recourse_supported_resources` | List resources with deterministic rules |
+
+Each tool returns a structured consequence report with:
+- **decision**: `allow`, `warn`, `escalate`, or `block`
+- **recoverability**: tier and reasoning
+- **evidence**: what was found, what's missing
+
+If decision is `block` or `escalate`, agents should not proceed without human approval.
+
+See `docs/mcp-setup.md` for full setup and `docs/agent-interface.md` for the schema reference.
+
 ## Quick Start
 
 ```bash

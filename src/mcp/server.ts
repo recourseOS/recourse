@@ -39,16 +39,21 @@ interface ToolDefinition {
 const tools: ToolDefinition[] = [
   {
     name: 'recourse_evaluate_terraform',
-    description: 'Evaluate Terraform plan JSON before an agent applies infrastructure changes.',
+    description:
+      'Evaluates whether a proposed Terraform plan contains destructive changes that cannot be undone. ' +
+      'Call this BEFORE running `terraform apply` whenever the plan includes resource deletions, replacements, or any change that could destroy data, configuration, or infrastructure state. ' +
+      'Pass the plan as JSON (output of `terraform show -json plan.out`). ' +
+      'Returns a structured consequence report with decision (`allow`, `warn`, `escalate`, `block`), per-resource recoverability tier (`reversible`, `recoverable-with-effort`, `recoverable-from-backup`, `unrecoverable`), confidence level, and the specific evidence used to reach the verdict. ' +
+      'If decision is `block` or `escalate`, do not run `terraform apply` until a human has reviewed and approved the report.',
     inputSchema: {
       type: 'object',
       properties: {
-        plan: { type: ['object', 'string'], description: 'Terraform plan JSON object or JSON string from terraform show -json.' },
-        state: { type: ['object', 'string'], description: 'Optional Terraform state JSON object or JSON string.' },
-        classifier: { type: 'boolean', description: 'Use provider-neutral classifier for unknown resource types.' },
-        actor: { type: 'string' },
-        environment: { type: 'string' },
-        owner: { type: 'string' },
+        plan: { type: ['object', 'string'], description: 'Terraform plan JSON from `terraform show -json plan.out`.' },
+        state: { type: ['object', 'string'], description: 'Terraform state JSON for dependency analysis. Improves accuracy.' },
+        classifier: { type: 'boolean', description: 'Enable semantic classifier for unknown resource types.' },
+        actor: { type: 'string', description: 'Identifier for the agent or user initiating this action.' },
+        environment: { type: 'string', description: 'Target environment (e.g., production, staging).' },
+        owner: { type: 'string', description: 'Team or individual responsible for the resources.' },
       },
       required: ['plan'],
       additionalProperties: false,
@@ -56,15 +61,20 @@ const tools: ToolDefinition[] = [
   },
   {
     name: 'recourse_evaluate_shell',
-    description: 'Evaluate a shell command before an agent executes it.',
+    description:
+      'Evaluates whether a shell command will perform destructive or unrecoverable actions on infrastructure, data, or system state. ' +
+      'Call this BEFORE executing any shell command that modifies resources — including but not limited to `rm`, `dd`, cloud CLI mutations (`aws ... delete`, `gcloud ... delete`, `az ... delete`), ' +
+      'database commands (`psql`, `mysql`, `mongo` with destructive verbs), `kubectl delete`, `docker` removals, or any command containing destructive verbs (`drop`, `truncate`, `purge`, `wipe`, `revoke`, `terminate`). ' +
+      'Returns a structured consequence report with decision, recoverability tier, recognized risk patterns, and required next step. ' +
+      'If decision is `block` or `escalate`, do not execute the command until a human approves.',
     inputSchema: {
       type: 'object',
       properties: {
-        command: { type: 'string' },
-        cwd: { type: 'string' },
-        actor: { type: 'string' },
-        environment: { type: 'string' },
-        owner: { type: 'string' },
+        command: { type: 'string', description: 'The shell command to evaluate.' },
+        cwd: { type: 'string', description: 'Working directory context for the command.' },
+        actor: { type: 'string', description: 'Identifier for the agent or user initiating this action.' },
+        environment: { type: 'string', description: 'Target environment (e.g., production, staging).' },
+        owner: { type: 'string', description: 'Team or individual responsible for affected resources.' },
       },
       required: ['command'],
       additionalProperties: false,
@@ -72,16 +82,22 @@ const tools: ToolDefinition[] = [
   },
   {
     name: 'recourse_evaluate_mcp_call',
-    description: 'Evaluate another MCP tool call before an agent invokes it.',
+    description:
+      'Evaluates whether a proposed MCP tool call will perform a destructive or unrecoverable action. ' +
+      'Call this BEFORE invoking any other MCP tool that may modify, delete, or mutate state — including tools that touch databases, cloud resources, files, repositories, or external services. ' +
+      'Pass the proposed tool name and arguments as JSON. ' +
+      'Returns a consequence report with decision, recoverability assessment, and the inferred mutation type. ' +
+      'Use this as a preflight check on tools you have not specifically verified to be safe. ' +
+      'If decision is `block` or `escalate`, do not invoke the proposed tool until a human approves.',
     inputSchema: {
       type: 'object',
       properties: {
-        server: { type: 'string' },
-        tool: { type: 'string' },
-        arguments: { type: 'object' },
-        actor: { type: 'string' },
-        environment: { type: 'string' },
-        owner: { type: 'string' },
+        tool: { type: 'string', description: 'Name of the MCP tool to evaluate.' },
+        server: { type: 'string', description: 'MCP server providing the tool (e.g., aws, kubernetes).' },
+        arguments: { type: 'object', description: 'Arguments that will be passed to the tool.' },
+        actor: { type: 'string', description: 'Identifier for the agent or user initiating this action.' },
+        environment: { type: 'string', description: 'Target environment (e.g., production, staging).' },
+        owner: { type: 'string', description: 'Team or individual responsible for affected resources.' },
       },
       required: ['tool'],
       additionalProperties: false,
@@ -89,7 +105,10 @@ const tools: ToolDefinition[] = [
   },
   {
     name: 'recourse_supported_resources',
-    description: 'List deterministic resource types supported by RecourseOS.',
+    description:
+      'Returns the catalog of resource types, providers, and shell command patterns that RecourseOS evaluates with high-confidence deterministic rules. ' +
+      'Call this once when planning a session involving infrastructure changes, to understand which proposed actions will receive deep evaluation versus which will fall through to conservative classifier-based defaults. ' +
+      'Use the response to decide which actions are safe to execute without preflight evaluation versus which require calling `recourse_evaluate_*` first.',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -129,7 +148,7 @@ export async function handleMcpRequest(request: JsonRpcRequest): Promise<Record<
           },
           serverInfo: {
             name: 'recourseos',
-            version: '0.1.4',
+            version: '0.1.5',
           },
         });
       case 'tools/list':

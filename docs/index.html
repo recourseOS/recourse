@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>RecourseOS - Consequence oracle for AI agents</title>
-<meta name="description" content="The consequence layer agents call before they act. Structured reports for any agent that touches infrastructure." />
-<meta property="og:title" content="RecourseOS - Consequence oracle for AI agents" />
-<meta property="og:description" content="Pass a proposed action, get back what it would actually do. Decision-support infrastructure for AI agents." />
+<title>RecourseOS - MCP server for infrastructure safety</title>
+<meta name="description" content="AI agents check consequences before acting. MCP server that evaluates Terraform, shell commands, and tool calls. Returns decision, recoverability, evidence." />
+<meta property="og:title" content="RecourseOS - MCP server for infrastructure safety" />
+<meta property="og:description" content="Agents are getting a bad rap for infrastructure damage. RecourseOS gives them a way to check consequences before acting." />
 <meta property="og:type" content="website" />
 <link rel="icon" href="favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -42,18 +42,18 @@
 </nav>
 
 <header class="hero hero-simple container">
-  <div class="eyebrow">Consequence oracle for AI agents</div>
-  <h1>The layer agents call <span class="accent">before they act.</span></h1>
+  <div class="eyebrow">MCP server for infrastructure safety</div>
+  <h1>Agents check here <span class="accent">before they break things.</span></h1>
   <p class="lede">
-    Pass a proposed action, get back what it would actually do. Structured consequence reports for any agent that touches infrastructure.
+    AI agents are getting a bad rap for infrastructure damage. RecourseOS gives them a way to check consequences before acting — not after. One MCP config, and your agent knows what's recoverable.
   </p>
   <div class="hero-actions">
-    <a class="button primary" href="/mcp-setup.html">Wire MCP server</a>
+    <a class="button primary" href="/mcp-setup.html">Add to your agent</a>
     <a class="button secondary" href="/console.html">Try it</a>
   </div>
   <div class="hero-command">
-    <code>recourse.evaluate({ source: "shell", input: "aws s3 rm s3://prod --recursive" })</code>
-    <button type="button" data-copy='recourse.evaluate({ source: "shell", input: "aws s3 rm s3://prod --recursive" })' aria-label="Copy command">Copy</button>
+    <code>{ "mcpServers": { "recourseos": { "command": "npx", "args": ["-y", "recourse-cli", "mcp", "serve"] } } }</code>
+    <button type="button" data-copy='{ "mcpServers": { "recourseos": { "command": "npx", "args": ["-y", "recourse-cli", "mcp", "serve"] } } }' aria-label="Copy config">Copy</button>
   </div>
 </header>
 
@@ -82,9 +82,9 @@
     <div class="container split">
       <div>
         <div class="section-label">The problem</div>
-        <h2>Agents have no ground truth about consequences.</h2>
+        <h2>Agents cause damage because they can't see consequences.</h2>
         <p class="section-copy">
-          An agent can read a Terraform plan. It cannot reason about whether "will be destroyed" means recoverable or gone forever. RecourseOS provides that ground truth as structured data.
+          An agent reads "will be destroyed" and doesn't know if that means recoverable or gone forever. It runs the command. The database disappears. No backup. RecourseOS is the call agents make first — before they cause the damage they're getting blamed for.
         </p>
       </div>
       <div class="card-grid">
@@ -252,9 +252,9 @@
     <div class="container split">
       <div>
         <div class="section-label">Why this matters</div>
-        <h2>Agents can't parse "will be destroyed" into safe or unsafe.</h2>
+        <h2>The difference between "I deleted your database" and "I checked first."</h2>
         <p class="section-copy">
-          A Terraform plan is a diff. It doesn't tell an agent whether deletion is reversible, recoverable from backup, or permanent. That's what the consequence report adds.
+          Agents that call RecourseOS before acting can say: "I was about to delete this, but Recourse told me it's unrecoverable — skip_final_snapshot is true, no backups exist. Blocking until you approve." That's a different conversation than "I deleted your production database."
         </p>
       </div>
       <div class="terminal">
@@ -352,7 +352,7 @@
 </main>
 
 <footer class="container">
-  <span>RecourseOS · Consequence oracle for AI agents</span>
+  <span>RecourseOS · MCP server for infrastructure safety</span>
   <span>
     <a href="https://github.com/recourseOS/recourse">github</a>
     <a href="https://www.npmjs.com/package/recourse-cli">npm</a>
