@@ -484,12 +484,6 @@
         </div>
 
         <div class="mcp-section">
-          <div class="result-section-title">Run Locally</div>
-          <p class="local-hint">For real evaluations using the RecourseOS engine:</p>
-          <div class="mcp-config" style="margin-bottom: 16px;">
-            <button class="mcp-copy" data-copy="npx recourse-cli serve">Copy</button>
-            <pre>npx recourse-cli serve</pre>
-          </div>
           <div class="result-section-title">MCP Config</div>
           <div class="mcp-config">
             <button class="mcp-copy" data-copy='{"mcpServers":{"recourseos":{"command":"npx","args":["-y","recourse-cli@latest","mcp","serve"]}}}'>Copy</button>
@@ -522,24 +516,41 @@ const serverStatus = document.getElementById('server-status');
 
 let activeSource = 'terraform';
 let serverAvailable = false;
-const SERVER_URL = 'http://localhost:3001';
+let apiBase = '';
 
-// Check if local server is running
+// Check if server is available (same origin first, then localhost fallback)
 async function checkServer() {
+  // Try same-origin first (when served by recourse serve)
   try {
-    const res = await fetch(`${SERVER_URL}/health`, { method: 'GET' });
+    const res = await fetch('/api/health', { method: 'GET' });
     if (res.ok) {
       serverAvailable = true;
+      apiBase = '/api';
       serverStatus.textContent = 'Live';
       serverStatus.className = 'server-status live';
-      serverStatus.title = 'Connected to local RecourseOS server';
+      serverStatus.title = 'Connected to RecourseOS server';
+      return;
     }
-  } catch {
-    serverAvailable = false;
-    serverStatus.textContent = 'Demo';
-    serverStatus.className = 'server-status demo';
-    serverStatus.title = 'Using demo mode. Run "recourse serve" for live evaluation.';
-  }
+  } catch {}
+
+  // Fallback to localhost:3001 (when opening HTML file directly)
+  try {
+    const res = await fetch('http://localhost:3001/api/health', { method: 'GET' });
+    if (res.ok) {
+      serverAvailable = true;
+      apiBase = 'http://localhost:3001/api';
+      serverStatus.textContent = 'Live';
+      serverStatus.className = 'server-status live';
+      serverStatus.title = 'Connected to localhost:3001';
+      return;
+    }
+  } catch {}
+
+  serverAvailable = false;
+  apiBase = '';
+  serverStatus.textContent = 'Demo';
+  serverStatus.className = 'server-status demo';
+  serverStatus.title = 'Demo mode. Run "npx recourse-cli serve" for live evaluation.';
 }
 checkServer();
 setInterval(checkServer, 5000);
@@ -754,7 +765,7 @@ async function evaluateWithServer(source, input) {
     input: source === 'shell' ? input : JSON.parse(input)
   };
 
-  const res = await fetch(`${SERVER_URL}/evaluate`, {
+  const res = await fetch(`${apiBase}/evaluate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)

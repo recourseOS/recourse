@@ -68,7 +68,7 @@ interface CloudEvaluationOptions extends EvaluationOptions {
 program
   .name('recourse')
   .description('Know what you can\'t undo before you terraform apply')
-  .version('0.1.6');
+  .version('0.1.7');
 
 program
   .command('plan')
@@ -167,10 +167,11 @@ mcp
 
 program
   .command('serve')
-  .description('Start the RecourseOS HTTP server for the web console')
+  .description('Start the RecourseOS console with live evaluation')
   .option('-p, --port <port>', 'Port to listen on', '3001')
-  .action((options: { port: string }) => {
-    runHttpServer(Number(options.port));
+  .option('--no-open', 'Do not open browser automatically')
+  .action((options: { port: string; open: boolean }) => {
+    runHttpServer(Number(options.port), options.open);
   });
 
 program

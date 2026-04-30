@@ -1,4 +1,8 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'http';
+import { readFileSync, existsSync } from 'fs';
+import { join, extname } from 'path';
+import { fileURLToPath } from 'url';
+import { exec } from 'child_process';
 import { parsePlanJson } from '../parsers/plan.js';
 import {
   evaluateMcpToolCallConsequences,
@@ -14,6 +18,16 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+const MIME_TYPES: Record<string, string> = {
+  '.html': 'text/html',
+  '.css': 'text/css',
+  '.js': 'application/javascript',
+  '.json': 'application/json',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.ico': 'image/x-icon',
+};
+
 interface EvaluateRequest {
   source: 'terraform' | 'shell' | 'mcp';
   input: unknown;
@@ -25,8 +39,15 @@ interface EvaluateRequest {
   };
 }
 
-export function runHttpServer(port: number = 3001): void {
+export function runHttpServer(port: number = 3001, openBrowser: boolean = true): void {
+  // Find the docs directory relative to this file
+  const currentFile = fileURLToPath(import.meta.url);
+  // Go up from dist/http/server.js to project root, then to docs
+  const docsDir = join(currentFile, '..', '..', '..', 'docs');
+
   const server = createServer(async (req, res) => {
+    const url = req.url || '/';
+
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
       res.writeHead(204, CORS_HEADERS);
@@ -34,14 +55,14 @@ export function runHttpServer(port: number = 3001): void {
       return;
     }
 
-    // Health check
-    if (req.method === 'GET' && req.url === '/health') {
-      sendJson(res, 200, { status: 'ok', version: '0.1.6' });
+    // API: Health check
+    if (req.method === 'GET' && url === '/api/health') {
+      sendJson(res, 200, { status: 'ok', version: '0.1.7' });
       return;
     }
 
-    // Evaluate endpoint
-    if (req.method === 'POST' && req.url === '/evaluate') {
+    // API: Evaluate endpoint
+    if (req.method === 'POST' && url === '/api/evaluate') {
       try {
         const body = await readBody(req);
         const request = JSON.parse(body) as EvaluateRequest;
@@ -58,20 +79,75 @@ export function runHttpServer(port: number = 3001): void {
       return;
     }
 
+    // Static files: Serve from docs directory
+    if (req.method === 'GET') {
+      let filePath = url === '/' ? '/console.html' : url;
+
+      // Remove query string
+      filePath = filePath.split('?')[0];
+
+      const fullPath = join(docsDir, filePath);
+
+      if (existsSync(fullPath)) {
+        try {
+          const content = readFileSync(fullPath);
+          const ext = extname(fullPath);
+          const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+
+          res.writeHead(200, {
+            ...CORS_HEADERS,
+            'Content-Type': contentType,
+          });
+          res.end(content);
+          return;
+        } catch {
+          // Fall through to 404
+        }
+      }
+    }
+
     // 404
     sendJson(res, 404, { error: 'Not found' });
   });
 
-  server.listen(port, () => {
-    console.log(`RecourseOS HTTP server running at http://localhost:${port}`);
-    console.log('');
-    console.log('Endpoints:');
-    console.log(`  GET  /health    - Health check`);
-    console.log(`  POST /evaluate  - Evaluate a proposed action`);
-    console.log('');
-    console.log('The console at http://localhost:8080 will auto-connect to this server.');
-    console.log('Press Ctrl+C to stop.');
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`\nPort ${port} is already in use.`);
+      console.error(`\nOptions:`);
+      console.error(`  1. Stop the other process using port ${port}`);
+      console.error(`  2. Use a different port: recourse serve --port 3002\n`);
+      process.exit(1);
+    }
+    throw err;
   });
+
+  server.listen(port, () => {
+    const url = `http://localhost:${port}`;
+    console.log(`
+┌─────────────────────────────────────────────────────┐
+│                                                     │
+│   RecourseOS Console                                │
+│   ${url.padEnd(45)}│
+│                                                     │
+│   API Endpoints:                                    │
+│     POST /api/evaluate  - Evaluate an action        │
+│     GET  /api/health    - Health check              │
+│                                                     │
+│   Press Ctrl+C to stop                              │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+`);
+
+    if (openBrowser) {
+      openUrl(url);
+    }
+  });
+}
+
+function openUrl(url: string): void {
+  const cmd = process.platform === 'darwin' ? 'open' :
+              process.platform === 'win32' ? 'start' : 'xdg-open';
+  exec(`${cmd} ${url}`);
 }
 
 function evaluate(request: EvaluateRequest) {
