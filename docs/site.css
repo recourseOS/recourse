@@ -1099,19 +1099,22 @@ tr:last-child td { border-bottom: 0; }
 
 .tui-product {
   color: #effbf3;
-  padding: 68px 32px 86px;
+  padding: 42px 32px 86px;
 }
 .tui-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.7fr);
-  gap: 28px;
-  align-items: end;
-  margin-bottom: 24px;
+  grid-template-columns: minmax(0, 0.9fr) minmax(320px, 0.72fr);
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 22px;
 }
 .tui-hero h1 {
-  max-width: 12ch;
-  margin: 14px 0 20px;
+  max-width: 15ch;
+  margin: 12px 0 14px;
+  font-size: clamp(46px, 6vw, 76px);
+  line-height: 0.94;
 }
+.tui-hero .lede { font-size: 18px; max-width: 68ch; }
 .tui-command {
   border: 1px solid var(--line-dark);
   border-radius: 16px;
@@ -1181,7 +1184,7 @@ tr:last-child td { border-bottom: 0; }
     radial-gradient(circle at 76% 14%, rgba(99, 230, 184, 0.08), transparent 30%),
     #020806;
   background-size: 26px 26px, 26px 26px, auto, auto;
-  min-height: 610px;
+  min-height: 620px;
 }
 .terminal-command-line {
   display: grid;
@@ -1204,13 +1207,14 @@ tr:last-child td { border-bottom: 0; }
   border-radius: 0;
   background: transparent;
   color: rgba(236, 247, 239, 0.9);
-  min-height: 548px;
-  padding: 18px 22px 26px;
+  min-height: 558px;
+  padding: 20px 24px 28px;
   overflow: auto;
   font-family: "JetBrains Mono", monospace;
-  font-size: clamp(9px, 0.88vw, 12px);
-  line-height: 1.54;
-  white-space: pre;
+  font-size: 14px;
+  line-height: 1.58;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .terminal-input-panel {
   border-top: 1px solid rgba(236, 247, 239, 0.1);
@@ -1651,9 +1655,11 @@ footer a:hover { color: var(--ink); border-bottom-color: #2b856b; }
   .console-workspace { padding: 14px; }
   .console-topbar h1 { font-size: clamp(34px, 11vw, 48px); }
   .tui-product { padding: 46px 22px 58px; }
+  .tui-hero h1 { max-width: 12ch; font-size: clamp(40px, 12vw, 58px); }
+  .tui-hero .lede { font-size: 18px; }
   .terminal-screen { min-height: 460px; }
   .terminal-screen pre,
-  .terminal-product pre { min-height: 390px; font-size: 10px; }
+  .terminal-product pre { min-height: 390px; font-size: 12px; }
   .terminal-input-panel { padding: 12px; }
   .terminal-tabs { padding: 10px; }
   .terminal-status { display: none; }

@@ -578,64 +578,67 @@ function commandFor(source, value) {
 }
 
 function renderTui(report, source) {
-  const decision = `${report.decision.toUpperCase()}  ${report.tier}`;
-  const top = line();
-  const divider = sep();
-  const adapters = [
-    `${source === 'terraform' ? 'active' : 'ready'}: Terraform plans`,
-    `${source === 'shell' ? 'active' : 'ready'}: Shell / cloud CLIs`,
-    `${source === 'mcp' ? 'active' : 'ready'}: MCP tool calls`,
-    'ready: kubectl, SQL, APIs'
-  ];
   return [
-    top,
-    padRow('RECOURSEOS PREFLIGHT', 'NORMALIZED MUTATION', 'DECISION'),
-    divider,
-    padRow(`input: ${source}`, `target: ${report.target}`, decision),
-    padRow(`plug: ${adapterName(source)}`, `action: ${report.action}`, `confidence: ${confidenceLabel(report.confidence)}`),
-    padRow('actor: agent/preflight', `provider: ${report.provider}`, `policy: ${policyAction(report.decision)}`),
-    divider,
-    padRow('ADAPTERS', 'EVALUATION PIPELINE', 'NEXT ACTION'),
-    padRow(adapters[0], '1. parse action into MutationIntent', nextAction(report.decision)),
-    padRow(adapters[1], '2. match known resource rules first', report.decision === 'allow' ? 'review not required' : 'review required'),
-    padRow(adapters[2], '3. use semantic unknown fallback', ''),
-    padRow(adapters[3], '4. return structured report + TUI', ''),
-    divider,
-    fullRow('EVIDENCE'),
-    ...report.evidence.map(item => fullRow(`- ${item}`)),
-    fullRow('MISSING EVIDENCE'),
-    ...(report.missing.length ? report.missing : ['None']).map(item => fullRow(`- ${item}`)),
-    fullRow('AGENT-SAFE RESPONSE'),
-    fullRow(agentResponse(report)),
-    top
+    'RECOURSEOS PREFLIGHT',
+    '====================',
+    kv('input', source),
+    kv('adapter', adapterName(source)),
+    kv('actor', 'agent/preflight'),
+    kv('supported inputs', 'Terraform plans, Shell / cloud CLIs, MCP tool calls'),
+    '',
+    heading('CONSEQUENCE DECISION'),
+    kv('verdict', `${report.decision.toUpperCase()} (${report.tier})`),
+    kv('policy', policyAction(report.decision)),
+    kv('confidence', confidenceLabel(report.confidence)),
+    ...kvRows('reason', report.reason),
+    '',
+    heading('NORMALIZED MUTATION'),
+    kv('target', report.target),
+    kv('action', report.action),
+    kv('provider', report.provider),
+    '',
+    heading('EVIDENCE'),
+    ...bullets(report.evidence, 'present'),
+    '',
+    heading('MISSING EVIDENCE'),
+    ...bullets(report.missing.length ? report.missing : ['None'], 'needed'),
+    '',
+    heading('EVALUATION PATH'),
+    `1. ${adapterName(source)} parsed input into MutationIntent`,
+    '2. Known resource rules checked first',
+    '3. Semantic unknown fallback handles long-tail resource types',
+    `4. Next action: ${nextAction(report.decision)} (${report.decision === 'allow' ? 'review not required' : 'review required'})`,
+    '',
+    heading('AGENT-SAFE RESPONSE'),
+    ...wrap(agentResponse(report))
   ].join('\n');
 }
 
-const tuiWidths = { left: 31, center: 43, right: 34 };
-const tuiWidth = tuiWidths.left + tuiWidths.center + tuiWidths.right + 10;
-
-function line() {
-  return `+${'-'.repeat(tuiWidth - 2)}+`;
+function heading(value) {
+  return `${value}\n${'-'.repeat(value.length)}`;
 }
 
-function sep() {
-  return `+${'-'.repeat(tuiWidths.left + 2)}+${'-'.repeat(tuiWidths.center + 2)}+${'-'.repeat(tuiWidths.right + 2)}+`;
+function kv(key, value) {
+  return `${key.padEnd(16)} ${value}`;
 }
 
-function padRow(left, center, right) {
-  return `| ${cell(left, tuiWidths.left)} | ${cell(center, tuiWidths.center)} | ${cell(right, tuiWidths.right)} |`;
+function kvRows(key, value) {
+  const [first = '', ...rest] = wrap(String(value), 71);
+  return [
+    kv(key, first),
+    ...rest.map(line => `${' '.repeat(17)}${line}`)
+  ];
 }
 
-function fullRow(value) {
-  return wrapRows(value, tuiWidth - 4).map(line => `| ${line.padEnd(tuiWidth - 4)} |`).join('\n');
+function bullets(items, label) {
+  return items.flatMap(item => wrapWithIndent(`- [${label}] ${item}`, '  '));
 }
 
-function cell(value, length) {
-  const clean = String(value).replace(/\s+/g, ' ').trim();
-  return clean.length > length ? `${clean.slice(0, length - 3)}...` : clean.padEnd(length);
+function wrap(value, length = 88) {
+  return wrapWithIndent(value, '', length);
 }
 
-function wrapRows(value, length) {
+function wrapWithIndent(value, indent, length = 88) {
   const words = String(value).replace(/\s+/g, ' ').trim().split(' ');
   const rows = [];
   let row = '';
@@ -644,7 +647,7 @@ function wrapRows(value, length) {
     else if (row.length + word.length + 1 <= length) row = `${row} ${word}`;
     else {
       rows.push(row);
-      row = word;
+      row = `${indent}${word}`;
     }
   }
   if (row) rows.push(row);
