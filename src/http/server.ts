@@ -36,7 +36,7 @@ export function runHttpServer(port: number = 3001): void {
 
     // Health check
     if (req.method === 'GET' && req.url === '/health') {
-      sendJson(res, 200, { status: 'ok', version: '0.1.5' });
+      sendJson(res, 200, { status: 'ok', version: '0.1.6' });
       return;
     }
 
