@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "recourseos": {
+      "command": "npx",
+      "args": ["-y", "recourse-cli", "mcp", "serve"]
+    }
+  }
+}

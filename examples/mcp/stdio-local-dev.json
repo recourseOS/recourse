@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "recourseos": {
+      "command": "node",
+      "args": ["dist/index.js", "mcp", "serve"]
+    }
+  }
+}
