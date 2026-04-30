@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>RecourseOS Playground</title>
-<meta name="description" content="Interactive browser-only consequence analysis playground for RecourseOS." />
+<title>RecourseOS Preflight TUI</title>
+<meta name="description" content="Interactive preview of the RecourseOS terminal preflight product for Terraform, shell, and MCP actions." />
 <link rel="icon" href="favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -32,41 +32,69 @@
     <a href="/mcp-setup.html">mcp setup</a>
     <a href="/agent-interface.html">agents</a>
     <a href="https://github.com/recourseOS/recourse">github</a>
-    <a href="#sandbox" class="nav-cta">playground</a>
+    <a href="#preflight" class="nav-cta">preflight</a>
   </div>
 </nav>
 
-<main class="container app-shell" id="sandbox">
-  <div class="console-frame">
-    <aside class="console-sidebar" aria-label="Product navigation">
-      <div class="workspace-card">
-        <span>workspace</span>
-        <strong>production</strong>
-        <small>agent preflight</small>
-      </div>
-      <nav class="console-menu">
-        <a class="active" href="#sandbox">Preflight</a>
-        <a href="#sandbox">Runs</a>
-        <a href="#sandbox">Policies</a>
-        <a href="#sandbox">Evidence</a>
-        <a href="#sandbox">Audit</a>
-      </nav>
-      <div class="policy-stack">
-        <div class="rail-title">Policy gates</div>
-        <div class="policy-row"><span>block</span><strong>unrecoverable</strong></div>
-        <div class="policy-row"><span>escalate</span><strong>missing evidence</strong></div>
-        <div class="policy-row"><span>warn</span><strong>backup recovery</strong></div>
+<main class="container tui-product" id="preflight">
+  <header class="tui-hero">
+    <div>
+      <div class="eyebrow">Actual product surface</div>
+      <h1>Preflight happens in the terminal.</h1>
+      <p class="lede">Terraform plans, shell commands, MCP tool calls, and future adapters plug into the same local consequence cockpit before anything destructive executes.</p>
+    </div>
+    <div class="tui-command">
+      <span>$</span>
+      <code>recourse preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'</code>
+    </div>
+  </header>
+
+  <section class="tui-grid" aria-label="RecourseOS terminal product preview">
+    <aside class="plug-panel">
+      <div class="panel-title">Inputs that plug in</div>
+      <button class="plug-item active" type="button" data-source="terraform">
+        <span>Terraform</span>
+        <strong>plan JSON</strong>
+      </button>
+      <button class="plug-item" type="button" data-source="shell">
+        <span>Shell</span>
+        <strong>aws, kubectl, git, sql</strong>
+      </button>
+      <button class="plug-item" type="button" data-source="mcp">
+        <span>MCP</span>
+        <strong>tool-call payloads</strong>
+      </button>
+      <div class="plug-item passive">
+        <span>Next</span>
+        <strong>cloud APIs, SQL, SaaS</strong>
       </div>
     </aside>
 
-    <section class="console-workspace" aria-label="RecourseOS preflight dashboard">
-      <header class="console-topbar">
+    <section class="terminal-product" aria-label="Terminal preflight output">
+      <div class="terminal-bar">
+        <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
+        <span class="terminal-title">recourse preflight</span>
+      </div>
+      <pre id="tui-output"></pre>
+    </section>
+
+    <aside class="plug-panel">
+      <div class="panel-title">Pipeline</div>
+      <div class="pipeline-step"><span>01</span><strong>Adapter</strong><p id="adapter-copy">Terraform plan JSON becomes mutation intent.</p></div>
+      <div class="pipeline-step"><span>02</span><strong>Rules first</strong><p>Known provider resources use deterministic recovery behavior.</p></div>
+      <div class="pipeline-step"><span>03</span><strong>Unknowns</strong><p>Semantic fallback stays conservative when evidence is thin.</p></div>
+      <div class="pipeline-step"><span>04</span><strong>Decision</strong><p>Agents get allow, warn, block, or escalate with structured evidence.</p></div>
+    </aside>
+  </section>
+
+  <section class="operator-workbench" aria-label="Interactive preflight sample">
+    <div class="work-card action-card">
+      <div class="work-card-head">
         <div>
-          <div class="eyebrow">RecourseOS console</div>
-          <h1>Agent Preflight</h1>
-          <p>Evaluate proposed infrastructure actions before the agent executes them.</p>
+          <div class="panel-title">Sample input</div>
+          <p>Change source and scenario to see the TUI, MCP request, and JSON report update.</p>
         </div>
-        <div class="app-controls">
+        <div class="app-controls compact-controls">
           <label>
             Source
             <select id="source-select" aria-label="Source">
@@ -80,108 +108,35 @@
             <select id="scenario-select" aria-label="Scenario"></select>
           </label>
           <div class="app-actions">
-            <button id="evaluate" type="button">Run preflight</button>
-            <button id="reset" type="button" class="secondary">Reset</button>
+            <button id="evaluate" type="button">Run</button>
           </div>
         </div>
-      </header>
-
-      <div class="summary-strip">
-        <div><span>decision</span><strong id="summary-decision">escalate</strong></div>
-        <div><span>recoverability</span><strong id="summary-tier">needs-review</strong></div>
-        <div><span>source</span><strong id="summary-source">shell-adapter</strong></div>
-        <div><span>confidence</span><strong id="summary-confidence">72%</strong></div>
       </div>
+      <textarea id="input" spellcheck="false" aria-label="Mutation input"></textarea>
+    </div>
 
-      <div class="dashboard-grid">
-        <aside class="run-queue" aria-label="Preflight runs">
-          <div class="work-card-head">
-            <div class="panel-title">Run queue</div>
-            <span>live</span>
-          </div>
-          <button class="run-item active" type="button">
-            <span class="run-status block"></span>
-            <span><strong>deploy-agent-42</strong><small>prod apply · now</small></span>
-          </button>
-          <button class="run-item" type="button">
-            <span class="run-status warn"></span>
-            <span><strong>storage-cleanup</strong><small>bucket retention · 4m</small></span>
-          </button>
-          <button class="run-item" type="button">
-            <span class="run-status allow"></span>
-            <span><strong>iam-maintainer</strong><small>role binding · 9m</small></span>
-          </button>
-          <div class="queue-metrics" aria-label="Current run summary">
-            <div><span>mutations</span><strong>1</strong></div>
-            <div><span>target env</span><strong>prod</strong></div>
-          </div>
-          <div class="resource-stack">
-            <div class="rail-title">Touched surface</div>
-            <div class="resource-row"><span>resource</span><strong id="surface-resource">s3://prod-audit-logs</strong></div>
-            <div class="resource-row"><span>operation</span><strong id="surface-operation">recursive delete</strong></div>
-            <div class="resource-row"><span>owner</span><strong id="surface-owner">unknown</strong></div>
-          </div>
-        </aside>
-
-        <section class="workbench" aria-label="Preflight evaluation">
-          <section class="work-card action-card">
-            <div class="work-card-head">
-              <div>
-                <div class="panel-title">Proposed action</div>
-                <p>No uploads. The sample is evaluated in the browser.</p>
-              </div>
-            </div>
-            <textarea id="input" spellcheck="false" aria-label="Mutation input"></textarea>
-          </section>
-
-          <section class="work-card">
-            <div class="work-card-head">
-              <div class="panel-title">Evidence</div>
-            </div>
-            <div class="evidence-grid">
-              <div>
-                <h2>Observed</h2>
-                <ul id="evidence-list"></ul>
-              </div>
-              <div>
-                <h2>Missing</h2>
-                <ul id="missing-list"></ul>
-              </div>
-            </div>
-          </section>
-
-          <section class="work-card">
-            <div class="work-card-head">
-              <div class="panel-title">Agent response</div>
-            </div>
-            <p class="agent-copy" id="agent-response"></p>
-          </section>
-        </section>
-
-        <aside class="decision-inspector" aria-label="MCP and report inspector">
-          <section class="inspector-card result">
-            <div class="work-card-head">
-              <div class="panel-title">Consequence report</div>
-              <span>recourse.consequence.v1</span>
-            </div>
-            <div class="result-body" id="result"></div>
-          </section>
-          <section class="inspector-card">
-            <div class="work-card-head">
-              <div class="panel-title">MCP request</div>
-              <span>tools/call</span>
-            </div>
-            <pre id="mcp-call"></pre>
-          </section>
-        </aside>
-      </div>
-    </section>
-  </div>
+    <div class="inspector-grid">
+      <section class="inspector-card">
+        <div class="work-card-head">
+          <div class="panel-title">MCP request</div>
+          <span>tools/call</span>
+        </div>
+        <pre id="mcp-call"></pre>
+      </section>
+      <section class="inspector-card result">
+        <div class="work-card-head">
+          <div class="panel-title">Consequence JSON</div>
+          <span>recourse.consequence.v1</span>
+        </div>
+        <pre id="result"></pre>
+      </section>
+    </div>
+  </section>
 </main>
 
 <footer class="container">
-  <span>RecourseOS playground</span>
-  <span><a href="/mcp-setup.html">MCP setup</a> <a href="/resource-coverage.html">Coverage</a></span>
+  <span>RecourseOS preflight</span>
+  <span><a href="/mcp-setup.html">MCP setup</a> <a href="/agent-interface.html">Agent interface</a></span>
 </footer>
 
 <script>
@@ -191,32 +146,26 @@ const scenarios = {
       id: 'rds-unrecoverable',
       label: 'RDS delete without recovery',
       input: {
-        resource_changes: [
-          {
-            address: 'aws_db_instance.main',
-            type: 'aws_db_instance',
-            name: 'main',
-            provider_name: 'registry.terraform.io/hashicorp/aws',
-            change: {
-              actions: ['delete'],
-              before: {
-                identifier: 'prod-main',
-                skip_final_snapshot: true,
-                backup_retention_period: 0,
-                deletion_protection: false
-              },
-              after: null,
-              after_unknown: {}
-            }
+        resource_changes: [{
+          address: 'aws_db_instance.main',
+          type: 'aws_db_instance',
+          provider_name: 'registry.terraform.io/hashicorp/aws',
+          change: {
+            actions: ['delete'],
+            before: { identifier: 'prod-main', skip_final_snapshot: true, backup_retention_period: 0, deletion_protection: false },
+            after: null
           }
-        ]
+        }]
       },
       report: {
         decision: 'block',
         tier: 'unrecoverable',
         source: 'rules',
         confidence: 0.99,
-        reason: 'RDS instance deletion skips the final snapshot, has no backup retention, and deletion protection is disabled.',
+        target: 'aws_db_instance.main',
+        action: 'delete aws_db_instance',
+        provider: 'aws / rds / production',
+        reason: 'RDS deletion skips the final snapshot, has no backup retention, and deletion protection is disabled.',
         evidence: ['skip_final_snapshot=true', 'backup_retention_period=0', 'deletion_protection=false'],
         missing: [],
         next: 'Enable a final snapshot, backup retention, or deletion protection before applying.'
@@ -226,31 +175,22 @@ const scenarios = {
       id: 'gcs-versioned',
       label: 'GCS bucket with versioning',
       input: {
-        resource_changes: [
-          {
-            address: 'google_storage_bucket.audit',
-            type: 'google_storage_bucket',
-            name: 'audit',
-            provider_name: 'registry.terraform.io/hashicorp/google',
-            change: {
-              actions: ['delete'],
-              before: {
-                name: 'audit-log-sample',
-                versioning: { enabled: true },
-                force_destroy: false
-              },
-              after: null,
-              after_unknown: {}
-            }
-          }
-        ]
+        resource_changes: [{
+          address: 'google_storage_bucket.audit',
+          type: 'google_storage_bucket',
+          provider_name: 'registry.terraform.io/hashicorp/google',
+          change: { actions: ['delete'], before: { versioning: { enabled: true }, force_destroy: false }, after: null }
+        }]
       },
       report: {
         decision: 'warn',
         tier: 'recoverable-from-backup',
         source: 'rules',
         confidence: 0.9,
-        reason: 'Bucket versioning is enabled, so object generations may be recoverable if retention policy allows it.',
+        target: 'google_storage_bucket.audit',
+        action: 'delete google_storage_bucket',
+        provider: 'gcp / storage / production',
+        reason: 'Bucket versioning is enabled, so object generations may be recoverable if retention allows it.',
         evidence: ['versioning.enabled=true', 'force_destroy=false'],
         missing: ['Confirm object retention policy and restore process.'],
         next: 'Surface the recovery dependency before continuing.'
@@ -267,23 +207,29 @@ const scenarios = {
         tier: 'needs-review',
         source: 'shell-adapter',
         confidence: 0.72,
+        target: 's3://prod-audit-logs',
+        action: 'delete s3_object_or_prefix',
+        provider: 'aws-s3 / production',
         reason: 'The command matches a destructive S3 deletion pattern, but no live bucket evidence was supplied.',
-        evidence: ['recognized-shell-pattern=s3_object_or_prefix', 'target=s3://prod-audit-logs'],
+        evidence: ['shell.command=aws s3 rm s3://prod-audit-logs --recursive', 'shell.pattern=s3_object_or_prefix'],
         missing: ['Bucket versioning status', 'Lifecycle retention', 'Replication or backup evidence'],
         next: 'Collect read-only S3 evidence or ask for human review.'
       }
     },
     {
       id: 'kubectl-delete',
-      label: 'Kubernetes delete',
+      label: 'Kubernetes namespace delete',
       input: 'kubectl delete namespace payments',
       report: {
         decision: 'escalate',
         tier: 'needs-review',
         source: 'shell-adapter',
         confidence: 0.66,
-        reason: 'The command deletes a Kubernetes namespace, but workload state and recovery path are unknown.',
-        evidence: ['recognized-shell-pattern=kubernetes_resource', 'target=namespace/payments'],
+        target: 'namespace/payments',
+        action: 'delete kubernetes_resource',
+        provider: 'kubernetes / production',
+        reason: 'The command deletes a namespace, but workload state and recovery path are unknown.',
+        evidence: ['shell.command=kubectl delete namespace payments', 'shell.pattern=kubernetes_resource'],
         missing: ['Cluster backup evidence', 'Persistent volume recovery path', 'Deployment owner approval'],
         next: 'Require review before deleting namespace-scoped workloads.'
       }
@@ -293,19 +239,16 @@ const scenarios = {
     {
       id: 'aws-s3-delete-bucket',
       label: 'AWS MCP bucket delete',
-      input: {
-        server: 'aws',
-        tool: 's3.delete_bucket',
-        arguments: {
-          bucket: 'prod-audit-logs'
-        }
-      },
+      input: { server: 'aws', tool: 's3.delete_bucket', arguments: { bucket: 'prod-audit-logs' } },
       report: {
         decision: 'escalate',
         tier: 'needs-review',
         source: 'mcp-adapter',
         confidence: 0.74,
-        reason: 'The MCP call is a destructive bucket operation, but RecourseOS does not have bucket state evidence in this sample.',
+        target: 'prod-audit-logs',
+        action: 'tool s3.delete_bucket',
+        provider: 'aws / s3 / production',
+        reason: 'The MCP call is destructive, but bucket state evidence is absent in this sample.',
         evidence: ['mcp.tool=s3.delete_bucket', 'bucket=prod-audit-logs'],
         missing: ['Versioning status', 'Object inventory', 'Retention and replication evidence'],
         next: 'Ask for review or provide bucket evidence before invoking the tool.'
@@ -314,20 +257,16 @@ const scenarios = {
     {
       id: 'iam-detach-policy',
       label: 'IAM policy detach',
-      input: {
-        server: 'aws',
-        tool: 'iam.detach_role_policy',
-        arguments: {
-          roleName: 'app-runtime-role',
-          policyArn: 'arn:aws:iam::123456789012:policy/read-only-sample'
-        }
-      },
+      input: { server: 'aws', tool: 'iam.detach_role_policy', arguments: { roleName: 'app-runtime-role', policyArn: 'arn:aws:iam::123456789012:policy/read-only-sample' } },
       report: {
         decision: 'allow',
         tier: 'reversible',
         source: 'rules',
         confidence: 0.86,
-        reason: 'IAM policy attachments are relationship resources and can be reapplied if needed.',
+        target: 'app-runtime-role',
+        action: 'tool iam.detach_role_policy',
+        provider: 'aws / iam / production',
+        reason: 'IAM policy attachments are relationship resources and can be reapplied.',
         evidence: ['relationship-resource=true', 'role and policy remain addressable'],
         missing: [],
         next: 'Continue if the access change is intended.'
@@ -339,29 +278,12 @@ const scenarios = {
 const sourceSelect = document.getElementById('source-select');
 const scenarioSelect = document.getElementById('scenario-select');
 const input = document.getElementById('input');
-const result = document.getElementById('result');
+const tuiOutput = document.getElementById('tui-output');
 const mcpCall = document.getElementById('mcp-call');
-const agentResponse = document.getElementById('agent-response');
-const summaryDecision = document.getElementById('summary-decision');
-const summaryTier = document.getElementById('summary-tier');
-const summarySource = document.getElementById('summary-source');
-const summaryConfidence = document.getElementById('summary-confidence');
-const evidenceList = document.getElementById('evidence-list');
-const missingList = document.getElementById('missing-list');
-const surfaceResource = document.getElementById('surface-resource');
-const surfaceOperation = document.getElementById('surface-operation');
-const surfaceOwner = document.getElementById('surface-owner');
+const jsonOutput = document.getElementById('result');
+const adapterCopy = document.getElementById('adapter-copy');
 const evaluateButton = document.getElementById('evaluate');
-const resetButton = document.getElementById('reset');
-
-function activeScenario() {
-  const source = sourceSelect.value;
-  return scenarios[source].find(item => item.id === scenarioSelect.value) || scenarios[source][0];
-}
-
-function formatInput(value) {
-  return typeof value === 'string' ? value : JSON.stringify(value, null, 2);
-}
+const plugButtons = Array.from(document.querySelectorAll('[data-source]'));
 
 function populateScenarios() {
   scenarioSelect.innerHTML = '';
@@ -374,76 +296,102 @@ function populateScenarios() {
   loadScenario();
 }
 
+function activeScenario() {
+  return scenarios[sourceSelect.value].find(item => item.id === scenarioSelect.value) || scenarios[sourceSelect.value][0];
+}
+
 function loadScenario() {
-  input.value = formatInput(activeScenario().input);
-  renderReport(activeScenario().report, sourceSelect.value, activeScenario().input);
+  const scenario = activeScenario();
+  input.value = typeof scenario.input === 'string' ? scenario.input : JSON.stringify(scenario.input, null, 2);
+  render(scenario.report, sourceSelect.value, scenario.input);
 }
 
 function evaluate() {
   const scenario = activeScenario();
-  const parsed = parseInput(sourceSelect.value, input.value);
-  if (!parsed.ok) {
-    renderInvalid(parsed.message);
-    return;
-  }
-  renderReport(adjustReport(scenario.report, sourceSelect.value, parsed.value), sourceSelect.value, parsed.value);
+  render(scenario.report, sourceSelect.value, parseInput(sourceSelect.value, input.value));
 }
 
 function parseInput(source, value) {
-  if (source === 'shell') {
-    return value.trim()
-      ? { ok: true, value: value.trim() }
-      : { ok: false, message: 'Shell command is required.' };
-  }
+  if (source === 'shell') return value.trim();
   try {
-    return { ok: true, value: JSON.parse(value) };
-  } catch (error) {
-    return { ok: false, message: 'Input must be valid JSON for this source.' };
+    return JSON.parse(value);
+  } catch {
+    return value;
   }
 }
 
-function adjustReport(base, source, value) {
-  const text = typeof value === 'string' ? value : JSON.stringify(value).toLowerCase();
-  const report = JSON.parse(JSON.stringify(base));
-
-  if (source === 'terraform' && /deletion_protection["']?\s*:\s*true/i.test(text)) {
-    report.decision = 'allow';
-    report.tier = 'reversible';
-    report.reason = 'Deletion protection is enabled, so the destructive change should not proceed without first changing protection settings.';
-    report.evidence = ['deletion_protection=true'];
-    report.missing = [];
-    report.next = 'Keep deletion protection enabled unless the operator intentionally changes it.';
-  }
-
-  if (source === 'shell' && !/\b(rm|delete|drop|truncate|destroy|rb)\b/i.test(text)) {
-    report.decision = 'allow';
-    report.tier = 'reversible';
-    report.reason = 'No high-risk mutation pattern was recognized in this sample command.';
-    report.evidence = ['no destructive verb detected'];
-    report.missing = [];
-    report.next = 'Continue under the normal agent permission policy.';
-  }
-
-  return report;
+function render(report, source, value) {
+  plugButtons.forEach(button => button.classList.toggle('active', button.dataset.source === source));
+  adapterCopy.textContent = {
+    terraform: 'Terraform plan JSON becomes mutation intent.',
+    shell: 'Shell and cloud CLI commands become mutation intent.',
+    mcp: 'MCP tool-call arguments become mutation intent before invocation.'
+  }[source];
+  tuiOutput.textContent = renderTui(report, source);
+  mcpCall.textContent = JSON.stringify(buildMcpInvocation(source, value), null, 2);
+  jsonOutput.textContent = JSON.stringify(buildReport(report, source), null, 2);
 }
 
-function renderInvalid(message) {
-  result.innerHTML = `<div class="invalid">${escapeHtml(message)}</div>`;
-  mcpCall.textContent = '';
-  agentResponse.textContent = 'The agent should stop and ask for valid input before calling Recourse.';
-  summaryDecision.textContent = 'invalid';
-  summaryTier.textContent = 'input-error';
-  summarySource.textContent = 'browser';
-  summaryConfidence.textContent = '0%';
-  evidenceList.innerHTML = '';
-  missingList.innerHTML = '<li>Valid input payload</li>';
-  surfaceResource.textContent = 'unknown';
-  surfaceOperation.textContent = 'invalid input';
-  surfaceOwner.textContent = 'browser';
+function renderTui(report, source) {
+  const decision = `${report.decision.toUpperCase()}  ${report.tier}`;
+  const top = line();
+  const divider = sep();
+  const adapters = [
+    `${source === 'terraform' ? 'active' : 'ready'}: Terraform plans`,
+    `${source === 'shell' ? 'active' : 'ready'}: Shell / cloud CLIs`,
+    `${source === 'mcp' ? 'active' : 'ready'}: MCP tool calls`,
+    'ready: kubectl, SQL, APIs'
+  ];
+  return [
+    top,
+    padRow('RECOURSEOS PREFLIGHT', 'NORMALIZED MUTATION', 'DECISION'),
+    divider,
+    padRow(`input: ${source}`, `target: ${report.target}`, decision),
+    padRow(`plug: ${adapterName(source)}`, `action: ${report.action}`, `confidence: ${Math.round(report.confidence * 100)}%`),
+    padRow('actor: agent/preflight', `provider: ${report.provider}`, `policy: ${policyAction(report.decision)}`),
+    divider,
+    padRow('ADAPTERS', 'EVALUATION PIPELINE', 'NEXT ACTION'),
+    padRow(adapters[0], '1. parse action into MutationIntent', nextAction(report.decision)),
+    padRow(adapters[1], '2. match known resource rules first', report.decision === 'allow' ? 'review not required' : 'review required'),
+    padRow(adapters[2], '3. use semantic unknown fallback', ''),
+    padRow(adapters[3], '4. return structured report + TUI', ''),
+    divider,
+    fullRow('EVIDENCE'),
+    ...report.evidence.map(item => fullRow(`- ${item}`)),
+    fullRow('MISSING EVIDENCE'),
+    ...(report.missing.length ? report.missing : ['None']).map(item => fullRow(`- ${item}`)),
+    fullRow('AGENT-SAFE RESPONSE'),
+    fullRow(agentResponse(report)),
+    top
+  ].join('\n');
 }
 
-function renderReport(report, source, value) {
-  const payload = {
+const tuiWidths = { left: 22, center: 31, right: 24 };
+const tuiWidth = tuiWidths.left + tuiWidths.center + tuiWidths.right + 10;
+
+function line() {
+  return `+${'-'.repeat(tuiWidth - 2)}+`;
+}
+
+function sep() {
+  return `+${'-'.repeat(tuiWidths.left + 2)}+${'-'.repeat(tuiWidths.center + 2)}+${'-'.repeat(tuiWidths.right + 2)}+`;
+}
+
+function padRow(left, center, right) {
+  return `| ${cell(left, tuiWidths.left)} | ${cell(center, tuiWidths.center)} | ${cell(right, tuiWidths.right)} |`;
+}
+
+function fullRow(value) {
+  return `| ${cell(value, tuiWidth - 4)} |`;
+}
+
+function cell(value, length) {
+  const clean = String(value).replace(/\s+/g, ' ').trim();
+  return clean.length > length ? `${clean.slice(0, length - 3)}...` : clean.padEnd(length);
+}
+
+function buildReport(report, source) {
+  return {
     schemaVersion: 'recourse.consequence.v1',
     decision: report.decision,
     decisionReason: report.reason,
@@ -451,156 +399,57 @@ function renderReport(report, source, value) {
       totalMutations: 1,
       needsReview: report.decision === 'escalate',
       hasUnrecoverable: report.decision === 'block',
-      worstRecoverability: {
-        label: report.tier,
-        confidence: report.confidence,
-        source: report.source
-      }
+      worstRecoverability: { label: report.tier, confidence: report.confidence, source: report.source }
     },
-    mutations: [
-      {
-        source,
-        recoverability: report.tier,
-        evidence: report.evidence,
-        missingEvidence: report.missing
-      }
-    ]
-  };
-  const invocation = buildMcpInvocation(source, value);
-  mcpCall.textContent = JSON.stringify(invocation, null, 2);
-  agentResponse.textContent = responseFor(report);
-  summaryDecision.textContent = report.decision;
-  summaryTier.textContent = report.tier;
-  summarySource.textContent = report.source;
-  summaryConfidence.textContent = `${Math.round(report.confidence * 100)}%`;
-  const surface = surfaceFor(source, value);
-  surfaceResource.textContent = surface.resource;
-  surfaceOperation.textContent = surface.operation;
-  surfaceOwner.textContent = surface.owner;
-  evidenceList.innerHTML = report.evidence.map(item => `<li>${escapeHtml(item)}</li>`).join('');
-  missingList.innerHTML = (report.missing.length ? report.missing : ['None for this sample.'])
-    .map(item => `<li>${escapeHtml(item)}</li>`)
-    .join('');
-
-  result.innerHTML = `
-    <div class="decision-card">
-      <div class="decision-top">
-        <div class="decision-label">${escapeHtml(report.decision)}</div>
-        <div class="decision-pill ${escapeHtml(report.decision)}">${escapeHtml(report.tier)}</div>
-      </div>
-      <p class="decision-reason">${escapeHtml(report.reason)}</p>
-      <div class="facts three">
-        <div class="fact"><div class="fact-key">source</div><div class="fact-value">${escapeHtml(report.source)}</div></div>
-        <div class="fact"><div class="fact-key">confidence</div><div class="fact-value">${Math.round(report.confidence * 100)}%</div></div>
-        <div class="fact"><div class="fact-key">agent action</div><div class="fact-value">${escapeHtml(actionFor(report.decision))}</div></div>
-      </div>
-    </div>
-    ${listSection('Evidence', report.evidence)}
-    ${listSection('Missing Evidence', report.missing.length ? report.missing : ['None for this sample.'])}
-    ${listSection('Next Step', [report.next])}
-    <div class="result-section">
-      <h3>Structured Output</h3>
-      <pre>${escapeHtml(JSON.stringify(payload, null, 2))}</pre>
-    </div>
-  `;
-}
-
-function surfaceFor(source, value) {
-  if (source === 'shell') {
-    const target = String(value).match(/s3:\/\/[^\s]+|namespace\s+([^\s]+)/i);
-    return {
-      resource: target ? target[0].replace(/^namespace\s+/i, 'namespace/') : 'shell target',
-      operation: 'command mutation',
-      owner: 'unknown'
-    };
-  }
-  if (source === 'mcp') {
-    return {
-      resource: value?.arguments?.bucket || value?.arguments?.roleName || value?.tool || 'mcp target',
-      operation: value?.tool || 'tool call',
-      owner: value?.server || 'mcp'
-    };
-  }
-  const change = value?.resource_changes?.[0];
-  return {
-    resource: change?.address || change?.type || 'terraform resource',
-    operation: change?.change?.actions?.join('+') || 'plan mutation',
-    owner: change?.provider_name?.split('/').pop() || 'terraform'
+    mutations: [{ source, target: report.target, recoverability: report.tier, evidence: report.evidence, missingEvidence: report.missing }]
   };
 }
 
 function buildMcpInvocation(source, value) {
-  const base = {
-    actor: 'agent/preflight',
-    environment: 'production'
-  };
-
   const toolName = {
     terraform: 'recourse_evaluate_terraform',
     shell: 'recourse_evaluate_shell',
     mcp: 'recourse_evaluate_mcp_call'
   }[source];
-
-  const args = source === 'terraform'
-    ? { ...base, classifier: true, plan: value }
-    : source === 'shell'
-      ? { ...base, command: value }
-      : { ...base, ...value };
-
   return {
     jsonrpc: '2.0',
     id: 'preflight-1',
     method: 'tools/call',
     params: {
       name: toolName,
-      arguments: args
+      arguments: source === 'shell'
+        ? { actor: 'agent/preflight', environment: 'production', command: value }
+        : { actor: 'agent/preflight', environment: 'production', payload: value }
     }
   };
 }
 
-function actionFor(decision) {
-  return {
-    allow: 'continue',
-    warn: 'surface recovery requirement',
-    block: 'do not execute',
-    escalate: 'ask for review'
-  }[decision] || 'ask for review';
+function adapterName(source) {
+  return { terraform: 'Terraform plan adapter', shell: 'Shell command adapter', mcp: 'MCP tool-call adapter' }[source];
 }
 
-function responseFor(report) {
-  if (report.decision === 'block') {
-    return `I checked this with RecourseOS. It blocks the action because ${report.reason} I will not execute it unless the recovery posture changes or policy is explicitly overridden.`;
-  }
-  if (report.decision === 'escalate') {
-    return `I checked this with RecourseOS. It needs human review because ${report.reason} Missing evidence: ${report.missing.join(', ')}.`;
-  }
-  if (report.decision === 'warn') {
-    return `I checked this with RecourseOS. The action can continue only after surfacing the recovery requirement: ${report.reason}`;
-  }
-  return `I checked this with RecourseOS. The action is classified as reversible, so I can continue under the normal permission policy.`;
+function policyAction(decision) {
+  return { allow: 'continue', warn: 'surface warning', escalate: 'human review', block: 'do not execute' }[decision];
 }
 
-function listSection(title, items) {
-  return `
-    <div class="result-section">
-      <h3>${escapeHtml(title)}</h3>
-      <ul>${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>
-    </div>
-  `;
+function nextAction(decision) {
+  return { allow: 'continue under policy', warn: 'show recovery dependency', escalate: 'collect evidence or approve', block: 'change recovery posture' }[decision];
 }
 
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+function agentResponse(report) {
+  if (report.decision === 'block') return `I checked with RecourseOS. The action is blocked because ${report.reason}`;
+  if (report.decision === 'escalate') return `I checked with RecourseOS. The action needs review because ${report.reason}`;
+  if (report.decision === 'warn') return `I checked with RecourseOS. The action can continue only after surfacing this recovery dependency: ${report.reason}`;
+  return 'I checked with RecourseOS. The action is reversible and can continue under normal policy.';
 }
 
 sourceSelect.addEventListener('change', populateScenarios);
 scenarioSelect.addEventListener('change', loadScenario);
 evaluateButton.addEventListener('click', evaluate);
-resetButton.addEventListener('click', loadScenario);
+plugButtons.forEach(button => button.addEventListener('click', () => {
+  sourceSelect.value = button.dataset.source;
+  populateScenarios();
+}));
 populateScenarios();
 </script>
 </body>

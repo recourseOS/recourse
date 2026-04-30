@@ -48,6 +48,34 @@ describe('compiled CLI scenario matrix', () => {
     expect(result.status).toBe(1);
   });
 
+  it('renders the terminal preflight view for shell mutations', () => {
+    expect(existsSync(distCli), 'dist/index.js must exist; run npm run build before CLI scenarios').toBe(true);
+
+    const result = spawnSync(process.execPath, [
+      distCli,
+      'preflight',
+      'shell',
+      'aws s3 rm s3://prod-audit-logs --recursive',
+      '--actor',
+      'agent/deploy',
+      '--environment',
+      'production',
+      '--fail-on',
+      'block',
+    ], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+    });
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('RECOURSEOS PREFLIGHT');
+    expect(result.stdout).toContain('Shell command adapter');
+    expect(result.stdout).toContain('MCP tool calls');
+    expect(result.stdout).toContain('CONSEQUENCE DECISION');
+    expect(result.stdout).toContain('AGENT-SAFE RESPONSE');
+  });
+
   it.each(goldenPlanScenarios)('evaluates golden Terraform fixture: $name', scenario => {
     expect(existsSync(distCli), 'dist/index.js must exist; run npm run build before CLI scenarios').toBe(true);
 

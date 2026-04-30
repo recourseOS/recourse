@@ -46,14 +46,14 @@
     <div class="eyebrow">MCP-native · CLI-ready · multi-cloud</div>
     <h1>The consequence layer <span class="accent">agents call before they act.</span></h1>
     <p class="lede">
-      RecourseOS gives agents and engineers a structured recoverability report for Terraform plans, shell commands, and MCP tool calls before destructive infrastructure changes land.
+      RecourseOS gives agents and engineers a terminal preflight surface plus structured recoverability reports for Terraform plans, shell commands, and MCP tool calls before destructive infrastructure changes land.
     </p>
     <div class="hero-actions">
-      <a class="button primary" href="/playground.html">Open playground</a>
+      <a class="button primary" href="/playground.html">Open TUI preview</a>
       <a class="button secondary" href="/mcp-setup.html">Wire MCP server</a>
     </div>
     <div class="install-line">
-      <span><span class="prompt">$</span> <span class="cmd" id="install-cmd">npx recourse-cli mcp serve</span></span>
+      <span><span class="prompt">$</span> <span class="cmd" id="install-cmd">npx recourse-cli preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'</span></span>
       <button id="copy-btn" aria-label="Copy MCP command">Copy</button>
     </div>
   </div>
