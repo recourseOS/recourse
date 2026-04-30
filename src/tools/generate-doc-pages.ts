@@ -38,6 +38,12 @@ const docPages: DocPage[] = [
     title: 'Agent Interface',
     description: 'MCP tool contract and consequence report semantics for agents that call RecourseOS before acting.',
   },
+  {
+    source: 'docs/mcp-setup.md',
+    output: 'docs/mcp-setup.html',
+    title: 'MCP Setup',
+    description: 'Connect RecourseOS to MCP clients and verify the local stdio server.',
+  },
 ];
 
 export async function renderDocPages(pages = docPages): Promise<Array<{ output: string; html: string }>> {
@@ -254,6 +260,7 @@ export function renderDocPage(page: DocPage, markdown: string): string {
     <a href="/resource-coverage.html">coverage</a>
     <a href="/golden-fixtures.html">fixtures</a>
     <a href="/agent-interface.html">agents</a>
+    <a href="/mcp-setup.html">mcp</a>
     <a href="https://github.com/recourseos/recourse">github</a>
   </div>
 </nav>

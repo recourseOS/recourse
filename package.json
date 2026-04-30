@@ -14,6 +14,7 @@
     "test:all": "npm run build && vitest --run && vitest --run tests/cli-scenarios.test.ts",
     "test:aws-live": "RUN_AWS_LIVE_TESTS=1 vitest --run tests/aws-live.test.ts",
     "test:docs:visual": "playwright test",
+    "mcp:smoke": "npm run build && node dist/tools/smoke-test-mcp.js",
     "docs:coverage": "npm run build && node dist/tools/generate-resource-coverage.js",
     "docs:pages": "npm run build && node dist/tools/generate-doc-pages.js",
     "docs:all": "npm run docs:coverage && npm run docs:pages",

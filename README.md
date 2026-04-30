@@ -159,6 +159,12 @@ recourse mcp serve
 
 The MCP server exposes `recourse_evaluate_terraform`, `recourse_evaluate_shell`, `recourse_evaluate_mcp_call`, and `recourse_supported_resources`. The public MCP tool contract and agent decision semantics are documented in `docs/agent-interface.md`.
 
+MCP client setup and smoke-test instructions are documented in `docs/mcp-setup.md`.
+
+```bash
+npm run mcp:smoke
+```
+
 ### Read-Only AWS Evidence
 
 ```bash
