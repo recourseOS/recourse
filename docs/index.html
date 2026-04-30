@@ -231,6 +231,108 @@
     </div>
   </section>
 
+  <section class="section" id="architecture">
+    <div class="container">
+      <div class="section-label">Architecture</div>
+      <h2 style="max-width: 16ch; margin-bottom: 18px;">One engine. Multiple surfaces. Same consequence contract.</h2>
+      <p class="section-copy" style="margin-bottom: 42px;">
+        The core evaluator normalizes mutations from any source into the same consequence model. The output is always: decision, recoverability tier, evidence, and missing evidence.
+      </p>
+      <div class="architecture-diagram">
+        <div class="arch-row arch-inputs">
+          <div class="arch-node input">
+            <span>Terraform</span>
+            <strong>plan JSON</strong>
+          </div>
+          <div class="arch-node input">
+            <span>Shell</span>
+            <strong>command string</strong>
+          </div>
+          <div class="arch-node input">
+            <span>MCP</span>
+            <strong>tool call</strong>
+          </div>
+        </div>
+        <div class="arch-arrow-row">
+          <svg class="arch-arrow" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 4 L12 20 M6 14 L12 20 L18 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="arch-row">
+          <div class="arch-node adapter">
+            <span>Adapters</span>
+            <strong>Parse to MutationIntent</strong>
+          </div>
+        </div>
+        <div class="arch-arrow-row">
+          <svg class="arch-arrow" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 4 L12 20 M6 14 L12 20 L18 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="arch-row">
+          <div class="arch-node core">
+            <span>RecourseOS Core</span>
+            <strong>Consequence Evaluator</strong>
+            <div class="arch-sub-grid">
+              <div class="arch-sub">
+                <span>Rules</span>
+                <small>AWS · GCP · Azure</small>
+              </div>
+              <div class="arch-sub">
+                <span>Classifier</span>
+                <small>Unknown resources</small>
+              </div>
+              <div class="arch-sub">
+                <span>Evidence</span>
+                <small>Live cloud state</small>
+              </div>
+              <div class="arch-sub">
+                <span>Policy</span>
+                <small>Decision thresholds</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="arch-arrow-row">
+          <svg class="arch-arrow" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 4 L12 20 M6 14 L12 20 L18 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="arch-row">
+          <div class="arch-node output">
+            <span>Consequence Report</span>
+            <strong>decision · tier · evidence · missing</strong>
+          </div>
+        </div>
+        <div class="arch-arrow-row multi">
+          <svg class="arch-arrow" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 4 L12 20 M6 14 L12 20 L18 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <svg class="arch-arrow" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 4 L12 20 M6 14 L12 20 L18 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <svg class="arch-arrow" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 4 L12 20 M6 14 L12 20 L18 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="arch-row arch-outputs">
+          <div class="arch-node surface">
+            <span>CLI</span>
+            <strong>Terminal · CI/CD</strong>
+          </div>
+          <div class="arch-node surface">
+            <span>MCP Server</span>
+            <strong>Agent integration</strong>
+          </div>
+          <div class="arch-node surface">
+            <span>Future</span>
+            <strong>Local app · Dashboard</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="section dark" id="difference">
     <div class="container split">
       <div>
