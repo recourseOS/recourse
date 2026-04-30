@@ -3,915 +3,286 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>RecourseOS — AI-ready consequence analysis for infrastructure changes</title>
+<title>RecourseOS - AI-ready consequence analysis for infrastructure changes</title>
 <meta name="description" content="Rules-first, BitNet-ready consequence analysis for Terraform, shell, and MCP infrastructure mutations." />
-<meta property="og:title" content="RecourseOS — AI-ready consequence analysis for infrastructure changes" />
-<meta property="og:description" content="Deterministic where safety matters. BitNet-ready where cloud resources are unknown." />
+<meta property="og:title" content="RecourseOS - AI-ready consequence analysis for infrastructure changes" />
+<meta property="og:description" content="The consequence layer agents call before infrastructure changes become irreversible." />
 <meta property="og:type" content="website" />
-<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<style>
-  :root {
-    --bg: #f4f0e8;
-    --bg-deep: #ebe5d8;
-    --bg-card: rgba(255, 252, 245, 0.72);
-    --ink: #171717;
-    --ink-soft: #48443e;
-    --ink-faint: #8a8177;
-    --rule: #d8d0bf;
-    --accent: #c75032;
-    --accent-dark: #9c3824;
-    --accent-soft: #dd8060;
-    --term-bg: #11110e;
-    --term-panel: #191813;
-    --term-ink: #ece8dc;
-    --term-faint: #776f63;
-    --term-green: #94aa76;
-    --term-amber: #d3ad5e;
-    --term-red: #d15b49;
-    --term-blue: #74a6be;
-    --shadow: 0 28px 80px -45px rgba(30, 22, 10, 0.48);
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-  body {
-    font-family: "Fraunces", Georgia, serif;
-    background:
-      radial-gradient(circle at 15% 0%, rgba(199, 80, 50, 0.13), transparent 34rem),
-      radial-gradient(circle at 90% 6%, rgba(20, 19, 15, 0.08), transparent 30rem),
-      linear-gradient(180deg, #f8f4ec 0%, var(--bg) 38%, #eee7d9 100%);
-    color: var(--ink);
-    line-height: 1.55;
-    font-size: 17px;
-    min-height: 100vh;
-  }
-
-  a { color: inherit; }
-  code { font-family: "JetBrains Mono", monospace; }
-
-  .container { max-width: 1120px; margin: 0 auto; padding: 0 32px; }
-  .narrow { max-width: 880px; }
-
-  /* Logo */
-  .brand {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    text-decoration: none;
-    color: var(--ink);
-  }
-
-  .brand-mark {
-    width: 52px;
-    height: 52px;
-    display: block;
-    filter: drop-shadow(0 10px 16px rgba(30, 20, 10, 0.12));
-  }
-
-  .brand-text {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-  }
-
-  .brand-name {
-    font-family: "Fraunces", Georgia, serif;
-    font-size: 22px;
-    line-height: 1;
-    font-weight: 600;
-    letter-spacing: -0.035em;
-  }
-
-  .brand-name .os { color: var(--accent); font-weight: 500; }
-
-  .brand-kicker {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 9px;
-    line-height: 1;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--ink-faint);
-  }
-
-  /* Top nav */
-  nav {
-    padding: 26px 0 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  nav .links { font-family: "JetBrains Mono", monospace; font-size: 12px; display: flex; align-items: center; gap: 22px; }
-  nav .links a {
-    color: var(--ink-soft);
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
-    padding-bottom: 2px;
-    transition: border-color 120ms ease, color 120ms ease;
-  }
-  nav .links a:hover { color: var(--ink); border-bottom-color: var(--ink); }
-  .nav-cta {
-    border: 1px solid var(--rule) !important;
-    border-radius: 999px;
-    padding: 8px 12px !important;
-    background: rgba(255, 252, 245, 0.55);
-  }
-  .nav-cta:hover { border-color: var(--accent) !important; color: var(--accent) !important; }
-
-  /* Hero */
-  .hero {
-    padding: 88px 0 70px;
-    display: grid;
-    grid-template-columns: minmax(0, 1.02fr) minmax(360px, 0.88fr);
-    gap: 56px;
-    align-items: center;
-  }
-
-  .eyebrow {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 12px;
-    letter-spacing: 0.11em;
-    text-transform: uppercase;
-    color: var(--accent-dark);
-    margin-bottom: 22px;
-  }
-
-  h1 {
-    font-size: clamp(42px, 6vw, 76px);
-    line-height: 0.96;
-    letter-spacing: -0.045em;
-    font-weight: 500;
-    font-variation-settings: "opsz" 144;
-    margin-bottom: 28px;
-    max-width: 10.8ch;
-  }
-
-  h1 .muted {
-    color: var(--ink-soft);
-    font-style: italic;
-    font-weight: 400;
-  }
-
-  h1 .accent { color: var(--accent); }
-
-  .lede {
-    max-width: 58ch;
-    color: var(--ink-soft);
-    font-size: 19px;
-    line-height: 1.62;
-    margin-bottom: 34px;
-  }
-
-  .hero-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .button {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 12px;
-    letter-spacing: 0.02em;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    border-radius: 999px;
-    padding: 12px 16px;
-    transition: transform 140ms ease, border-color 140ms ease, color 140ms ease, background 140ms ease;
-  }
-
-  .button:hover { transform: translateY(-1px); }
-  .button.primary { background: var(--term-bg); color: var(--term-ink); border: 1px solid var(--term-bg); }
-  .button.secondary { background: rgba(255, 252, 245, 0.58); color: var(--ink-soft); border: 1px solid var(--rule); }
-  .button.secondary:hover { color: var(--ink); border-color: var(--ink-faint); }
-
-  /* Install block */
-  .install {
-    background: var(--term-bg);
-    color: var(--term-ink);
-    border-radius: 10px;
-    padding: 17px 18px 17px 20px;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    max-width: 560px;
-    box-shadow: var(--shadow);
-    border: 1px solid rgba(255,255,255,0.05);
-    margin-top: 24px;
-  }
-  .install .prompt { color: var(--term-faint); user-select: none; }
-  .install .cmd { color: var(--term-ink); white-space: nowrap; }
-  .install button {
-    background: transparent;
-    border: 1px solid var(--term-faint);
-    color: var(--term-faint);
-    font-family: inherit;
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 6px 10px;
-    border-radius: 999px;
-    cursor: pointer;
-    transition: all 140ms ease;
-  }
-  .install button:hover { color: var(--term-ink); border-color: var(--term-ink); }
-  .install button.copied { color: var(--term-green); border-color: var(--term-green); }
-
-  .hero-card {
-    background: linear-gradient(160deg, #151510 0%, #1f1d17 100%);
-    color: var(--term-ink);
-    border-radius: 24px;
-    min-height: 488px;
-    padding: 26px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 38px 90px -48px rgba(0,0,0,0.7);
-    border: 1px solid rgba(255,255,255,0.08);
-  }
-
-  .hero-card::before {
-    content: "";
-    position: absolute;
-    inset: -20% -20% auto auto;
-    width: 320px;
-    height: 320px;
-    border-radius: 999px;
-    background: radial-gradient(circle, rgba(199,80,50,0.28), transparent 63%);
-  }
-
-  .hero-card-inner {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    min-height: 436px;
-    justify-content: space-between;
-  }
-
-  .lockup {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-  }
-
-  .lockup .brand-mark { width: 88px; height: 88px; filter: none; }
-  .lockup-name {
-    font-size: 42px;
-    letter-spacing: -0.045em;
-    line-height: 1;
-  }
-  .lockup-name .os { color: var(--accent); }
-  .lockup-tag {
-    font-family: "Inter", system-ui, sans-serif;
-    font-size: 16px;
-    color: rgba(244,240,232,0.76);
-    margin-top: 10px;
-  }
-  .lockup-tag strong { color: var(--accent-soft); font-weight: 600; }
-
-  .verdict-card {
-    background: rgba(244,240,232,0.06);
-    border: 1px solid rgba(244,240,232,0.11);
-    border-radius: 18px;
-    padding: 20px;
-    backdrop-filter: blur(10px);
-  }
-
-  .verdict-title {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--term-faint);
-    margin-bottom: 16px;
-  }
-
-  .verdict-row {
-    display: grid;
-    grid-template-columns: 20px 1fr auto;
-    gap: 10px;
-    align-items: baseline;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 12px;
-    padding: 10px 0;
-    border-top: 1px solid rgba(244,240,232,0.08);
-  }
-  .verdict-row:first-of-type { border-top: 0; }
-  .badge {
-    font-size: 10px;
-    border-radius: 999px;
-    padding: 3px 7px;
-    color: var(--term-bg);
-    background: var(--term-faint);
-  }
-  .badge.red { background: var(--term-red); color: white; }
-  .badge.amber { background: var(--term-amber); color: #16120a; }
-  .badge.green { background: var(--term-green); color: #10140c; }
-
-  .hero-note {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 12px;
-    color: var(--term-faint);
-    line-height: 1.7;
-  }
-
-  /* Sections */
-  .section { padding: 84px 0; border-top: 1px solid var(--rule); }
-  .section.alt { background: rgba(235,229,216,0.42); }
-  .section-label {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
-    letter-spacing: 0.13em;
-    text-transform: uppercase;
-    color: var(--ink-faint);
-    margin-bottom: 18px;
-  }
-  h2 {
-    font-size: clamp(28px, 3vw, 40px);
-    line-height: 1.08;
-    font-weight: 500;
-    letter-spacing: -0.025em;
-    margin-bottom: 30px;
-    font-variation-settings: "opsz" 72;
-  }
-  h2 .accent { color: var(--accent); }
-
-  .split {
-    display: grid;
-    grid-template-columns: 0.68fr 1fr;
-    gap: 58px;
-    align-items: start;
-  }
-
-  .section-copy {
-    color: var(--ink-soft);
-    font-size: 17px;
-    line-height: 1.68;
-    max-width: 54ch;
-  }
-
-  /* Terminal output */
-  .terminal {
-    background: var(--term-bg);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: var(--shadow);
-    border: 1px solid rgba(0,0,0,0.08);
-  }
-  .terminal-bar {
-    background: var(--term-panel);
-    padding: 12px 14px;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    border-bottom: 1px solid #28241d;
-  }
-  .terminal-bar .dot {
-    width: 11px; height: 11px; border-radius: 50%;
-    background: #3a3630;
-  }
-  .terminal-bar .dot:nth-child(1) { background: #8a3d30; }
-  .terminal-bar .dot:nth-child(2) { background: #9a7c43; }
-  .terminal-bar .dot:nth-child(3) { background: #62744d; }
-  .terminal-bar .title {
-    margin-left: 14px;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
-    color: var(--term-faint);
-    letter-spacing: 0.04em;
-  }
-  .terminal-body {
-    padding: 24px 26px 28px;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 13px;
-    line-height: 1.72;
-    color: var(--term-ink);
-    overflow-x: auto;
-  }
-  .terminal-body .prompt-line { color: var(--term-faint); margin-bottom: 14px; }
-  .terminal-body .prompt-line .user { color: var(--term-blue); }
-  .terminal-body .prompt-line .cmd { color: var(--term-ink); }
-  .terminal-body .heading {
-    color: var(--term-faint);
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    margin-top: 16px;
-    margin-bottom: 8px;
-    font-size: 11px;
-  }
-  .terminal-body .heading:first-child { margin-top: 0; }
-  .terminal-body .row { display: flex; gap: 8px; }
-  .terminal-body .row .marker { width: 14px; flex-shrink: 0; }
-  .terminal-body .row .body { flex: 1; white-space: nowrap; }
-  .terminal-body .red { color: var(--term-red); }
-  .terminal-body .amber { color: var(--term-amber); }
-  .terminal-body .green { color: var(--term-green); }
-  .terminal-body .faint { color: var(--term-faint); }
-  .terminal-body .indent { padding-left: 22px; color: var(--term-faint); font-size: 12px; white-space: nowrap; }
-  .terminal-body .summary {
-    margin-top: 18px;
-    padding-top: 16px;
-    border-top: 1px solid #2a2620;
-  }
-  .terminal-body .exit {
-    margin-top: 14px;
-    color: var(--term-faint);
-    font-size: 12px;
-  }
-
-  /* Coverage list */
-  .coverage {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0,1fr));
-    gap: 12px;
-  }
-  .coverage-item {
-    background: var(--bg-card);
-    border: 1px solid var(--rule);
-    border-radius: 14px;
-    padding: 18px;
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 8px 14px;
-    align-items: baseline;
-    box-shadow: 0 12px 36px -32px rgba(30, 22, 10, 0.48);
-  }
-  a.coverage-item {
-    color: inherit;
-    text-decoration: none;
-    transition: transform 140ms ease, border-color 140ms ease;
-  }
-  a.coverage-item:hover {
-    transform: translateY(-1px);
-    border-color: var(--accent-soft);
-  }
-  .coverage-item .num {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 12px;
-    color: var(--accent);
-    width: 28px;
-    flex-shrink: 0;
-  }
-  .coverage-item .label {
-    font-weight: 600;
-    font-size: 17px;
-    letter-spacing: -0.01em;
-  }
-  .coverage-item .desc {
-    color: var(--ink-soft);
-    font-size: 14px;
-    grid-column: 2;
-    font-family: "Inter", system-ui, sans-serif;
-  }
-
-  /* Principles */
-  .principles { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; }
-  .principle {
-    background: rgba(255, 252, 245, 0.58);
-    padding: 22px;
-    border: 1px solid var(--rule);
-    border-radius: 16px;
-  }
-  .principle-title {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--accent);
-    margin-bottom: 9px;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-  }
-  .principle-body {
-    color: var(--ink-soft);
-    font-size: 15px;
-    line-height: 1.65;
-    font-family: "Inter", system-ui, sans-serif;
-  }
-
-  /* Limits */
-  .limits {
-    background: var(--term-bg);
-    color: rgba(236,232,220,0.77);
-    padding: 30px 34px;
-    border-radius: 18px;
-    font-family: "Inter", system-ui, sans-serif;
-    font-size: 15px;
-    line-height: 1.7;
-    box-shadow: var(--shadow);
-  }
-  .limits strong { color: var(--term-ink); font-weight: 600; }
-  .limits code { background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 5px; color: var(--term-ink); }
-
-  /* Footer */
-  footer {
-    padding: 46px 0 72px;
-    border-top: 1px solid var(--rule);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 12px;
-    color: var(--ink-faint);
-  }
-  footer a {
-    color: var(--ink-soft);
-    text-decoration: none;
-    border-bottom: 1px solid var(--rule);
-    padding-bottom: 1px;
-    margin-left: 18px;
-    transition: color 120ms ease, border-color 120ms ease;
-  }
-  footer a:hover { color: var(--ink); border-bottom-color: var(--ink); }
-
-  /* Subtle entrance */
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(9px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .hero-copy > *, .hero-card { animation: rise 680ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-  .hero-copy .eyebrow { animation-delay: 0ms; }
-  .hero-copy h1 { animation-delay: 90ms; }
-  .hero-copy .lede { animation-delay: 180ms; }
-  .hero-copy .hero-actions { animation-delay: 260ms; }
-  .hero-copy .install { animation-delay: 340ms; }
-  .hero-card { animation-delay: 180ms; }
-
-  @media (max-width: 900px) {
-    .hero { grid-template-columns: 1fr; gap: 34px; padding-top: 68px; }
-    .hero-card { min-height: auto; }
-    .hero-card-inner { min-height: 360px; }
-    h1 { max-width: 11.6ch; }
-    .split { grid-template-columns: 1fr; gap: 30px; }
-  }
-
-  @media (max-width: 640px) {
-    .container { padding: 0 22px; }
-    nav { flex-direction: column; align-items: flex-start; gap: 16px; }
-    nav .links {
-      width: 100%;
-      display: grid;
-      grid-template-columns: repeat(3, max-content);
-      gap: 16px;
-      font-size: 11px;
-      justify-content: flex-start;
-      padding-bottom: 5px;
-    }
-    .nav-cta { padding: 0 0 2px !important; border: 0 !important; background: transparent; border-radius: 0; }
-    .brand-kicker { display: none; }
-    .hero { padding: 54px 0 48px; }
-    h1 { font-size: clamp(40px, 14vw, 58px); }
-    .lede { font-size: 17px; }
-    .install { overflow-x: auto; }
-    .install .cmd { font-size: 12px; }
-    .lockup { align-items: flex-start; }
-    .lockup-name { font-size: 34px; }
-    .section { padding: 58px 0; }
-    .coverage, .principles { grid-template-columns: 1fr; }
-    .terminal-body { font-size: 12px; padding: 18px; }
-    .terminal-body .indent, .terminal-body .row .body { white-space: normal; }
-    footer { flex-direction: column; align-items: flex-start; gap: 16px; }
-    footer a { margin-left: 0; margin-right: 18px; }
-  }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="site.css" />
 </head>
 <body>
-
-<nav class="container">
+<div class="top-band">
+<nav class="container site-nav">
   <a href="/" class="brand" aria-label="RecourseOS home">
     <svg class="brand-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M50 5 L88.97 27.5 V72.5 L50 95 L11.03 72.5 V27.5 Z" fill="#14130f"/>
-      <path d="M50 9.8 L84.8 29.9 V70.1 L50 90.2 L15.2 70.1 V29.9 Z" stroke="#f4f0e8" stroke-width="5.6" stroke-linejoin="round"/>
-      <path d="M34 70 V30 H57.5 C67.2 30 74 36 74 44.6 C74 53.2 67.2 59.2 57.5 59.2 H34" stroke="#f4f0e8" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M55.5 59.5 L74 70.5" stroke="#f4f0e8" stroke-width="7" stroke-linecap="round"/>
-      <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#c75032" stroke-width="6.5" stroke-linecap="round"/>
-      <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#c75032" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M50 5 L88.97 27.5 V72.5 L50 95 L11.03 72.5 V27.5 Z" fill="#06110e"/>
+      <path d="M50 9.8 L84.8 29.9 V70.1 L50 90.2 L15.2 70.1 V29.9 Z" stroke="#effbf3" stroke-width="5.6" stroke-linejoin="round"/>
+      <path d="M34 70 V30 H57.5 C67.2 30 74 36 74 44.6 C74 53.2 67.2 59.2 57.5 59.2 H34" stroke="#effbf3" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M55.5 59.5 L74 70.5" stroke="#effbf3" stroke-width="7" stroke-linecap="round"/>
+      <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round"/>
+      <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
-    <span class="brand-text">
+    <span>
       <span class="brand-name">Recourse<span class="os">OS</span></span>
-      <span class="brand-kicker">Recoverability checks</span>
+      <span class="brand-kicker">Consequence layer</span>
     </span>
   </a>
   <div class="links">
-    <a href="https://github.com/recourseos/recourse">github</a>
+    <a href="#platform">platform</a>
     <a href="#difference">difference</a>
-    <a href="#output">output</a>
     <a href="#coverage">coverage</a>
     <a href="/playground.html">playground</a>
     <a href="#docs">docs</a>
-    <a href="#principles" class="nav-cta">principles</a>
+    <a href="https://github.com/recourseOS/recourse" class="nav-cta">github</a>
   </div>
 </nav>
 
 <header class="hero container">
-  <div class="hero-copy">
-    <div class="eyebrow">v0.1.2 · MCP · Terraform · AWS · GCP · Azure</div>
-    <h1>
-      AI-ready consequence analysis for infrastructure changes.
-    </h1>
+  <div>
+    <div class="eyebrow">MCP-native · CLI-ready · multi-cloud</div>
+    <h1>The consequence layer <span class="accent">agents call before they act.</span></h1>
     <p class="lede">
-      RecourseOS is rules-first where safety matters and BitNet-ready where cloud resources are unknown. It runs as a CLI or MCP server so agents can classify Terraform plans, shell commands, and tool calls by recoverability before destructive changes reach production.
+      RecourseOS gives agents and engineers a structured recoverability report for Terraform plans, shell commands, and MCP tool calls before destructive infrastructure changes land.
     </p>
     <div class="hero-actions">
-      <a class="button primary" href="#difference">Why not just plan? →</a>
-      <a class="button secondary" href="/playground.html">Open playground</a>
+      <a class="button primary" href="/playground.html">Open playground</a>
+      <a class="button secondary" href="/mcp-setup.html">Wire MCP server</a>
     </div>
-    <div class="install">
+    <div class="install-line">
       <span><span class="prompt">$</span> <span class="cmd" id="install-cmd">npx recourse-cli mcp serve</span></span>
-      <button id="copy-btn" aria-label="Copy install command">Copy</button>
+      <button id="copy-btn" aria-label="Copy MCP command">Copy</button>
     </div>
   </div>
 
-  <aside class="hero-card" aria-label="RecourseOS brand and recoverability summary">
-    <div class="hero-card-inner">
-      <div class="lockup">
-        <svg class="brand-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M50 5 L88.97 27.5 V72.5 L50 95 L11.03 72.5 V27.5 Z" fill="transparent"/>
-          <path d="M50 9.8 L84.8 29.9 V70.1 L50 90.2 L15.2 70.1 V29.9 Z" stroke="#f4f0e8" stroke-width="5.6" stroke-linejoin="round"/>
-          <path d="M34 70 V30 H57.5 C67.2 30 74 36 74 44.6 C74 53.2 67.2 59.2 57.5 59.2 H34" stroke="#f4f0e8" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M55.5 59.5 L74 70.5" stroke="#f4f0e8" stroke-width="7" stroke-linecap="round"/>
-          <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#c75032" stroke-width="6.5" stroke-linecap="round"/>
-          <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#c75032" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <div>
-          <div class="lockup-name">Recourse<span class="os">OS</span></div>
-          <div class="lockup-tag">Know what you cannot <strong>undo</strong> before it lands.</div>
+  <aside class="product-shell hero-card" aria-label="RecourseOS product preview">
+    <div class="product-window">
+      <div class="window-bar">
+        <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
+        <span class="window-title">recourse.consequence.v1</span>
+      </div>
+      <div class="status-card">
+        <div class="status-top">
+          <div>
+            <div class="status-label">Agent preflight verdict</div>
+            <div class="status-value">Block</div>
+          </div>
+          <span class="pill red">unrecoverable</span>
         </div>
       </div>
-
-      <div class="verdict-card">
-        <div class="verdict-title">Current plan summary</div>
-        <div class="verdict-row">
-          <span class="red">✗</span>
-          <span>aws_db_instance.main</span>
-          <span class="badge red">unrecoverable</span>
-        </div>
-        <div class="verdict-row">
-          <span class="red">✗</span>
-          <span>google_storage_bucket.audit</span>
-          <span class="badge green">backup</span>
-        </div>
-        <div class="verdict-row">
-          <span class="green">✓</span>
-          <span>azurerm_role_assignment.reader</span>
-          <span class="badge green">reversible</span>
-        </div>
-        <div class="verdict-row">
-          <span class="amber">!</span>
-          <span>acme_custom_resource.unknown</span>
-          <span class="badge amber">review</span>
+      <div class="status-card">
+        <div class="status-label">Mutations in proposed action</div>
+        <div class="verdict-list">
+          <div class="verdict-row">
+            <span class="red-text">x</span>
+            <span class="resource">aws_db_instance.main</span>
+            <span class="pill red">block</span>
+          </div>
+          <div class="verdict-row">
+            <span class="green-text">✓</span>
+            <span class="resource">google_storage_bucket.audit</span>
+            <span class="pill green">backup</span>
+          </div>
+          <div class="verdict-row">
+            <span class="green-text">✓</span>
+            <span class="resource">azurerm_role_assignment.reader</span>
+            <span class="pill green">reversible</span>
+          </div>
+          <div class="verdict-row">
+            <span class="amber-text">!</span>
+            <span class="resource">acme_custom_resource.unknown</span>
+            <span class="pill">review</span>
+          </div>
         </div>
       </div>
-
-      <p class="hero-note">
-        Deterministic local rules for known resources. Conservative semantic classification for unknown ones. Optional cloud submission stays separate from local decisions.
-      </p>
+      <div class="signal-grid">
+        <div class="signal-card">
+          <div class="signal-key">rules</div>
+          <div class="signal-value">first</div>
+          <div class="signal-note">Known providers stay deterministic.</div>
+        </div>
+        <div class="signal-card">
+          <div class="signal-key">unknowns</div>
+          <div class="signal-value">safe</div>
+          <div class="signal-note">Weak evidence becomes review.</div>
+        </div>
+        <div class="signal-card">
+          <div class="signal-key">agents</div>
+          <div class="signal-value">MCP</div>
+          <div class="signal-note">Structured output, no parsing.</div>
+        </div>
+      </div>
     </div>
   </aside>
 </header>
 
-<section class="section alt" id="difference">
-  <div class="container split">
-    <div>
-      <div class="section-label">Why not just Terraform plan?</div>
-      <h2>Terraform shows the diff. Recourse shows the consequence.</h2>
-      <p class="section-copy">
-        Terraform tells you a resource will be destroyed. Recourse tells you whether that destruction is reversible, recoverable from backup, unrecoverable, or too ambiguous to treat as safe.
-      </p>
-    </div>
-    <div class="terminal">
-      <div class="terminal-bar">
-        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-        <div class="title">diff vs consequence</div>
+<div class="logo-strip">
+  <div class="container">
+    <div class="strip-inner">
+      <div>
+        <div class="strip-label">Built for the tools agents already touch</div>
       </div>
-      <div class="terminal-body">
-        <div class="heading">TERRAFORM PLAN</div>
-        <div><span class="red">-</span> aws_db_instance.main will be destroyed</div>
+      <div class="integration-list" aria-label="Supported input and provider surfaces">
+        <span>Terraform</span>
+        <span>Shell</span>
+        <span>MCP</span>
+        <span>AWS</span>
+        <span>GCP</span>
+        <span>Azure</span>
+        <span>CI</span>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
 
-        <div class="heading">RECOURSE</div>
-        <div>aws_db_instance.main</div>
-        <div class="indent">recoverability: <span class="red">unrecoverable</span></div>
-        <div class="indent">reason: skip_final_snapshot=true, backup_retention_period=0</div>
-        <div class="indent">decision: <span class="red">block</span></div>
+<main>
+  <section class="section" id="platform">
+    <div class="container split">
+      <div>
+        <div class="section-label">Platform</div>
+        <h2>One evaluator. Multiple action surfaces.</h2>
+        <p class="section-copy">
+          Agents do not only edit Terraform. They run shell commands, invoke MCP tools, and call provider APIs through wrappers. RecourseOS normalizes those proposed mutations into the same consequence model.
+        </p>
+      </div>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-kicker">01</div>
+          <div class="card-title">Terraform plan analysis</div>
+          <div class="card-body">Reads plan JSON and classifies destructive changes by recoverability, evidence, and decision.</div>
+        </div>
+        <div class="card">
+          <div class="card-kicker">02</div>
+          <div class="card-title">Shell mutation preflight</div>
+          <div class="card-body">Detects destructive command patterns and escalates when live recovery evidence is missing.</div>
+        </div>
+        <div class="card">
+          <div class="card-kicker">03</div>
+          <div class="card-title">MCP tool-call guard</div>
+          <div class="card-body">Exposes a local MCP server so agents can ask for a verdict before invoking risky tools.</div>
+        </div>
+        <div class="card">
+          <div class="card-kicker">04</div>
+          <div class="card-title">BitNet-ready unknowns</div>
+          <div class="card-body">Known rules remain first. Unknown resources route through conservative semantic classification.</div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-        <div class="summary">
-          <div class="heading">SAME MODEL, MORE INPUTS</div>
+  <section class="section dark" id="difference">
+    <div class="container split">
+      <div>
+        <div class="section-label">Why not just plan?</div>
+        <h2>Terraform shows the diff. Recourse shows the point of no return.</h2>
+        <p class="section-copy">
+          A plan can tell you a database will be destroyed. Recourse tells you whether that destruction is reversible, recoverable from backup, unrecoverable, or too ambiguous for an agent to treat as safe.
+        </p>
+      </div>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
+          <span class="terminal-title">diff vs consequence</span>
+        </div>
+        <div class="terminal-body">
+          <div class="terminal-heading">Terraform plan</div>
+          <div><span class="red-text">-</span> aws_db_instance.main will be destroyed</div>
+          <div class="terminal-heading">Recourse</div>
+          <div>aws_db_instance.main</div>
+          <div class="terminal-indent">recoverability: <span class="red-text">unrecoverable</span></div>
+          <div class="terminal-indent">evidence: skip_final_snapshot=true, backup_retention_period=0</div>
+          <div class="terminal-indent">decision: <span class="red-text">block</span></div>
+          <div class="terminal-heading">Same contract</div>
           <div>Terraform plan · shell command · MCP tool call</div>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="section" id="output">
-  <div class="container split">
-    <div>
-      <div class="section-label">Sample output</div>
-      <h2>Point-of-no-return checks for infrastructure mutations.</h2>
-      <p class="section-copy">
-        RecourseOS does not replace <code>terraform plan</code>, shell guardrails, or MCP permissions. It gives agents and reviewers a structured consequence report so they know whether there is a safe path back.
-      </p>
-    </div>
-    <div class="terminal">
-      <div class="terminal-bar">
-        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-        <div class="title">~/infra · zsh</div>
+  <section class="section" id="coverage">
+    <div class="container split">
+      <div>
+        <div class="section-label">Coverage</div>
+        <h2>Rules where safety is knowable. Review where it is not.</h2>
+        <p class="section-copy">
+          Provider-specific handlers cover common AWS, GCP, Azure, and Azure AD resources. Unknown resources use semantic safety signals and stay conservative when evidence is thin.
+        </p>
       </div>
-      <div class="terminal-body">
-        <div class="prompt-line"><span class="user">$</span> <span class="cmd">recourse evaluate terraform plan.json --classifier</span></div>
+      <div class="card-grid">
+        <div class="card"><div class="card-kicker">AWS</div><div class="card-title">Data, identity, network</div><div class="card-body">RDS, DynamoDB, S3, EBS, IAM, KMS, Secrets Manager, VPC, Route53, Lambda, queues, and more.</div></div>
+        <div class="card"><div class="card-kicker">GCP</div><div class="card-title">Storage, SQL, IAM</div><div class="card-body">GCS versioning, Cloud SQL protection and backups, Secret Manager, BigQuery, IAM bindings, and long-tail review paths.</div></div>
+        <div class="card"><div class="card-kicker">Azure</div><div class="card-title">Storage, database, identity</div><div class="card-body">Storage soft delete, SQL family protection signals, Cosmos DB, Key Vault, role assignments, and Azure AD resources.</div></div>
+        <div class="card"><div class="card-kicker">Unknown</div><div class="card-title">Semantic classifier</div><div class="card-body">Deletion protection, backup windows, versioning, retention, and force-destroy signals are evaluated without hardcoding every resource.</div></div>
+      </div>
+    </div>
+  </section>
 
-        <div class="heading">DESTRUCTIVE CHANGES</div>
-
-        <div class="row"><span class="marker red">✗</span><span class="body"><span class="red">DELETE</span> aws_db_instance.main</span></div>
-        <div class="indent">recoverability: <span class="red">unrecoverable</span> · skip_final_snapshot=true, no backup retention</div>
-
-        <div class="row"><span class="marker green">✓</span><span class="body"><span class="green">DELETE</span> google_storage_bucket.audit</span></div>
-        <div class="indent">recoverability: <span class="green">recoverable-from-backup</span> · GCS versioning enabled</div>
-
-        <div class="row"><span class="marker green">✓</span><span class="body"><span class="green">DELETE</span> azurerm_role_assignment.reader</span></div>
-        <div class="indent">recoverability: <span class="green">reversible</span> · config-only role assignment can be reapplied</div>
-
-        <div class="row"><span class="marker amber">!</span><span class="body"><span class="amber">DELETE</span> acme_custom_resource.unknown</span></div>
-        <div class="indent">recoverability: <span class="amber">needs-review</span> · unknown resource semantics</div>
-
-        <div class="summary">
-          <div class="heading">SUMMARY</div>
-          <div><span class="red">●</span> block: 1 &nbsp;·&nbsp; <span class="amber">●</span> escalate: 1 &nbsp;·&nbsp; <span class="green">●</span> warn/allow: 2</div>
-          <div class="exit">local report is authoritative · cloud submission optional</div>
+  <section class="section dark">
+    <div class="container split">
+      <div>
+        <div class="section-label">Output</div>
+        <h2>Structured reports for agents, readable reports for humans.</h2>
+        <p class="section-copy">
+          The schema is designed for machine consumption: enum-like decisions, recoverability tiers, confidence, evidence, and missing evidence. The CLI keeps that same report inspectable in CI.
+        </p>
+      </div>
+      <div class="card-grid">
+        <div class="card dark-card">
+          <div class="card-kicker">decision</div>
+          <div class="metric">block</div>
+          <div class="card-body">Stop an action when evidence shows an unrecoverable consequence.</div>
+        </div>
+        <div class="card dark-card">
+          <div class="card-kicker">tier</div>
+          <div class="metric">backup</div>
+          <div class="card-body">Distinguish reversible config changes from backup-dependent recovery.</div>
+        </div>
+        <div class="card dark-card">
+          <div class="card-kicker">missing</div>
+          <div class="metric">review</div>
+          <div class="card-body">Escalate unknowns instead of guessing that a destructive change is safe.</div>
+        </div>
+        <div class="card dark-card">
+          <div class="card-kicker">schema</div>
+          <div class="metric">v1</div>
+          <div class="card-body">Publish a stable consequence contract for agents and automation.</div>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="section alt" id="coverage">
-  <div class="container split">
-    <div>
-      <div class="section-label">Coverage</div>
-      <h2>What it checks.</h2>
-      <p class="section-copy">
-        Known resources use deterministic provider rules. Unknown resource types use a conservative semantic classifier when enabled, so the evaluator can generalize without marking weak evidence as safe.
-      </p>
-    </div>
-    <div class="coverage">
-      <div class="coverage-item">
-        <span class="num">01</span>
-        <span class="label">AWS data stores</span>
-        <span class="desc">RDS, DynamoDB, ElastiCache, Neptune, S3, EBS, EFS, backup retention</span>
+  <section class="section" id="docs">
+    <div class="container split">
+      <div>
+        <div class="section-label">Docs</div>
+        <h2>Useful public references.</h2>
+        <p class="section-copy">
+          The docs are intentionally practical: coverage, fixtures, MCP setup, and the agent-facing schema. No internal strategy is required to understand or use the tool.
+        </p>
       </div>
-      <div class="coverage-item">
-        <span class="num">02</span>
-        <span class="label">AWS platform</span>
-        <span class="desc">EC2, Lambda, IAM, KMS, Secrets Manager, VPC, ELB, Route53, SNS/SQS</span>
-      </div>
-      <div class="coverage-item">
-        <span class="num">03</span>
-        <span class="label">GCP storage & secrets</span>
-        <span class="desc">GCS buckets, objects, versioning, force destroy, bucket IAM, Secret Manager</span>
-      </div>
-      <div class="coverage-item">
-        <span class="num">04</span>
-        <span class="label">GCP databases</span>
-        <span class="desc">Cloud SQL deletion protection, backups, PITR, users, BigQuery</span>
-      </div>
-      <div class="coverage-item">
-        <span class="num">05</span>
-        <span class="label">Azure storage</span>
-        <span class="desc">Storage accounts, blobs, containers, soft delete, versioning</span>
-      </div>
-      <div class="coverage-item">
-        <span class="num">06</span>
-        <span class="label">Azure databases</span>
-        <span class="desc">SQL/MSSQL, PostgreSQL, MySQL, MariaDB, Cosmos DB retention signals</span>
-      </div>
-      <div class="coverage-item">
-        <span class="num">07</span>
-        <span class="label">Identity and secrets</span>
-        <span class="desc">IAM bindings, role assignments, service account keys, secrets, credentials</span>
-      </div>
-      <div class="coverage-item">
-        <span class="num">08</span>
-        <span class="label">Unknown resources</span>
-        <span class="desc">semantic safety signals, BitNet-ready contract, needs-review fallback</span>
+      <div class="card-grid">
+        <a class="card" href="/resource-coverage.html"><div class="card-kicker">coverage</div><div class="card-title">Resource coverage</div><div class="card-body">Generated handler coverage for AWS, GCP, Azure, and Azure AD resources.</div></a>
+        <a class="card" href="/golden-fixtures.html"><div class="card-kicker">tests</div><div class="card-title">Golden fixtures</div><div class="card-body">End-to-end Terraform plan fixtures used to validate evaluator behavior.</div></a>
+        <a class="card" href="/agent-interface.html"><div class="card-kicker">agents</div><div class="card-title">Agent interface</div><div class="card-body">MCP tool contract and consequence report semantics for agent developers.</div></a>
+        <a class="card" href="/mcp-setup.html"><div class="card-kicker">mcp</div><div class="card-title">MCP setup</div><div class="card-body">Client config examples and a smoke test for local stdio wiring.</div></a>
+        <a class="card" href="/live-aws-tests.html"><div class="card-kicker">evidence</div><div class="card-title">Live AWS tests</div><div class="card-body">Opt-in read-only evidence collection notes for validating recovery signals.</div></a>
+        <a class="card" href="/schema-gaps.html"><div class="card-kicker">classifier</div><div class="card-title">Classifier notes</div><div class="card-body">Unknown-resource behavior, semantic safety features, and BitNet-compatible placement.</div></a>
+        <a class="card" href="/playground.html"><div class="card-kicker">demo</div><div class="card-title">Playground</div><div class="card-body">Browser-only sandbox for Terraform, shell, and MCP examples.</div></a>
       </div>
     </div>
-  </div>
-</section>
-
-<section class="section" id="docs">
-  <div class="container split">
-    <div>
-      <div class="section-label">Useful docs</div>
-      <h2>Proof points you can inspect.</h2>
-      <p class="section-copy">
-        The public repository includes resource coverage, golden fixture contracts, and the working MCP interface so users can see exactly what is supported and how agents should consume it.
-      </p>
-    </div>
-    <div class="coverage">
-      <a class="coverage-item" href="/resource-coverage.html">
-        <span class="num">01</span>
-        <span class="label">Resource coverage</span>
-        <span class="desc">Deterministic AWS, GCP, Azure, and Azure AD resource handler coverage.</span>
-      </a>
-      <a class="coverage-item" href="/golden-fixtures.html">
-        <span class="num">02</span>
-        <span class="label">Golden fixtures</span>
-        <span class="desc">Stable Terraform plan fixtures used to validate evaluator and compiled CLI behavior.</span>
-      </a>
-      <a class="coverage-item" href="/live-aws-tests.html">
-        <span class="num">03</span>
-        <span class="label">Live AWS evidence</span>
-        <span class="desc">Opt-in read-only evidence collection for S3, RDS, DynamoDB, IAM, and KMS.</span>
-      </a>
-      <a class="coverage-item" href="/schema-gaps.html">
-        <span class="num">04</span>
-        <span class="label">Classifier notes</span>
-        <span class="desc">Unknown-resource behavior, semantic safety signals, and the BitNet-compatible contract.</span>
-      </a>
-      <a class="coverage-item" href="/agent-interface.html">
-        <span class="num">05</span>
-        <span class="label">Agent interface</span>
-        <span class="desc">Working MCP server command, tool contract, and consequence report semantics for agents before they act.</span>
-      </a>
-      <a class="coverage-item" href="/mcp-setup.html">
-        <span class="num">06</span>
-        <span class="label">MCP setup</span>
-        <span class="desc">Client config examples and smoke-test instructions for local MCP wiring.</span>
-      </a>
-      <a class="coverage-item" href="/playground.html">
-        <span class="num">07</span>
-        <span class="label">Playground</span>
-        <span class="desc">Browser-only consequence sandbox with Terraform, shell, and MCP examples.</span>
-      </a>
-    </div>
-  </div>
-</section>
-
-<section class="section" id="principles">
-  <div class="container">
-    <div class="section-label">Design principles</div>
-    <h2>Checkable verdicts, <span class="accent">not vibes.</span></h2>
-    <div class="principles">
-      <div class="principle">
-        <div class="principle-title">No inference theater</div>
-        <div class="principle-body">It does not guess that something “looks like” production. It reads explicit values in your plan and reports the recoverability consequence.</div>
-      </div>
-      <div class="principle">
-        <div class="principle-title">No severity-by-vibes</div>
-        <div class="principle-body">Verdicts are factual: reversible, recoverable-with-effort, recoverable-from-backup, unrecoverable, or needs-review.</div>
-      </div>
-      <div class="principle">
-        <div class="principle-title">No moralizing your config</div>
-        <div class="principle-body">It does not merely say “set deletion_protection.” It tells you what would change the recoverability verdict if you did.</div>
-      </div>
-      <div class="principle">
-        <div class="principle-title">Local first</div>
-        <div class="principle-body">It runs as a CLI on your machine or in CI. Optional cloud submission never changes the local report or local exit behavior.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="section alt">
-  <div class="container split">
-    <div>
-      <div class="section-label">Honest limits</div>
-      <h2>What it does not pretend to know.</h2>
-    </div>
-    <div class="limits">
-      <p><strong>Evidence-bound.</strong> If an out-of-band backup exists but is not in the plan, state, or supplied evidence, RecourseOS will not pretend it verified recovery.</p>
-      <p style="margin-top: 12px;"><strong>Provider rules are incremental.</strong> AWS, GCP, and Azure have first-class coverage for common destructive resources, but long-tail services still need rules and fixtures.</p>
-      <p style="margin-top: 12px;"><strong>Unknown resources stay conservative.</strong> The semantic classifier can transfer safety patterns, but weak evidence becomes <code>needs-review</code>.</p>
-      <p style="margin-top: 12px;"><strong>Cloud is optional.</strong> RecourseOS can submit consequence reports to a configured endpoint, but the public CLI and MCP server remain useful without signup or hosted state.</p>
-    </div>
-  </div>
-</section>
+  </section>
+</main>
 
 <footer class="container">
-  <a href="/" class="brand" aria-label="RecourseOS home">
-    <svg class="brand-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M50 5 L88.97 27.5 V72.5 L50 95 L11.03 72.5 V27.5 Z" fill="#14130f"/>
-      <path d="M50 9.8 L84.8 29.9 V70.1 L50 90.2 L15.2 70.1 V29.9 Z" stroke="#f4f0e8" stroke-width="5.6" stroke-linejoin="round"/>
-      <path d="M34 70 V30 H57.5 C67.2 30 74 36 74 44.6 C74 53.2 67.2 59.2 57.5 59.2 H34" stroke="#f4f0e8" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M55.5 59.5 L74 70.5" stroke="#f4f0e8" stroke-width="7" stroke-linecap="round"/>
-      <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#c75032" stroke-width="6.5" stroke-linecap="round"/>
-      <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#c75032" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <span class="brand-text">
-      <span class="brand-name">Recourse<span class="os">OS</span></span>
-      <span class="brand-kicker">Recoverability checks</span>
-    </span>
-  </a>
-  <div>
-    <a href="https://github.com/recourseos/recourse">github</a>
+  <span>RecourseOS · AI-ready consequence analysis for infrastructure changes</span>
+  <span>
+    <a href="https://github.com/recourseOS/recourse">github</a>
     <a href="https://www.npmjs.com/package/recourse-cli">npm</a>
-  </div>
+  </span>
 </footer>
 
 <script>
@@ -928,13 +299,12 @@
           btn.textContent = 'Copy';
           btn.classList.remove('copied');
         }, 1600);
-      } catch (e) {
+      } catch (error) {
         btn.textContent = 'Copy failed';
         setTimeout(() => { btn.textContent = 'Copy'; }, 1600);
       }
     });
   }
 </script>
-
 </body>
 </html>
