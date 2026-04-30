@@ -127,15 +127,15 @@ h1, h2, h3 {
   line-height: 1.1;
 }
 
-h1 { font-size: clamp(48px, 8vw, 72px); }
-h2 { font-size: clamp(36px, 5vw, 48px); }
+h1 { font-size: clamp(36px, 6vw, 52px); }
+h2 { font-size: clamp(28px, 4vw, 40px); }
 h3 { font-size: 24px; }
 
 .lede {
   color: rgba(240, 253, 244, 0.7);
-  font-size: 18px;
-  line-height: 1.7;
-  max-width: 600px;
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 520px;
 }
 
 .section-copy {
@@ -188,16 +188,16 @@ h3 { font-size: 24px; }
    ───────────────────────────────────────────────────────────── */
 .hero {
   color: #f0fdf4;
-  padding: 80px 0 60px;
+  padding: 48px 0 40px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 60px;
+  gap: 48px;
   align-items: center;
 }
 
 .hero h1 {
-  margin: 16px 0 24px;
-  max-width: 12ch;
+  margin: 12px 0 16px;
+  max-width: 14ch;
 }
 .hero h1 .accent { color: var(--green); }
 
@@ -205,12 +205,12 @@ h3 { font-size: 24px; }
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 32px;
+  margin-top: 20px;
 }
 
 /* Quickstart Card */
 .quickstart-card {
-  margin-top: 32px;
+  margin-top: 20px;
   max-width: 680px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(240, 253, 244, 0.1);
@@ -413,10 +413,10 @@ h3 { font-size: 24px; }
    Sections
    ───────────────────────────────────────────────────────────── */
 .section {
-  padding: 100px 0;
+  padding: 72px 0;
 }
 
-.compact-section { padding: 80px 0; }
+.compact-section { padding: 56px 0; }
 
 .section.dark {
   background: var(--night);
@@ -818,10 +818,10 @@ select:focus, textarea:focus, button:focus-visible {
   .site-nav { flex-direction: column; align-items: flex-start; gap: 16px; }
   .site-nav .links { flex-wrap: wrap; gap: 16px; }
   .brand-kicker { display: none; }
-  .hero { padding: 60px 0 48px; }
-  h1 { font-size: clamp(36px, 10vw, 48px); }
-  h2 { font-size: clamp(28px, 8vw, 36px); }
-  .section { padding: 72px 0; }
+  .hero { padding: 36px 0 32px; }
+  h1 { font-size: clamp(28px, 8vw, 36px); }
+  h2 { font-size: clamp(24px, 6vw, 32px); }
+  .section { padding: 56px 0; }
   .card-grid, .signal-grid, .arch-sub-grid { grid-template-columns: 1fr; }
   .arch-row.arch-inputs, .arch-row.arch-outputs { grid-template-columns: 1fr; }
   .arch-arrow-row.multi { gap: 32px; }
