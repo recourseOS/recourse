@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>RecourseOS - AI-ready consequence analysis for infrastructure changes</title>
-<meta name="description" content="Rules-first, BitNet-ready consequence analysis for Terraform, shell, and MCP infrastructure mutations." />
-<meta property="og:title" content="RecourseOS - AI-ready consequence analysis for infrastructure changes" />
-<meta property="og:description" content="The consequence layer agents call before infrastructure changes become irreversible." />
+<title>RecourseOS - Consequence oracle for AI agents</title>
+<meta name="description" content="The consequence layer agents call before they act. Structured reports for any agent that touches infrastructure." />
+<meta property="og:title" content="RecourseOS - Consequence oracle for AI agents" />
+<meta property="og:description" content="Pass a proposed action, get back what it would actually do. Decision-support infrastructure for AI agents." />
 <meta property="og:type" content="website" />
 <link rel="icon" href="favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -81,32 +81,32 @@
   <section class="section compact-section">
     <div class="container split">
       <div>
-        <div class="section-label">Why preflight?</div>
-        <h2>It is the check you run before the risky action runs.</h2>
+        <div class="section-label">The problem</div>
+        <h2>Agents have no ground truth about consequences.</h2>
         <p class="section-copy">
-          <code>preflight</code> is not a separate install. It is the Recourse command that evaluates a proposed action while there is still time to stop, change, or approve it.
+          An agent can read a Terraform plan. It cannot reason about whether "will be destroyed" means recoverable or gone forever. RecourseOS provides that ground truth as structured data.
         </p>
       </div>
       <div class="card-grid">
         <div class="card">
-          <div class="card-kicker">before</div>
-          <div class="card-title">Catches destructive intent early</div>
-          <div class="card-body">Run it before `terraform apply`, a shell delete, or an agent MCP call.</div>
+          <div class="card-kicker">blind spot</div>
+          <div class="card-title">Diffs don't explain impact</div>
+          <div class="card-body">A plan says "delete." It doesn't say whether backups exist, versioning is on, or deletion protection is set.</div>
         </div>
         <div class="card">
           <div class="card-kicker">decision</div>
-          <div class="card-title">Gives an operator verdict</div>
-          <div class="card-body">Outputs run, warn, review, or block instead of leaving people to interpret raw diffs.</div>
+          <div class="card-title">Agents need enum-level clarity</div>
+          <div class="card-body">Not prose, not diffs. A machine-readable verdict: run, warn, review, or block.</div>
         </div>
         <div class="card">
           <div class="card-kicker">evidence</div>
-          <div class="card-title">Explains what is missing</div>
-          <div class="card-body">Shows the detected target, recovery evidence found, and evidence needed for approval.</div>
+          <div class="card-title">Reasoning the agent can relay</div>
+          <div class="card-body">"Blocked because skip_final_snapshot=true" is something an agent can explain to a human.</div>
         </div>
         <div class="card">
-          <div class="card-kicker">agents</div>
-          <div class="card-title">Works as an agent safety layer</div>
-          <div class="card-body">The same evaluator can be called through MCP before an agent touches infrastructure.</div>
+          <div class="card-kicker">scope</div>
+          <div class="card-title">Any action surface</div>
+          <div class="card-body">Terraform, shell, MCP tool calls — same evaluator, same contract, same consequence model.</div>
         </div>
       </div>
     </div>
@@ -116,31 +116,31 @@
     <div class="container split">
       <div>
         <div class="section-label">Platform</div>
-        <h2>One evaluator. Multiple action surfaces.</h2>
+        <h2>One API. Every action an agent might take.</h2>
         <p class="section-copy">
-          Agents do not only edit Terraform. They run shell commands, invoke MCP tools, and call provider APIs through wrappers. RecourseOS normalizes those proposed mutations into the same consequence model.
+          Agents don't just edit Terraform. They run shell commands, invoke MCP tools, call provider APIs. RecourseOS normalizes all of it into a single consequence contract agents can reason about.
         </p>
       </div>
       <div class="card-grid">
         <div class="card">
-          <div class="card-kicker">01</div>
-          <div class="card-title">Terraform plan analysis</div>
-          <div class="card-body">Reads plan JSON and classifies destructive changes by recoverability, evidence, and decision.</div>
+          <div class="card-kicker">MCP</div>
+          <div class="card-title">Native agent integration</div>
+          <div class="card-body">Expose <code>recourse.evaluate</code> as an MCP tool. Any MCP-compatible agent gets consequence data with one config line.</div>
         </div>
         <div class="card">
-          <div class="card-kicker">02</div>
-          <div class="card-title">Shell mutation preflight</div>
-          <div class="card-body">Detects destructive command patterns and escalates when live recovery evidence is missing.</div>
+          <div class="card-kicker">Terraform</div>
+          <div class="card-title">Plan JSON analysis</div>
+          <div class="card-body">Pass a plan file, get back recoverability and evidence for every destructive change.</div>
         </div>
         <div class="card">
-          <div class="card-kicker">03</div>
-          <div class="card-title">MCP tool-call guard</div>
-          <div class="card-body">Exposes a local MCP server so agents can ask for a verdict before invoking risky tools.</div>
+          <div class="card-kicker">Shell</div>
+          <div class="card-title">Command evaluation</div>
+          <div class="card-body">Detects destructive patterns in shell commands and checks live state for recovery evidence.</div>
         </div>
         <div class="card">
-          <div class="card-kicker">04</div>
-          <div class="card-title">BitNet-ready unknowns</div>
-          <div class="card-body">Known rules remain first. Unknown resources route through conservative semantic classification.</div>
+          <div class="card-kicker">Unknowns</div>
+          <div class="card-title">Conservative classification</div>
+          <div class="card-body">Unrecognized resources get semantic analysis. Weak evidence escalates to review, never to approval.</div>
         </div>
       </div>
     </div>
@@ -149,9 +149,9 @@
   <section class="section" id="architecture">
     <div class="container">
       <div class="section-label">Architecture</div>
-      <h2 style="max-width: 16ch; margin-bottom: 18px;">One engine. Multiple surfaces. Same consequence contract.</h2>
+      <h2 style="max-width: 20ch; margin-bottom: 18px;">One evaluator. Any agent. Same consequence contract.</h2>
       <p class="section-copy" style="margin-bottom: 42px;">
-        The core evaluator normalizes mutations from any source into the same consequence model. The output is always: decision, recoverability tier, evidence, and missing evidence.
+        Pass any proposed action — Terraform, shell, MCP tool call. Get back a structured consequence report every agent consumes the same way.
       </p>
       <div class="architecture-diagram">
         <div class="arch-row arch-inputs">
@@ -251,27 +251,27 @@
   <section class="section dark" id="difference">
     <div class="container split">
       <div>
-        <div class="section-label">Why not just plan?</div>
-        <h2>Terraform shows the diff. Recourse shows the point of no return.</h2>
+        <div class="section-label">Why this matters</div>
+        <h2>Agents can't parse "will be destroyed" into safe or unsafe.</h2>
         <p class="section-copy">
-          A plan can tell you a database will be destroyed. Recourse tells you whether that destruction is reversible, recoverable from backup, unrecoverable, or too ambiguous for an agent to treat as safe.
+          A Terraform plan is a diff. It doesn't tell an agent whether deletion is reversible, recoverable from backup, or permanent. That's what the consequence report adds.
         </p>
       </div>
       <div class="terminal">
         <div class="terminal-bar">
           <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
-          <span class="terminal-title">diff vs consequence</span>
+          <span class="terminal-title">what an agent sees vs what it needs</span>
         </div>
         <div class="terminal-body">
-          <div class="terminal-heading">Terraform plan</div>
+          <div class="terminal-heading">What the agent sees</div>
           <div><span class="red-text">-</span> aws_db_instance.main will be destroyed</div>
-          <div class="terminal-heading">Recourse</div>
+          <div class="terminal-heading">What the agent needs</div>
           <div>aws_db_instance.main</div>
           <div class="terminal-indent">recoverability: <span class="red-text">unrecoverable</span></div>
           <div class="terminal-indent">evidence: skip_final_snapshot=true, backup_retention_period=0</div>
           <div class="terminal-indent">decision: <span class="red-text">block</span></div>
-          <div class="terminal-heading">Same contract</div>
-          <div>Terraform plan · shell command · MCP tool call</div>
+          <div class="terminal-heading">Agent can now say</div>
+          <div>"I checked with Recourse — this deletes the database with no backup. Blocking."</div>
         </div>
       </div>
     </div>
@@ -298,32 +298,32 @@
   <section class="section dark">
     <div class="container split">
       <div>
-        <div class="section-label">Output</div>
-        <h2>Structured reports for agents, readable reports for humans.</h2>
+        <div class="section-label">The contract</div>
+        <h2>A schema agents can reason about reliably.</h2>
         <p class="section-copy">
-          The schema is designed for machine consumption: enum-like decisions, recoverability tiers, confidence, evidence, and missing evidence. The CLI keeps that same report inspectable in CI.
+          No prose, no diffs to parse. Enum decisions, typed tiers, structured evidence. The consequence report is the product — agents consume it directly.
         </p>
       </div>
       <div class="card-grid">
         <div class="card dark-card">
           <div class="card-kicker">decision</div>
           <div class="metric">block</div>
-          <div class="card-body">Stop an action when evidence shows an unrecoverable consequence.</div>
+          <div class="card-body">Unambiguous enum the agent acts on. No interpretation required.</div>
         </div>
         <div class="card dark-card">
           <div class="card-kicker">tier</div>
           <div class="metric">backup</div>
-          <div class="card-body">Distinguish reversible config changes from backup-dependent recovery.</div>
+          <div class="card-body">Recoverability level the agent can relay: reversible, effort, backup, unrecoverable.</div>
+        </div>
+        <div class="card dark-card">
+          <div class="card-kicker">evidence</div>
+          <div class="metric">array</div>
+          <div class="card-body">Structured fields the agent can include in its explanation to humans.</div>
         </div>
         <div class="card dark-card">
           <div class="card-kicker">missing</div>
           <div class="metric">review</div>
-          <div class="card-body">Escalate unknowns instead of guessing that a destructive change is safe.</div>
-        </div>
-        <div class="card dark-card">
-          <div class="card-kicker">schema</div>
-          <div class="metric">v1</div>
-          <div class="card-body">Publish a stable consequence contract for agents and automation.</div>
+          <div class="card-body">When evidence is incomplete, escalate to human — never guess safe.</div>
         </div>
       </div>
     </div>
@@ -332,27 +332,24 @@
   <section class="section" id="docs">
     <div class="container split">
       <div>
-        <div class="section-label">Docs</div>
-        <h2>Useful public references.</h2>
+        <div class="section-label">For agent builders</div>
+        <h2>Integration docs and schema references.</h2>
         <p class="section-copy">
-          The docs are intentionally practical: coverage, fixtures, MCP setup, and the agent-facing schema. No internal strategy is required to understand or use the tool.
+          Everything you need to wire RecourseOS into an agent: MCP setup, consequence report schema, example prompts, resource coverage.
         </p>
       </div>
       <div class="card-grid">
-        <a class="card" href="/resource-coverage.html"><div class="card-kicker">coverage</div><div class="card-title">Resource coverage</div><div class="card-body">Generated handler coverage for AWS, GCP, Azure, and Azure AD resources.</div></a>
-        <a class="card" href="/golden-fixtures.html"><div class="card-kicker">tests</div><div class="card-title">Golden fixtures</div><div class="card-body">End-to-end Terraform plan fixtures used to validate evaluator behavior.</div></a>
-        <a class="card" href="/agent-interface.html"><div class="card-kicker">agents</div><div class="card-title">Agent interface</div><div class="card-body">MCP tool contract and consequence report semantics for agent developers.</div></a>
-        <a class="card" href="/mcp-setup.html"><div class="card-kicker">mcp</div><div class="card-title">MCP setup</div><div class="card-body">Client config examples and a smoke test for local stdio wiring.</div></a>
-        <a class="card" href="/live-aws-tests.html"><div class="card-kicker">evidence</div><div class="card-title">Live AWS tests</div><div class="card-body">Opt-in read-only evidence collection notes for validating recovery signals.</div></a>
-        <a class="card" href="/schema-gaps.html"><div class="card-kicker">classifier</div><div class="card-title">Classifier notes</div><div class="card-body">Unknown-resource behavior, semantic safety features, and BitNet-compatible placement.</div></a>
-        <a class="card" href="/playground.html"><div class="card-kicker">demo</div><div class="card-title">Playground</div><div class="card-body">Browser-only sandbox for Terraform, shell, and MCP examples.</div></a>
+        <a class="card" href="/mcp-setup.html"><div class="card-kicker">start here</div><div class="card-title">MCP setup</div><div class="card-body">Add Recourse to your agent's tool list in one config block.</div></a>
+        <a class="card" href="/agent-interface.html"><div class="card-kicker">schema</div><div class="card-title">Agent interface</div><div class="card-body">Consequence report format, example agent prompts, and reasoning patterns.</div></a>
+        <a class="card" href="/resource-coverage.html"><div class="card-kicker">coverage</div><div class="card-title">Resource coverage</div><div class="card-body">Which AWS, GCP, Azure resources have deterministic rules vs semantic fallback.</div></a>
+        <a class="card" href="/playground.html"><div class="card-kicker">try it</div><div class="card-title">Playground</div><div class="card-body">Test evaluate calls against Terraform, shell, and MCP examples in-browser.</div></a>
       </div>
     </div>
   </section>
 </main>
 
 <footer class="container">
-  <span>RecourseOS · AI-ready consequence analysis for infrastructure changes</span>
+  <span>RecourseOS · Consequence oracle for AI agents</span>
   <span>
     <a href="https://github.com/recourseOS/recourse">github</a>
     <a href="https://www.npmjs.com/package/recourse-cli">npm</a>
