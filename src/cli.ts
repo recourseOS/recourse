@@ -38,6 +38,7 @@ import { getSupportedResourceTypes, getRecoverabilityTraced, hasDetailedTracing 
 import { RecoverabilityTier } from './resources/types.js';
 import type { ConsequenceDecision } from './core/index.js';
 import { runMcpServer } from './mcp/server.js';
+import { runHttpServer } from './http/server.js';
 import { runInteractiveTui } from './tui/interactive.js';
 
 const program = new Command();
@@ -162,6 +163,14 @@ mcp
   .description('Start the RecourseOS MCP stdio server')
   .action(() => {
     runMcpServer();
+  });
+
+program
+  .command('serve')
+  .description('Start the RecourseOS HTTP server for the web console')
+  .option('-p, --port <port>', 'Port to listen on', '3001')
+  .action((options: { port: string }) => {
+    runHttpServer(Number(options.port));
   });
 
 program

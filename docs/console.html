@@ -113,6 +113,50 @@
   font-size: 12px;
 }
 
+.fixture-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.fixture-btn {
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.fixture-btn:hover { border-color: var(--green); color: var(--green); }
+
+.server-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 500;
+}
+.server-status.demo {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--amber);
+}
+.server-status.live {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--green);
+}
+.server-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
 /* Result panel */
 .result-empty {
   display: flex;
@@ -265,6 +309,17 @@
 }
 .mcp-copy:hover { border-color: var(--green); color: var(--green); }
 
+.local-hint {
+  color: var(--ink-soft);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 8px;
+}
+
 /* JSON output toggle */
 .json-toggle {
   display: flex;
@@ -334,6 +389,7 @@
       <div class="console-panel">
         <div class="panel-header">
           <span class="panel-title">Input</span>
+          <span class="server-status" id="server-status"></span>
           <div class="source-tabs">
             <button class="source-tab active" data-source="terraform">Terraform</button>
             <button class="source-tab" data-source="shell">Shell</button>
@@ -344,7 +400,12 @@
           <textarea id="input" class="input-area" spellcheck="false" placeholder="Paste Terraform plan JSON, shell command, or MCP tool call..."></textarea>
         </div>
         <div class="panel-footer">
-          <span class="input-hint" id="input-hint">Paste a Terraform plan JSON</span>
+          <div class="fixture-buttons" id="fixture-buttons">
+            <button class="fixture-btn" data-fixture="rds-unsafe">RDS unsafe</button>
+            <button class="fixture-btn" data-fixture="rds-safe">RDS safe</button>
+            <button class="fixture-btn" data-fixture="s3-no-versioning">S3 no versioning</button>
+            <button class="fixture-btn" data-fixture="iam-role">IAM role</button>
+          </div>
           <button class="evaluate-btn" id="evaluate">Evaluate</button>
         </div>
       </div>
@@ -353,12 +414,20 @@
       <div class="console-panel">
         <div class="panel-header">
           <span class="panel-title">Consequence Report</span>
-          <button class="json-toggle" id="json-toggle">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/>
-            </svg>
-            JSON
-          </button>
+          <div class="panel-actions">
+            <button class="json-toggle" id="copy-prompt" title="Copy what an agent would say">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+              </svg>
+              Agent prompt
+            </button>
+            <button class="json-toggle" id="json-toggle">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/>
+              </svg>
+              JSON
+            </button>
+          </div>
         </div>
         <div class="panel-body">
           <div class="result-empty" id="result-empty">
@@ -415,6 +484,12 @@
         </div>
 
         <div class="mcp-section">
+          <div class="result-section-title">Run Locally</div>
+          <p class="local-hint">For real evaluations using the RecourseOS engine:</p>
+          <div class="mcp-config" style="margin-bottom: 16px;">
+            <button class="mcp-copy" data-copy="npx recourse-cli serve">Copy</button>
+            <pre>npx recourse-cli serve</pre>
+          </div>
           <div class="result-section-title">MCP Config</div>
           <div class="mcp-config">
             <button class="mcp-copy" data-copy='{"mcpServers":{"recourseos":{"command":"npx","args":["-y","recourse-cli@latest","mcp","serve"]}}}'>Copy</button>
@@ -443,8 +518,31 @@ const resultContent = document.getElementById('result-content');
 const jsonToggle = document.getElementById('json-toggle');
 const jsonOutput = document.getElementById('json-output');
 const jsonContent = document.getElementById('json-content');
+const serverStatus = document.getElementById('server-status');
 
 let activeSource = 'terraform';
+let serverAvailable = false;
+const SERVER_URL = 'http://localhost:3001';
+
+// Check if local server is running
+async function checkServer() {
+  try {
+    const res = await fetch(`${SERVER_URL}/health`, { method: 'GET' });
+    if (res.ok) {
+      serverAvailable = true;
+      serverStatus.textContent = 'Live';
+      serverStatus.className = 'server-status live';
+      serverStatus.title = 'Connected to local RecourseOS server';
+    }
+  } catch {
+    serverAvailable = false;
+    serverStatus.textContent = 'Demo';
+    serverStatus.className = 'server-status demo';
+    serverStatus.title = 'Using demo mode. Run "recourse serve" for live evaluation.';
+  }
+}
+checkServer();
+setInterval(checkServer, 5000);
 
 const hints = {
   terraform: 'Paste a Terraform plan JSON',
@@ -478,6 +576,121 @@ const examples = {
   }, null, 2)
 };
 
+const fixtures = {
+  terraform: {
+    'rds-unsafe': {
+      resource_changes: [{
+        address: 'aws_db_instance.production',
+        type: 'aws_db_instance',
+        provider_name: 'registry.terraform.io/hashicorp/aws',
+        change: {
+          actions: ['delete'],
+          before: {
+            identifier: 'prod-db',
+            skip_final_snapshot: true,
+            backup_retention_period: 0,
+            deletion_protection: false,
+            engine: 'postgres',
+            allocated_storage: 100
+          },
+          after: null
+        }
+      }]
+    },
+    'rds-safe': {
+      resource_changes: [{
+        address: 'aws_db_instance.production',
+        type: 'aws_db_instance',
+        provider_name: 'registry.terraform.io/hashicorp/aws',
+        change: {
+          actions: ['delete'],
+          before: {
+            identifier: 'prod-db',
+            skip_final_snapshot: false,
+            backup_retention_period: 7,
+            deletion_protection: true,
+            engine: 'postgres',
+            allocated_storage: 100
+          },
+          after: null
+        }
+      }]
+    },
+    's3-no-versioning': {
+      resource_changes: [{
+        address: 'aws_s3_bucket.logs',
+        type: 'aws_s3_bucket',
+        provider_name: 'registry.terraform.io/hashicorp/aws',
+        change: {
+          actions: ['delete'],
+          before: {
+            bucket: 'company-audit-logs',
+            versioning: [{ enabled: false }],
+            force_destroy: true
+          },
+          after: null
+        }
+      }]
+    },
+    'iam-role': {
+      resource_changes: [{
+        address: 'aws_iam_role.service',
+        type: 'aws_iam_role',
+        provider_name: 'registry.terraform.io/hashicorp/aws',
+        change: {
+          actions: ['delete'],
+          before: {
+            name: 'prod-service-role',
+            assume_role_policy: '{}',
+            managed_policy_arns: ['arn:aws:iam::aws:policy/AdministratorAccess']
+          },
+          after: null
+        }
+      }]
+    }
+  },
+  shell: {
+    's3-delete': 'aws s3 rm s3://prod-data --recursive',
+    'ec2-terminate': 'aws ec2 terminate-instances --instance-ids i-1234567890abcdef0',
+    'rds-delete': 'aws rds delete-db-instance --db-instance-identifier prod-db --skip-final-snapshot',
+    'kubectl-delete': 'kubectl delete deployment production-api -n prod'
+  },
+  mcp: {
+    's3-delete': { server: 'aws', tool: 's3.delete_bucket', arguments: { bucket: 'prod-data', force: true } },
+    'rds-delete': { server: 'aws', tool: 'rds.delete_instance', arguments: { identifier: 'prod-db', skip_snapshot: true } },
+    'k8s-delete': { server: 'kubernetes', tool: 'delete_deployment', arguments: { name: 'api', namespace: 'production' } }
+  }
+};
+
+const fixtureLabels = {
+  terraform: {
+    'rds-unsafe': 'RDS unsafe',
+    'rds-safe': 'RDS safe',
+    's3-no-versioning': 'S3 no versioning',
+    'iam-role': 'IAM role'
+  },
+  shell: {
+    's3-delete': 'S3 delete',
+    'ec2-terminate': 'EC2 terminate',
+    'rds-delete': 'RDS delete',
+    'kubectl-delete': 'kubectl delete'
+  },
+  mcp: {
+    's3-delete': 'S3 delete',
+    'rds-delete': 'RDS delete',
+    'k8s-delete': 'K8s delete'
+  }
+};
+
+const fixtureButtonsContainer = document.getElementById('fixture-buttons');
+
+function updateFixtureButtons(source) {
+  const labels = fixtureLabels[source] || {};
+  fixtureButtonsContainer.innerHTML = Object.entries(labels)
+    .map(([key, label]) => `<button class="fixture-btn" data-fixture="${key}">${label}</button>`)
+    .join('');
+}
+
 sourceTabs.forEach(tab => {
   tab.addEventListener('click', () => {
     sourceTabs.forEach(t => t.classList.remove('active'));
@@ -486,24 +699,138 @@ sourceTabs.forEach(tab => {
     inputHint.textContent = hints[activeSource];
     inputArea.placeholder = hints[activeSource] + '...';
     inputArea.value = examples[activeSource];
+    updateFixtureButtons(activeSource);
   });
+});
+
+fixtureButtonsContainer.addEventListener('click', (e) => {
+  if (!e.target.classList.contains('fixture-btn')) return;
+  const fixtureKey = e.target.dataset.fixture;
+  const fixtureData = fixtures[activeSource]?.[fixtureKey];
+  if (fixtureData) {
+    inputArea.value = typeof fixtureData === 'string' ? fixtureData : JSON.stringify(fixtureData, null, 2);
+  }
 });
 
 // Load initial example
 inputArea.value = examples.terraform;
+updateFixtureButtons('terraform');
 
-evaluateBtn.addEventListener('click', () => {
+evaluateBtn.addEventListener('click', async () => {
   const input = inputArea.value.trim();
   if (!input) return;
 
-  const report = evaluate(activeSource, input);
-  renderResult(report);
+  evaluateBtn.disabled = true;
+  evaluateBtn.textContent = 'Evaluating...';
+
+  try {
+    let report;
+    if (serverAvailable) {
+      report = await evaluateWithServer(activeSource, input);
+    } else {
+      report = evaluate(activeSource, input);
+    }
+    renderResult(report);
+  } catch (error) {
+    renderResult({
+      decision: 'escalate',
+      tier: 'needs-review',
+      target: 'evaluation',
+      action: 'error',
+      provider: 'console',
+      reason: error.message || 'Evaluation failed',
+      evidence: [],
+      missing: []
+    });
+  } finally {
+    evaluateBtn.disabled = false;
+    evaluateBtn.textContent = 'Evaluate';
+  }
 });
+
+async function evaluateWithServer(source, input) {
+  const body = {
+    source,
+    input: source === 'shell' ? input : JSON.parse(input)
+  };
+
+  const res = await fetch(`${SERVER_URL}/evaluate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Server error');
+  }
+
+  const data = await res.json();
+
+  // Convert server response to console format
+  const mutation = data.mutations?.[0] || {};
+  return {
+    decision: data.decision || 'escalate',
+    tier: data.summary?.worstRecoverability?.label || mutation.recoverability?.label || 'needs-review',
+    target: mutation.resourceAddress || mutation.target || 'unknown',
+    action: mutation.action || 'unknown',
+    provider: mutation.provider || 'unknown',
+    reason: data.decisionReason || mutation.recoverability?.reasoning || 'See evidence',
+    evidence: mutation.recoverability?.evidence || [],
+    missing: mutation.recoverability?.missingEvidence || []
+  };
+}
 
 jsonToggle.addEventListener('click', () => {
   jsonOutput.classList.toggle('visible');
   resultContent.style.display = jsonOutput.classList.contains('visible') ? 'none' : 'block';
 });
+
+let lastReport = null;
+
+document.getElementById('copy-prompt').addEventListener('click', async () => {
+  if (!lastReport) return;
+  const prompt = generateAgentPrompt(lastReport);
+  await navigator.clipboard.writeText(prompt);
+  const btn = document.getElementById('copy-prompt');
+  const original = btn.innerHTML;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Copied!';
+  setTimeout(() => btn.innerHTML = original, 1500);
+});
+
+function generateAgentPrompt(report) {
+  const decisionText = {
+    allow: 'proceed with this action',
+    warn: 'proceed, but inform the user about recovery requirements first',
+    escalate: 'ask the user for explicit approval before proceeding',
+    block: 'refuse to execute this action'
+  };
+
+  let prompt = `I checked this with RecourseOS before executing.\n\n`;
+  prompt += `**Decision: ${report.decision.toUpperCase()}** — I should ${decisionText[report.decision]}.\n\n`;
+  prompt += `**Target:** ${report.target}\n`;
+  prompt += `**Action:** ${report.action}\n`;
+  prompt += `**Recoverability:** ${report.tier}\n\n`;
+  prompt += `**Reasoning:** ${report.reason}\n\n`;
+
+  if (report.evidence.length > 0) {
+    prompt += `**Evidence found:**\n`;
+    report.evidence.forEach(e => prompt += `- ${e}\n`);
+  }
+
+  if (report.missing.length > 0) {
+    prompt += `\n**Evidence needed for safe execution:**\n`;
+    report.missing.forEach(e => prompt += `- ${e}\n`);
+  }
+
+  if (report.decision === 'block') {
+    prompt += `\nI will not execute this action unless you change the configuration or explicitly override the safety check.`;
+  } else if (report.decision === 'escalate') {
+    prompt += `\nPlease confirm you want me to proceed, or provide the missing evidence.`;
+  }
+
+  return prompt;
+}
 
 document.querySelectorAll('[data-copy]').forEach(btn => {
   btn.addEventListener('click', async () => {
@@ -528,55 +855,161 @@ function evaluateTerraform(input) {
 
     const before = change.change?.before || {};
     const actions = change.change?.actions || [];
+    const resourceType = change.type || '';
+    const provider = extractProvider(change.provider_name);
 
-    if (!actions.includes('delete')) {
+    // Non-destructive actions
+    if (!actions.includes('delete') && !actions.includes('replace')) {
       return {
         decision: 'allow',
         tier: 'reversible',
         target: change.address,
         action: actions.join('+'),
-        provider: 'terraform',
+        provider,
         reason: 'No destructive action detected',
         evidence: [`actions=${actions.join(',')}`],
         missing: []
       };
     }
 
+    // Deletion protection check (applies to many resource types)
     if (before.deletion_protection === true) {
       return {
         decision: 'allow',
         tier: 'reversible',
         target: change.address,
         action: 'delete',
-        provider: extractProvider(change.provider_name),
-        reason: 'Deletion protection is enabled',
+        provider,
+        reason: 'Deletion protection is enabled - action will fail safely',
         evidence: ['deletion_protection=true'],
         missing: []
       };
     }
 
-    if (change.type?.includes('db_instance') && before.skip_final_snapshot === true) {
+    // RDS / Database instances
+    if (/db_instance|rds_cluster/.test(resourceType)) {
+      const skipSnapshot = before.skip_final_snapshot === true;
+      const noBackups = (before.backup_retention_period || 0) === 0;
+
+      if (skipSnapshot && noBackups) {
+        return {
+          decision: 'block',
+          tier: 'unrecoverable',
+          target: change.address,
+          action: 'delete',
+          provider,
+          reason: 'Database deletion skips final snapshot and has no backup retention',
+          evidence: ['skip_final_snapshot=true', `backup_retention_period=${before.backup_retention_period || 0}`],
+          missing: []
+        };
+      }
+
+      if (skipSnapshot) {
+        return {
+          decision: 'warn',
+          tier: 'recoverable-from-backup',
+          target: change.address,
+          action: 'delete',
+          provider,
+          reason: 'Database deletion skips final snapshot but has backup retention',
+          evidence: ['skip_final_snapshot=true', `backup_retention_period=${before.backup_retention_period}`],
+          missing: ['Existing snapshot list']
+        };
+      }
+
       return {
-        decision: 'block',
-        tier: 'unrecoverable',
+        decision: 'allow',
+        tier: 'recoverable-from-backup',
         target: change.address,
         action: 'delete',
-        provider: extractProvider(change.provider_name),
-        reason: 'Database deletion skips the final snapshot and has no backup retention',
-        evidence: ['skip_final_snapshot=true', `backup_retention_period=${before.backup_retention_period || 0}`],
+        provider,
+        reason: 'Database deletion will create final snapshot',
+        evidence: ['skip_final_snapshot=false'],
         missing: []
       };
     }
 
+    // S3 Buckets
+    if (/s3_bucket/.test(resourceType)) {
+      const versioning = before.versioning?.[0]?.enabled === true;
+      const forceDestroy = before.force_destroy === true;
+
+      if (!versioning && forceDestroy) {
+        return {
+          decision: 'block',
+          tier: 'unrecoverable',
+          target: change.address,
+          action: 'delete',
+          provider,
+          reason: 'S3 bucket deletion with force_destroy and no versioning - objects unrecoverable',
+          evidence: ['versioning=false', 'force_destroy=true'],
+          missing: []
+        };
+      }
+
+      if (!versioning) {
+        return {
+          decision: 'escalate',
+          tier: 'needs-review',
+          target: change.address,
+          action: 'delete',
+          provider,
+          reason: 'S3 bucket without versioning - check for object recovery options',
+          evidence: ['versioning=false'],
+          missing: ['Object inventory', 'Replication configuration']
+        };
+      }
+
+      return {
+        decision: 'warn',
+        tier: 'recoverable-with-effort',
+        target: change.address,
+        action: 'delete',
+        provider,
+        reason: 'S3 bucket has versioning - objects may be recoverable',
+        evidence: ['versioning=true'],
+        missing: []
+      };
+    }
+
+    // IAM roles and policies
+    if (/iam_role|iam_policy|iam_user/.test(resourceType)) {
+      return {
+        decision: 'warn',
+        tier: 'recoverable-with-effort',
+        target: change.address,
+        action: 'delete',
+        provider,
+        reason: 'IAM resource can be recreated but attached resources will lose access',
+        evidence: [`type=${resourceType}`],
+        missing: ['Dependent resources', 'Policy attachments']
+      };
+    }
+
+    // EC2 instances
+    if (/aws_instance/.test(resourceType)) {
+      return {
+        decision: 'warn',
+        tier: 'recoverable-with-effort',
+        target: change.address,
+        action: 'delete',
+        provider,
+        reason: 'EC2 instance can be recreated from AMI',
+        evidence: [`instance_type=${before.instance_type || 'unknown'}`],
+        missing: ['AMI availability', 'EBS volume snapshots']
+      };
+    }
+
+    // Default: unknown resource type
     return {
       decision: 'escalate',
       tier: 'needs-review',
       target: change.address,
       action: 'delete',
-      provider: extractProvider(change.provider_name),
-      reason: 'Destructive action detected but recovery evidence is insufficient',
-      evidence: [`type=${change.type}`],
-      missing: ['Backup configuration', 'Recovery path']
+      provider,
+      reason: 'Destructive action on unrecognized resource type',
+      evidence: [`type=${resourceType}`],
+      missing: ['Recovery path', 'Backup configuration']
     };
   } catch (e) {
     return errorReport('Invalid JSON: ' + e.message);
@@ -584,31 +1017,101 @@ function evaluateTerraform(input) {
 }
 
 function evaluateShell(input) {
-  const s3Match = input.match(/aws\s+s3\s+(rm|rb)\s+(s3:\/\/[^\s]+)/i);
+  const cmd = input.trim();
+
+  // AWS S3 destructive commands
+  const s3Match = cmd.match(/aws\s+s3\s+(rm|rb)\s+(s3:\/\/[^\s]+)/i);
   if (s3Match) {
+    const isRecursive = /--recursive|--force/.test(cmd);
     return {
-      decision: 'escalate',
-      tier: 'needs-review',
+      decision: isRecursive ? 'block' : 'escalate',
+      tier: isRecursive ? 'unrecoverable' : 'needs-review',
       target: s3Match[2],
       action: s3Match[1] === 'rb' ? 'delete bucket' : 'delete objects',
       provider: 'aws/s3',
-      reason: 'Destructive S3 command detected but bucket state is unknown',
-      evidence: [`command=${input}`],
-      missing: ['Bucket versioning status', 'Replication configuration']
+      reason: isRecursive
+        ? 'Recursive S3 deletion without versioning check is unrecoverable'
+        : 'S3 deletion detected, versioning status unknown',
+      evidence: [`command=${cmd}`, isRecursive ? 'recursive=true' : 'recursive=false'],
+      missing: ['Bucket versioning status', 'Object versions']
     };
   }
 
-  if (/\b(rm|delete|drop|destroy)\b/i.test(input)) {
+  // AWS RDS delete
+  const rdsMatch = cmd.match(/aws\s+rds\s+delete-db-instance.*--db-instance-identifier\s+(\S+)/i);
+  if (rdsMatch) {
+    const skipSnapshot = /--skip-final-snapshot/.test(cmd);
     return {
-      decision: 'escalate',
-      tier: 'needs-review',
-      target: 'shell',
-      action: 'execute',
-      provider: 'shell',
-      reason: 'Destructive command pattern detected',
-      evidence: [`command=${input}`],
-      missing: ['Target resource state', 'Recovery path']
+      decision: skipSnapshot ? 'block' : 'warn',
+      tier: skipSnapshot ? 'unrecoverable' : 'recoverable-from-backup',
+      target: rdsMatch[1],
+      action: 'delete database',
+      provider: 'aws/rds',
+      reason: skipSnapshot
+        ? 'Database deletion skips final snapshot - data will be lost'
+        : 'Database deletion with final snapshot',
+      evidence: [`instance=${rdsMatch[1]}`, `skip_final_snapshot=${skipSnapshot}`],
+      missing: skipSnapshot ? ['Existing snapshots', 'Backup configuration'] : []
     };
+  }
+
+  // AWS EC2 terminate
+  const ec2Match = cmd.match(/aws\s+ec2\s+terminate-instances.*--instance-ids\s+(\S+)/i);
+  if (ec2Match) {
+    return {
+      decision: 'warn',
+      tier: 'recoverable-with-effort',
+      target: ec2Match[1],
+      action: 'terminate instance',
+      provider: 'aws/ec2',
+      reason: 'EC2 instance termination - can recreate from AMI if available',
+      evidence: [`instance=${ec2Match[1]}`],
+      missing: ['AMI availability', 'EBS snapshot status']
+    };
+  }
+
+  // kubectl delete
+  const kubectlMatch = cmd.match(/kubectl\s+delete\s+(\w+)\s+(\S+)/i);
+  if (kubectlMatch) {
+    const resourceType = kubectlMatch[1];
+    const resourceName = kubectlMatch[2];
+    const isStateful = /pv|pvc|secret|configmap|statefulset/i.test(resourceType);
+    return {
+      decision: isStateful ? 'escalate' : 'warn',
+      tier: isStateful ? 'needs-review' : 'recoverable-with-effort',
+      target: `${resourceType}/${resourceName}`,
+      action: `delete ${resourceType}`,
+      provider: 'kubernetes',
+      reason: isStateful
+        ? 'Stateful resource deletion requires backup verification'
+        : 'Kubernetes resource deletion - can redeploy from manifests',
+      evidence: [`resource=${resourceType}/${resourceName}`],
+      missing: isStateful ? ['Backup status', 'PersistentVolume data'] : []
+    };
+  }
+
+  // Generic destructive patterns
+  const destructivePatterns = [
+    { pattern: /\brm\s+-rf?\s+/i, action: 'delete files', risk: 'block' },
+    { pattern: /\bdrop\s+(database|table|schema)/i, action: 'drop database object', risk: 'block' },
+    { pattern: /\btruncate\s+table/i, action: 'truncate table', risk: 'block' },
+    { pattern: /\bdelete\s+from\b/i, action: 'delete rows', risk: 'escalate' },
+    { pattern: /\bdocker\s+(rm|rmi|system\s+prune)/i, action: 'remove containers/images', risk: 'warn' },
+  ];
+
+  for (const { pattern, action, risk } of destructivePatterns) {
+    if (pattern.test(cmd)) {
+      return {
+        decision: risk,
+        tier: risk === 'block' ? 'unrecoverable' : 'needs-review',
+        target: 'shell',
+        action,
+        provider: 'shell',
+        reason: `Destructive ${action} pattern detected`,
+        evidence: [`command=${cmd}`],
+        missing: ['Target state', 'Backup availability']
+      };
+    }
   }
 
   return {
@@ -618,7 +1121,7 @@ function evaluateShell(input) {
     action: 'execute',
     provider: 'shell',
     reason: 'No destructive pattern detected',
-    evidence: [`command=${input}`],
+    evidence: [`command=${cmd}`],
     missing: []
   };
 }
@@ -678,6 +1181,7 @@ function extractProvider(providerName) {
 }
 
 function renderResult(report) {
+  lastReport = report;
   resultEmpty.style.display = 'none';
   resultContent.classList.add('visible');
   jsonOutput.classList.remove('visible');
