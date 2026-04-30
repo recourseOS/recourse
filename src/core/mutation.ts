@@ -71,3 +71,82 @@ export interface DependencyImpact {
   reason: string;
   transitive: boolean;
 }
+
+// Verification Protocol v1
+
+export type VerificationType =
+  | 'aws_cli'
+  | 'gcloud_cli'
+  | 'az_cli'
+  | 'kubectl'
+  | 'terraform_state'
+  | 'aws_api'
+  | 'gcp_api'
+  | 'azure_api';
+
+export interface VerificationApiCall {
+  service: string;
+  operation: string;
+  parameters: Record<string, unknown>;
+}
+
+export interface VerificationCommand {
+  type: VerificationType;
+
+  // For CLI-based verification
+  argv?: string[];
+
+  // For API-based verification
+  api_call?: VerificationApiCall;
+
+  // Execution hints
+  timeout_seconds?: number;
+
+  // Required permissions (IAM-style notation)
+  // AWS: 'ec2:DescribeSnapshots'
+  // GCP: 'compute.snapshots.list'
+  // Azure: 'Microsoft.Compute/snapshots/read'
+  requires_permissions?: string[];
+}
+
+export type VerificationUncertainty = 'high' | 'medium' | 'low';
+export type VerificationPriority = 'critical' | 'recommended' | 'informational';
+
+export interface VerificationVerdictImpact {
+  current_tier: string;
+  potential_tier: string;
+  decision_change?: {
+    from: string;
+    to: string;
+  };
+}
+
+export interface VerificationSuggestion {
+  evidence_key: string;
+  description: string;
+  uncertainty: VerificationUncertainty;
+  verification: VerificationCommand;
+  expected_signal: string;
+  failure_signal: string;
+  verdict_impact: VerificationVerdictImpact;
+  // Derived from verdict_impact for agent convenience
+  priority: VerificationPriority;
+}
+
+// Evidence submission from agent
+
+export type AgentInterpretation =
+  | 'matches_expected'
+  | 'matches_failure'
+  | 'ambiguous'
+  | 'error';
+
+export interface EvidenceSubmission {
+  evidence_key: string;
+  command_executed: VerificationCommand;
+  exit_code?: number;
+  raw_output?: string;
+  parsed_evidence?: Record<string, unknown>;
+  agent_interpretation: AgentInterpretation;
+  agent_notes?: string;
+}

@@ -18,6 +18,9 @@ export const RecoverabilityLabels: Record<RecoverabilityTier, string> = {
 // Verdict source - where the classification came from
 export type VerdictSource = 'rules' | 'classifier' | 'default';
 
+// Import verification suggestion type
+import type { VerificationSuggestion } from '../core/mutation.js';
+
 export interface RecoverabilityResult {
   tier: RecoverabilityTier;
   label: string;
@@ -26,6 +29,8 @@ export interface RecoverabilityResult {
   source?: VerdictSource;       // 'rules' = hardcoded handler, 'classifier' = ML model
   confidence?: number;          // 0-1, always 1.0 for rules
   classifierAgreement?: boolean; // If rules fired, did classifier agree?
+  // Verification protocol v1
+  verificationSuggestions?: VerificationSuggestion[];
 }
 
 // Terraform plan action types

@@ -10,6 +10,8 @@ import {
   type ClassificationTrace,
 } from '../types.js';
 import { ClassificationContext } from '../../analyzer/trace.js';
+import type { VerificationSuggestion } from '../../core/mutation.js';
+import { rdsManualSnapshots, rdsAwsBackupRecoveryPoints, rdsAutomatedBackups } from '../../verification/index.js';
 
 export const rdsHandler: ResourceHandler = {
   resourceTypes: [
@@ -221,10 +223,26 @@ function classifyDbInstance(
 
   if (skipFinalSnapshot && !finalSnapshotIdentifier) {
     if (!backupRetentionPeriod || backupRetentionPeriod === 0) {
+      // Generate verification suggestions for unrecoverable case
+      const suggestions: VerificationSuggestion[] = [];
+      const identifier = values.identifier as string;
+
+      if (identifier) {
+        suggestions.push(rdsManualSnapshots(identifier));
+        suggestions.push(rdsAutomatedBackups(identifier));
+
+        // If we have ARN info, suggest AWS Backup check
+        const arn = values.arn as string;
+        if (arn) {
+          suggestions.push(rdsAwsBackupRecoveryPoints(arn));
+        }
+      }
+
       return {
         tier: RecoverabilityTier.UNRECOVERABLE,
         label: RecoverabilityLabels[RecoverabilityTier.UNRECOVERABLE],
         reasoning: 'skip_final_snapshot=true, no backup retention, no final snapshot; data will be lost',
+        verificationSuggestions: suggestions.length > 0 ? suggestions : undefined,
       };
     }
 
@@ -341,10 +359,23 @@ function classifyRdsCluster(
 
   if (skipFinalSnapshot && !finalSnapshotIdentifier) {
     if (!backupRetentionPeriod || backupRetentionPeriod === 0) {
+      // Generate verification suggestions for unrecoverable cluster
+      const suggestions: VerificationSuggestion[] = [];
+      const clusterIdentifier = values.cluster_identifier as string;
+
+      if (clusterIdentifier) {
+        // For clusters, we'd check cluster snapshots (similar pattern)
+        const arn = values.arn as string;
+        if (arn) {
+          suggestions.push(rdsAwsBackupRecoveryPoints(arn));
+        }
+      }
+
       return {
         tier: RecoverabilityTier.UNRECOVERABLE,
         label: RecoverabilityLabels[RecoverabilityTier.UNRECOVERABLE],
         reasoning: 'skip_final_snapshot=true, no backup retention; all cluster data will be lost',
+        verificationSuggestions: suggestions.length > 0 ? suggestions : undefined,
       };
     }
 

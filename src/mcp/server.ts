@@ -8,7 +8,7 @@ import {
 } from '../evaluator/index.js';
 import { getSupportedResourceTypes } from '../resources/index.js';
 import { toConsequenceJson } from '../output/consequence-json.js';
-import type { ConsequenceReport } from '../core/index.js';
+import type { ConsequenceReport, EvidenceSubmission } from '../core/index.js';
 import type { McpToolCall } from '../adapters/index.js';
 import type { AdapterContext } from '../adapters/types.js';
 import type { TerraformPlan, TerraformState } from '../resources/types.js';
@@ -132,6 +132,54 @@ const tools: ToolDefinition[] = [
       additionalProperties: false,
     },
   },
+  {
+    name: 'recourse_evaluate_with_evidence',
+    description:
+      'Re-evaluates a previous consequence report with additional evidence gathered by the agent. ' +
+      'Use this after running verification commands suggested by a prior evaluation. ' +
+      'Submit the original input (plan, command, or tool call) plus evidence gathered from running the suggested verification commands. ' +
+      'Returns an updated verdict incorporating the new evidence, potentially upgrading from `block` or `escalate` to `warn` or `allow` if the verification confirms recovery paths exist.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        source: {
+          type: 'string',
+          enum: ['terraform', 'shell', 'mcp'],
+          description: 'Type of original evaluation (terraform, shell, or mcp)',
+        },
+        original_input: {
+          type: 'object',
+          description: 'The original evaluation input (plan, command, or tool call)',
+        },
+        evidence: {
+          type: 'array',
+          description: 'Evidence gathered from verification commands',
+          items: {
+            type: 'object',
+            properties: {
+              evidence_key: { type: 'string', description: 'Key from verification suggestion' },
+              command_executed: { type: 'object', description: 'The verification command that was run' },
+              exit_code: { type: 'number', description: 'Command exit code' },
+              raw_output: { type: 'string', description: 'Raw command output' },
+              parsed_evidence: { type: 'object', description: 'Structured evidence if parseable' },
+              agent_interpretation: {
+                type: 'string',
+                enum: ['matches_expected', 'matches_failure', 'ambiguous', 'error'],
+                description: 'Agent interpretation of the result',
+              },
+              agent_notes: { type: 'string', description: 'Additional context' },
+            },
+            required: ['evidence_key', 'agent_interpretation'],
+          },
+        },
+        actor: { type: 'string', description: 'Identifier for the agent or user initiating this action.' },
+        environment: { type: 'string', description: 'Target environment (e.g., production, staging).' },
+        owner: { type: 'string', description: 'Team or individual responsible for the resources.' },
+      },
+      required: ['source', 'original_input', 'evidence'],
+      additionalProperties: false,
+    },
+  },
 ];
 
 export interface McpServerOptions {
@@ -252,6 +300,14 @@ async function callTool(params: unknown): Promise<Record<string, unknown>> {
         resources: getSupportedResourceTypes(),
         total: getSupportedResourceTypes().length,
       });
+    case 'recourse_evaluate_with_evidence': {
+      const report = evaluateWithEvidence(args);
+      const mutation = report.mutations[0];
+      const target = mutation?.intent.target.id || 'with-evidence';
+      const tier = mutation?.recoverability?.label || 'unknown';
+      logDecision('evidence', target, report.decision, tier);
+      return toolResult(withSchemaVersion(report));
+    }
     default:
       throw new Error(`Unknown RecourseOS MCP tool: ${name}`);
   }
@@ -287,6 +343,137 @@ function evaluateMcpCall(args: Record<string, unknown>): ConsequenceReport {
   return evaluateMcpToolCallConsequences(call, {
     adapterContext: adapterContext(args),
   });
+}
+
+function evaluateWithEvidence(args: Record<string, unknown>): ConsequenceReport {
+  const source = requireString(args.source, 'source is required (terraform, shell, or mcp)');
+  const originalInput = requireObject(args.original_input, 'original_input');
+  const evidenceArray = args.evidence;
+
+  if (!Array.isArray(evidenceArray)) {
+    throw new Error('evidence must be an array');
+  }
+
+  // Parse evidence submissions
+  const submissions: EvidenceSubmission[] = evidenceArray.map((e: unknown) => {
+    const item = requireObject(e, 'evidence item');
+
+    // Parse command_executed with proper typing
+    let commandExecuted: EvidenceSubmission['command_executed'] = { type: 'aws_cli' };
+    if (isObject(item.command_executed)) {
+      const cmd = item.command_executed;
+      commandExecuted = {
+        type: (typeof cmd.type === 'string' ? cmd.type : 'aws_cli') as EvidenceSubmission['command_executed']['type'],
+        argv: Array.isArray(cmd.argv) ? cmd.argv as string[] : undefined,
+        timeout_seconds: typeof cmd.timeout_seconds === 'number' ? cmd.timeout_seconds : undefined,
+        requires_permissions: Array.isArray(cmd.requires_permissions) ? cmd.requires_permissions as string[] : undefined,
+      };
+    }
+
+    return {
+      evidence_key: requireString(item.evidence_key, 'evidence_key is required'),
+      command_executed: commandExecuted,
+      exit_code: typeof item.exit_code === 'number' ? item.exit_code : undefined,
+      raw_output: typeof item.raw_output === 'string' ? item.raw_output : undefined,
+      parsed_evidence: isObject(item.parsed_evidence) ? item.parsed_evidence : undefined,
+      agent_interpretation: (item.agent_interpretation as EvidenceSubmission['agent_interpretation']) || 'ambiguous',
+      agent_notes: typeof item.agent_notes === 'string' ? item.agent_notes : undefined,
+    };
+  });
+
+  // Re-evaluate the original input
+  let baseReport: ConsequenceReport;
+  switch (source) {
+    case 'terraform':
+      baseReport = evaluateTerraform(originalInput);
+      break;
+    case 'shell':
+      baseReport = evaluateShell(originalInput);
+      break;
+    case 'mcp':
+      baseReport = evaluateMcpCall(originalInput);
+      break;
+    default:
+      throw new Error(`Unsupported source: ${source}`);
+  }
+
+  // Check if any evidence confirms recovery paths
+  const positiveEvidence = submissions.filter(s => s.agent_interpretation === 'matches_expected');
+
+  if (positiveEvidence.length > 0) {
+    // Evidence confirms recovery - upgrade the verdict
+    return upgradeVerdictWithEvidence(baseReport, submissions);
+  }
+
+  // No positive evidence - return original with evidence noted
+  return {
+    ...baseReport,
+    verificationProtocolVersion: 'v1',
+    // Clear suggestions since verification was attempted
+    verificationSuggestions: [],
+  };
+}
+
+function upgradeVerdictWithEvidence(
+  baseReport: ConsequenceReport,
+  evidence: EvidenceSubmission[]
+): ConsequenceReport {
+  // Find evidence that matches expected signals
+  const confirmedEvidence = evidence.filter(e => e.agent_interpretation === 'matches_expected');
+
+  // Update mutations with the new evidence
+  const updatedMutations = baseReport.mutations.map(mutation => {
+    // Check if any evidence applies to this mutation
+    const relevantEvidence = confirmedEvidence.filter(e =>
+      e.evidence_key.includes('snapshot') ||
+      e.evidence_key.includes('backup') ||
+      e.evidence_key.includes('replication') ||
+      e.evidence_key.includes('versioning')
+    );
+
+    if (relevantEvidence.length > 0 && mutation.recoverability.tier === 4) {
+      // Upgrade from unrecoverable to recoverable-from-backup
+      return {
+        ...mutation,
+        recoverability: {
+          tier: 3,
+          label: 'recoverable-from-backup',
+          reasoning: `External backup verified: ${relevantEvidence.map(e => e.evidence_key).join(', ')}`,
+        },
+        evidence: [
+          ...mutation.evidence,
+          ...relevantEvidence.map(e => ({
+            key: e.evidence_key,
+            value: e.parsed_evidence,
+            present: true,
+            description: e.agent_notes || 'Verified by agent',
+          })),
+        ],
+      };
+    }
+
+    return mutation;
+  });
+
+  // Determine new decision based on updated recoverability
+  const hasUnrecoverable = updatedMutations.some(m => m.recoverability.tier === 4);
+  const newDecision = hasUnrecoverable ? baseReport.decision : 'warn';
+  const newReason = hasUnrecoverable
+    ? baseReport.decisionReason
+    : 'External backup verified - proceed with caution';
+
+  return {
+    ...baseReport,
+    mutations: updatedMutations,
+    decision: newDecision,
+    decisionReason: newReason,
+    verificationProtocolVersion: 'v1',
+    verificationSuggestions: [], // Clear since verification was completed
+    summary: {
+      ...baseReport.summary,
+      hasUnrecoverable,
+    },
+  };
 }
 
 function parseTerraformPlan(value: unknown): TerraformPlan {

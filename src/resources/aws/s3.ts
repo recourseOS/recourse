@@ -10,6 +10,8 @@ import {
   type ClassificationTrace,
 } from '../types.js';
 import { ClassificationContext } from '../../analyzer/trace.js';
+import type { VerificationSuggestion } from '../../core/mutation.js';
+import { s3CrossRegionReplication, s3VersioningStatus } from '../../verification/index.js';
 
 export const s3Handler: ResourceHandler = {
   resourceTypes: ['aws_s3_bucket', 'aws_s3_bucket_versioning', 'aws_s3_object'],
@@ -150,10 +152,17 @@ function classifyS3Bucket(
     explanation: 'Empty buckets can be recreated with same configuration',
   });
 
+  // Generate verification suggestions
+  const suggestions: VerificationSuggestion[] = [];
+  if (bucketName) {
+    suggestions.push(s3CrossRegionReplication(bucketName));
+  }
+
   return {
     tier: RecoverabilityTier.UNRECOVERABLE,
     label: RecoverabilityLabels[RecoverabilityTier.UNRECOVERABLE],
     reasoning: 'Bucket deletion is permanent; versioning does not survive bucket deletion',
+    verificationSuggestions: suggestions.length > 0 ? suggestions : undefined,
   };
 }
 
@@ -225,9 +234,17 @@ function classifyS3Object(
     };
   }
 
+  // Generate verification suggestions - check versioning status live
+  const suggestions: VerificationSuggestion[] = [];
+  if (bucketName) {
+    suggestions.push(s3VersioningStatus(bucketName));
+    suggestions.push(s3CrossRegionReplication(bucketName));
+  }
+
   return {
     tier: RecoverabilityTier.UNRECOVERABLE,
     label: RecoverabilityLabels[RecoverabilityTier.UNRECOVERABLE],
     reasoning: 'Object deletion without versioning is permanent',
+    verificationSuggestions: suggestions.length > 0 ? suggestions : undefined,
   };
 }

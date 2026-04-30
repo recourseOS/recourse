@@ -1,13 +1,22 @@
 export type {
   ActorKind,
+  AgentInterpretation,
   DependencyImpact,
   EvidenceItem,
+  EvidenceSubmission,
   MissingEvidence,
   MutationAction,
   MutationActor,
   MutationIntent,
   MutationSource,
   MutationTarget,
+  VerificationApiCall,
+  VerificationCommand,
+  VerificationPriority,
+  VerificationSuggestion,
+  VerificationType,
+  VerificationUncertainty,
+  VerificationVerdictImpact,
 } from './mutation.js';
 
 export type {
@@ -15,4 +24,7 @@ export type {
   ConsequenceDecision,
   ConsequenceReport,
   ConsequenceSummary,
+  VerificationProtocolVersion,
+  VerificationStatus,
+  VerificationStatusInfo,
 } from './consequence.js';

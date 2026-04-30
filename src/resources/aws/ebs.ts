@@ -10,6 +10,8 @@ import {
   type ClassificationTrace,
 } from '../types.js';
 import { ClassificationContext } from '../../analyzer/trace.js';
+import type { VerificationSuggestion } from '../../core/mutation.js';
+import { ebsExternalSnapshots, ebsAwsBackupRecoveryPoints } from '../../verification/index.js';
 
 export const ebsHandler: ResourceHandler = {
   resourceTypes: [
@@ -151,6 +153,7 @@ function classifyEbsVolume(
   const size = values.size as number;
   const volumeType = values.type as string;
   const encrypted = values.encrypted as boolean;
+  const availabilityZone = values.availability_zone as string;
 
   ctx.check('volume_id', volumeId, {
     passed: true,
@@ -191,10 +194,27 @@ function classifyEbsVolume(
     };
   }
 
+  // No snapshot in state - generate verification suggestions
+  const suggestions: VerificationSuggestion[] = [];
+
+  if (volumeId) {
+    // Suggest checking for snapshots outside Terraform state
+    suggestions.push(ebsExternalSnapshots(volumeId));
+
+    // Suggest checking AWS Backup if we can construct the ARN
+    if (availabilityZone) {
+      const region = availabilityZone.slice(0, -1); // us-east-1a -> us-east-1
+      // Note: We'd need account ID for full ARN, but the agent can fill this in
+      const volumeArn = `arn:aws:ec2:${region}:*:volume/${volumeId}`;
+      suggestions.push(ebsAwsBackupRecoveryPoints(volumeArn));
+    }
+  }
+
   return {
     tier: RecoverabilityTier.UNRECOVERABLE,
     label: RecoverabilityLabels[RecoverabilityTier.UNRECOVERABLE],
     reasoning: 'Volume deletion without snapshot means data is permanently lost',
+    verificationSuggestions: suggestions.length > 0 ? suggestions : undefined,
   };
 }
 
