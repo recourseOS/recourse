@@ -41,9 +41,9 @@ In these cases, RecourseOS should escalate or require review.
 
 ## BitNet Path
 
-BitNet is planned for unknown-resource classification, not for replacing deterministic handlers. Known rules remain authoritative because they encode provider-specific recovery behavior.
+BitNet belongs in unknown-resource classification, not deterministic handlers. Known rules remain authoritative because they encode provider-specific recovery behavior.
 
-The public contract should not change when BitNet is introduced: agents and CI systems should continue to receive the same tiers, decisions, confidence, evidence, and missing-evidence fields.
+The public contract should stay stable for agents and CI systems: tiers, decisions, confidence, evidence, and missing-evidence fields should remain available regardless of the classifier implementation.
 
 ## Safety Requirements
 

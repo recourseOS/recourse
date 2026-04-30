@@ -170,13 +170,6 @@
     color: var(--accent);
   }
   tr:last-child td { border-bottom: 0; }
-  .source-note {
-    margin-top: 26px;
-    padding-top: 20px;
-    border-top: 1px solid var(--rule);
-    color: var(--ink-faint);
-    font-size: 13px;
-  }
   @media (max-width: 820px) {
     .container { padding: 0 22px; }
     nav { flex-direction: column; align-items: flex-start; gap: 16px; }
@@ -296,8 +289,7 @@
 <p>MCP tools should fail closed:</p>
 <ul><li>Invalid input: return an MCP error with validation details.</li><li>Unsupported source: return <code>decision: &quot;escalate&quot;</code> when the action can be parsed but not classified.</li><li>Internal error: return an MCP error; do not return <code>allow</code>.</li><li>Missing evidence: return <code>needs-review</code> or <code>escalate</code>, not <code>allow</code>.</li></ul>
 <h2 id="bitnet-placement">BitNet Placement</h2>
-<p>BitNet should replace the unknown-resource semantic scorer, not deterministic handlers. Known rules remain first because they encode provider-specific recovery behavior. BitNet becomes active after the public fixture corpus is broad enough to measure false-safe risk across unknown AWS, GCP, Azure, and long-tail provider resources.</p>
-    <p class="source-note">Generated from <code>docs/agent-interface.md</code>. Markdown remains available for source review.</p>
+<p>BitNet is intended for unknown-resource classification, not deterministic handlers. Known rules remain first because they encode provider-specific recovery behavior. Any model-backed classifier must preserve the same consequence report contract, include confidence and evidence, and default to <code>needs-review</code> when evidence is weak.</p>
   </article>
 </main>
 </body>

@@ -170,13 +170,6 @@
     color: var(--accent);
   }
   tr:last-child td { border-bottom: 0; }
-  .source-note {
-    margin-top: 26px;
-    padding-top: 20px;
-    border-top: 1px solid var(--rule);
-    color: var(--ink-faint);
-    font-size: 13px;
-  }
   @media (max-width: 820px) {
     .container { padding: 0 22px; }
     nav { flex-direction: column; align-items: flex-start; gap: 16px; }
@@ -284,7 +277,6 @@
 <pre><code>recourse evaluate shell 'aws kms schedule-key-deletion --key-id 1234abcd --pending-window-in-days 30' \
   --aws-kms-evidence kms-evidence.json \
   --fail-on block</code></pre>
-    <p class="source-note">Generated from <code>docs/live-aws-tests.md</code>. Markdown remains available for source review.</p>
   </article>
 </main>
 </body>

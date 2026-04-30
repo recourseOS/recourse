@@ -147,7 +147,7 @@ recourse evaluate shell 'aws s3 rm s3://prod-audit-logs --recursive'
 recourse evaluate mcp '{"server":"aws","tool":"s3.delete_bucket","arguments":{"bucket":"prod-audit-logs"}}'
 ```
 
-`evaluate` emits a normalized consequence report for Terraform, shell, or MCP inputs. This is the public contract Recourse Cloud can ingest later.
+`evaluate` emits a normalized consequence report for Terraform, shell, or MCP inputs. The same report shape is used by the CLI, MCP server, and configured submission endpoints.
 
 ### Agent Interface
 
@@ -177,7 +177,7 @@ Supported evidence providers: `aws-s3`, `aws-rds`, `aws-dynamodb`, `aws-iam-role
 recourse resources
 ```
 
-The generated coverage reference is in `docs/resource-coverage.md`, with the landing-page themed version at `docs/resource-coverage.html`.
+The coverage reference is in `docs/resource-coverage.md`, with the landing-page themed version at `docs/resource-coverage.html`.
 
 ## Multi-Cloud Coverage
 
@@ -215,7 +215,7 @@ For unknown resource types, `--classifier` enables a provider-neutral semantic p
 - IAM/config-only relationship resources
 - credential material that cannot be recovered after deletion
 
-If evidence is weak, the classifier returns `needs-review` rather than marking the change safe. This path is intentionally BitNet-compatible: a compact model can later replace the semantic scorer without changing the public consequence report contract. BitNet belongs on unknown-resource classification after the deterministic handler surface and false-safe fixture corpus are broad enough to measure it.
+If evidence is weak, the classifier returns `needs-review` rather than marking the change safe. This path is intentionally BitNet-compatible: model-backed unknown-resource classification can preserve the same consequence report contract while deterministic rules remain authoritative.
 
 ## Golden Fixtures
 

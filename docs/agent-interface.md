@@ -135,4 +135,4 @@ MCP tools should fail closed:
 
 ## BitNet Placement
 
-BitNet should replace the unknown-resource semantic scorer, not deterministic handlers. Known rules remain first because they encode provider-specific recovery behavior. BitNet becomes active after the public fixture corpus is broad enough to measure false-safe risk across unknown AWS, GCP, Azure, and long-tail provider resources.
+BitNet is intended for unknown-resource classification, not deterministic handlers. Known rules remain first because they encode provider-specific recovery behavior. Any model-backed classifier must preserve the same consequence report contract, include confidence and evidence, and default to `needs-review` when evidence is weak.

@@ -170,13 +170,6 @@
     color: var(--accent);
   }
   tr:last-child td { border-bottom: 0; }
-  .source-note {
-    margin-top: 26px;
-    padding-top: 20px;
-    border-top: 1px solid var(--rule);
-    color: var(--ink-faint);
-    font-size: 13px;
-  }
   @media (max-width: 820px) {
     .container { padding: 0 22px; }
     nav { flex-direction: column; align-items: flex-start; gap: 16px; }
@@ -239,11 +232,10 @@
 <ul><li>DNS record recovery can depend on out-of-band zone backups, IP ownership, and target resource state.</li><li>Secret, key, and certificate child resources may not include parent retention or purge-protection settings.</li><li>Unknown provider resources can look similar while having very different recovery behavior.</li><li>Live cloud state is only available when explicit evidence is supplied.</li></ul>
 <p>In these cases, RecourseOS should escalate or require review.</p>
 <h2 id="bitnet-path">BitNet Path</h2>
-<p>BitNet is planned for unknown-resource classification, not for replacing deterministic handlers. Known rules remain authoritative because they encode provider-specific recovery behavior.</p>
-<p>The public contract should not change when BitNet is introduced: agents and CI systems should continue to receive the same tiers, decisions, confidence, evidence, and missing-evidence fields.</p>
+<p>BitNet belongs in unknown-resource classification, not deterministic handlers. Known rules remain authoritative because they encode provider-specific recovery behavior.</p>
+<p>The public contract should stay stable for agents and CI systems: tiers, decisions, confidence, evidence, and missing-evidence fields should remain available regardless of the classifier implementation.</p>
 <h2 id="safety-requirements">Safety Requirements</h2>
 <ul><li>Rules win for known resources.</li><li>Unknown destructive resources require evidence before they can be treated as safe.</li><li>Classifier output must include confidence and evidence.</li><li>Missing recovery evidence should be visible to users and agents.</li><li>False-safe outcomes are more dangerous than false-review outcomes.</li></ul>
-    <p class="source-note">Generated from <code>docs/schema-gaps.md</code>. Markdown remains available for source review.</p>
   </article>
 </main>
 </body>
