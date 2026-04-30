@@ -55,6 +55,12 @@ npx recourse-cli plan plan.json
 
 The installed command is `recourse`.
 
+`preflight`, `evaluate`, and `mcp serve` require `recourse-cli` 0.1.3 or newer. If `npx` offers `recourse-cli@0.1.2`, that package is stale and will not include `preflight`; pin the current package:
+
+```bash
+npx recourse-cli@0.1.3 preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'
+```
+
 ## Quick Start
 
 ```bash
@@ -166,7 +172,7 @@ recourse preflight shell 'kubectl delete namespace payments'
 recourse preflight mcp mcp-call.json
 ```
 
-`preflight` is the human product surface. It renders a terminal cockpit showing the input adapter, normalized mutation, evaluation pipeline, decision, missing evidence, and agent-safe response. Use `--format json` when you want the same command to emit the machine-readable consequence report.
+`preflight` is the human product surface. It renders a decision-first terminal report showing whether to run, warn, review, or block; what action and target were detected; why the decision was made; what evidence was found; what evidence is missing; and what to do next. Use `--format json` when you want the same command to emit the machine-readable consequence report.
 
 ### Agent Interface
 

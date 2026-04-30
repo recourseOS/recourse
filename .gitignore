@@ -1,5 +1,6 @@
 node_modules/
 dist/
+.npm-cache/
 docs/ARCHITECTURE.md
 docs/WHITEPAPER.md
 docs/REPOSITORY_STRATEGY.md
