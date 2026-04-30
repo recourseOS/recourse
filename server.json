@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.recourseOS/recourse",
   "title": "RecourseOS",
-  "description": "Consequence evaluation for AI agents. Analyzes Terraform plans, shell commands, and MCP tool calls before execution. Returns recoverability verdicts (reversible, recoverable, unrecoverable) so agents know when to proceed, warn, or block.",
+  "description": "Consequence evaluation for AI agents. Check recoverability before destructive actions.",
   "version": "0.1.12",
   "websiteUrl": "https://recourseos.com",
   "repository": {
