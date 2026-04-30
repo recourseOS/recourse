@@ -15,6 +15,23 @@ import type { TerraformPlan, TerraformState } from '../resources/types.js';
 
 const SCHEMA_VERSION = 'recourse.consequence.v1';
 
+let verbose = false;
+
+function log(message: string): void {
+  if (verbose) {
+    const timestamp = new Date().toISOString().slice(11, 19);
+    process.stderr.write(`[${timestamp}] ${message}\n`);
+  }
+}
+
+function logDecision(tool: string, target: string, decision: string, tier: string): void {
+  if (!verbose) return;
+  const emoji = decision === 'allow' ? '✓' : decision === 'warn' ? '⚠' : decision === 'block' ? '✗' : '?';
+  const color = decision === 'allow' ? '\x1b[32m' : decision === 'warn' ? '\x1b[33m' : decision === 'block' ? '\x1b[31m' : '\x1b[33m';
+  const reset = '\x1b[0m';
+  process.stderr.write(`${color}${emoji} ${decision.toUpperCase()}${reset} ${tool} → ${target} (${tier})\n`);
+}
+
 type JsonValue =
   | null
   | boolean
@@ -117,10 +134,25 @@ const tools: ToolDefinition[] = [
   },
 ];
 
+export interface McpServerOptions {
+  verbose?: boolean;
+}
+
 export function runMcpServer(
   input: Readable = process.stdin,
-  output: Writable = process.stdout
+  output: Writable = process.stdout,
+  options: McpServerOptions = {}
 ): void {
+  verbose = options.verbose ?? false;
+
+  if (verbose) {
+    process.stderr.write('\n┌────────────────────────────────────────┐\n');
+    process.stderr.write('│  RecourseOS MCP Server                 │\n');
+    process.stderr.write('│  Verbose mode enabled                  │\n');
+    process.stderr.write('│  Waiting for agent connections...      │\n');
+    process.stderr.write('└────────────────────────────────────────┘\n\n');
+  }
+
   let buffer: Buffer<ArrayBufferLike> = Buffer.alloc(0);
 
   input.on('data', chunk => {
@@ -148,7 +180,7 @@ export async function handleMcpRequest(request: JsonRpcRequest): Promise<Record<
           },
           serverInfo: {
             name: 'recourseos',
-            version: '0.1.8',
+            version: '0.1.9',
           },
         });
       case 'tools/list':
@@ -188,13 +220,30 @@ async function callTool(params: unknown): Promise<Record<string, unknown>> {
   const args = isObject(call.arguments) ? call.arguments : {};
 
   switch (name) {
-    case 'recourse_evaluate_terraform':
-      return toolResult(withSchemaVersion(evaluateTerraform(args)));
-    case 'recourse_evaluate_shell':
-      return toolResult(withSchemaVersion(evaluateShell(args)));
-    case 'recourse_evaluate_mcp_call':
-      return toolResult(withSchemaVersion(evaluateMcpCall(args)));
+    case 'recourse_evaluate_terraform': {
+      const report = evaluateTerraform(args);
+      const mutation = report.mutations[0];
+      const target = mutation ? `${mutation.intent.target.type}.${mutation.intent.target.id}` : 'terraform plan';
+      const tier = mutation?.recoverability?.label || 'unknown';
+      logDecision('terraform', target, report.decision, tier);
+      return toolResult(withSchemaVersion(report));
+    }
+    case 'recourse_evaluate_shell': {
+      const report = evaluateShell(args);
+      const cmd = typeof args.command === 'string' ? args.command.slice(0, 50) : 'shell';
+      const tier = report.mutations[0]?.recoverability?.label || 'unknown';
+      logDecision('shell', cmd, report.decision, tier);
+      return toolResult(withSchemaVersion(report));
+    }
+    case 'recourse_evaluate_mcp_call': {
+      const report = evaluateMcpCall(args);
+      const tool = typeof args.tool === 'string' ? args.tool : 'mcp';
+      const tier = report.mutations[0]?.recoverability?.label || 'unknown';
+      logDecision('mcp', tool, report.decision, tier);
+      return toolResult(withSchemaVersion(report));
+    }
     case 'recourse_supported_resources':
+      log('Listed supported resources');
       return toolResult({
         schemaVersion: SCHEMA_VERSION,
         resources: getSupportedResourceTypes(),

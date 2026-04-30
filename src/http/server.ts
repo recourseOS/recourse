@@ -57,7 +57,7 @@ export function runHttpServer(port: number = 3001, openBrowser: boolean = true):
 
     // API: Health check
     if (req.method === 'GET' && url === '/api/health') {
-      sendJson(res, 200, { status: 'ok', version: '0.1.8' });
+      sendJson(res, 200, { status: 'ok', version: '0.1.9' });
       return;
     }
 
@@ -126,7 +126,7 @@ export function runHttpServer(port: number = 3001, openBrowser: boolean = true):
     console.log(`
 ┌─────────────────────────────────────────────────────┐
 │                                                     │
-│   RecourseOS Console                                │
+│   RecourseOS Playground                             │
 │   ${url.padEnd(45)}│
 │                                                     │
 │   API Endpoints:                                    │

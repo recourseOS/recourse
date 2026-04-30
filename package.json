@@ -1,6 +1,6 @@
 {
   "name": "recourse-cli",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "MCP server for AI agents to evaluate consequences before destructive actions. Analyzes Terraform plans, shell commands, and MCP tool calls.",
   "main": "dist/index.js",
   "bin": {
