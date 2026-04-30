@@ -10,45 +10,42 @@ const width = 88;
 export function formatTui(report: ConsequenceReport, options: TuiOptions): string {
   const primary = report.mutations[0];
   const source = normalizeSource(options.source);
-  const decision = report.decision.toUpperCase();
   const confidence = Math.round((report.summary.worstRecoverability.confidence ?? 1) * 100);
   const confidenceLabel = confidence > 0 ? `${confidence}%` : 'needs evidence';
   const evidence = primary?.evidence.map(item => `${item.key}: ${stringifyValue(item.value, item.present)}`) ?? [];
   const missingEvidence = primary?.missingEvidence.map(item => `${item.key}: ${item.description}`) ?? [];
 
   const lines = [
-    'RECOURSEOS PREFLIGHT',
-    '='.repeat(20),
-    keyValue('input', source),
-    keyValue('adapter', adapterName(options.source)),
-    keyValue('actor', actorLine(primary)),
-    keyValue('supported inputs', 'Terraform plans, Shell / cloud CLIs, MCP tool calls'),
+    'RecourseOS Preflight',
     '',
-    section('CONSEQUENCE DECISION'),
-    keyValue('verdict', `${decision} (${report.summary.worstRecoverability.label})`),
-    keyValue('policy', policyAction(report.decision)),
-    keyValue('confidence', confidenceLabel),
-    ...keyValueRows('reason', report.decisionReason),
+    ...keyValueRows('Command', options.inputLabel ?? source),
+    keyValue('Source', source),
+    keyValue('Actor', actorLine(primary)),
     '',
-    section('NORMALIZED MUTATION'),
-    keyValue('target', targetValue(primary)),
-    keyValue('action', actionValue(primary)),
-    keyValue('provider', providerValue(primary)),
+    decisionTitle(report.decision),
+    decisionSummary(report),
     '',
-    section('EVIDENCE'),
-    ...bulletRows(evidence, 'present'),
+    keyValue('Decision', report.decision),
+    keyValue('Recoverability', report.summary.worstRecoverability.label),
+    keyValue('Confidence', confidenceLabel),
+    keyValue('Policy', policyAction(report.decision)),
     '',
-    section('MISSING EVIDENCE'),
-    ...bulletRows(missingEvidence, 'needed'),
+    section('Action'),
+    keyValue('Type', actionValue(primary)),
+    keyValue('Target', targetValue(primary)),
+    keyValue('Provider', providerValue(primary)),
     '',
-    section('EVALUATION PATH'),
-    `1. ${adapterName(options.source)} parsed input into MutationIntent`,
-    '2. Known resource rules checked first',
-    '3. Semantic unknown fallback handles long-tail resource types',
-    `4. Next action: ${nextAction(report.decision)} (${reviewState(report)})`,
+    section('Why'),
+    ...wrapped(whyText(report, primary), width),
     '',
-    section('AGENT-SAFE RESPONSE'),
-    ...wrapped(agentResponse(report), width),
+    section('Evidence Found'),
+    ...bulletRows(evidence),
+    '',
+    section('Evidence Needed'),
+    ...bulletRows(missingEvidence),
+    '',
+    section('Next Steps'),
+    ...nextSteps(report),
   ];
 
   return lines.join('\n');
@@ -70,10 +67,10 @@ function keyValueRows(key: string, value: string): string[] {
   ];
 }
 
-function bulletRows(items: string[], label: string): string[] {
+function bulletRows(items: string[]): string[] {
   const normalized = items.length > 0 ? items : ['none'];
   return normalized.flatMap(item =>
-    wrappedWithIndent(`- [${label}] ${item}`, '  ')
+    wrappedWithIndent(`- ${item}`, '  ')
   );
 }
 
@@ -136,25 +133,6 @@ function normalizeSource(source: string): string {
   return source === 'mcp' ? 'MCP tool call' : source;
 }
 
-function adapterName(source: string): string {
-  return {
-    terraform: 'Terraform plan adapter',
-    shell: 'Shell command adapter',
-    mcp: 'MCP tool-call adapter',
-  }[source] ?? `${source} adapter`;
-}
-
-function adapterState(activeSource: string, source: string): string {
-  const labels: Record<string, string> = {
-    terraform: 'Terraform plans',
-    shell: 'Shell / cloud CLIs',
-    mcp: 'MCP tool calls',
-    future: 'kubectl, SQL, APIs',
-  };
-  const marker = activeSource === source ? 'active' : 'ready';
-  return `${marker}: ${labels[source]}`;
-}
-
 function policyAction(decision: ConsequenceReport['decision']): string {
   return {
     allow: 'continue',
@@ -164,33 +142,67 @@ function policyAction(decision: ConsequenceReport['decision']): string {
   }[decision];
 }
 
-function nextAction(decision: ConsequenceReport['decision']): string {
+function decisionTitle(decision: ConsequenceReport['decision']): string {
   return {
-    allow: 'continue under policy',
-    warn: 'show recovery dependency',
-    escalate: 'collect evidence or approve',
-    block: 'change recovery posture',
+    allow: 'OK TO RUN',
+    warn: 'RUN WITH WARNING',
+    escalate: 'REVIEW REQUIRED',
+    block: 'DO NOT RUN',
   }[decision];
 }
 
-function reviewState(report: ConsequenceReport): string {
-  if (report.summary.hasUnrecoverable) {
-    return 'unrecoverable found';
-  }
-  return report.summary.needsReview ? 'review required' : 'review not required';
-}
-
-function agentResponse(report: ConsequenceReport): string {
+function decisionSummary(report: ConsequenceReport): string {
   if (report.decision === 'block') {
-    return `I checked with RecourseOS. The action is blocked because ${report.decisionReason}`;
+    return 'This change can cause unrecoverable loss. Change the recovery posture before running it.';
   }
   if (report.decision === 'escalate') {
-    return `I checked with RecourseOS. The action needs review because ${report.decisionReason}`;
+    return 'Recourse needs more recovery evidence or a human approval before this action runs.';
   }
   if (report.decision === 'warn') {
-    return `I checked with RecourseOS. The action can continue only after surfacing this recovery dependency: ${report.decisionReason}`;
+    return 'This action may be recoverable, but the recovery path should be surfaced before running it.';
   }
-  return `I checked with RecourseOS. The action is classified as reversible and can continue under normal policy.`;
+  return 'Current evidence says this action is reversible under policy.';
+}
+
+function whyText(report: ConsequenceReport, mutation: AnalyzedMutation | undefined): string {
+  if (!mutation) {
+    return report.decisionReason;
+  }
+  if (report.decision === 'escalate') {
+    return `Recourse recognized ${actionValue(mutation)} on ${targetValue(mutation)}, but it does not have enough recovery evidence to call it safe.`;
+  }
+  if (report.decision === 'allow') {
+    return mutation.recoverability.reasoning;
+  }
+  return report.decisionReason || mutation.recoverability.reasoning;
+}
+
+function nextSteps(report: ConsequenceReport): string[] {
+  if (report.decision === 'block') {
+    return [
+      '1. Do not run this action.',
+      '2. Enable protection, backups, snapshots, retention, or another recovery path.',
+      '3. Re-run Recourse before applying or invoking the tool.',
+    ];
+  }
+  if (report.decision === 'escalate') {
+    return [
+      '1. Pause before running this action.',
+      '2. Attach the missing evidence or get human approval.',
+      '3. Re-run Recourse with the evidence file or use --format json for agent handoff.',
+    ];
+  }
+  if (report.decision === 'warn') {
+    return [
+      '1. Surface the recovery dependency to the operator.',
+      '2. Confirm the backup, versioning, retention, or restore path is acceptable.',
+      '3. Continue only if that recovery path is intentional.',
+    ];
+  }
+  return [
+    '1. Continue under normal policy.',
+    '2. Keep the JSON report if an audit trail is required.',
+  ];
 }
 
 function stringifyValue(value: unknown, present: boolean): string {

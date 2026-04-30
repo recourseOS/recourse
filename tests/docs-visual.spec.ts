@@ -44,7 +44,7 @@ test.describe('public docs visual QA', () => {
         await page.locator('#input').fill('aws s3 ls s3://prod-audit-logs');
         await page.locator('#evaluate').click();
         await expect(page.locator('#result')).toContainText('"decision": "allow"');
-        await expect(page.locator('#tui-output')).toContainText('ALLOW');
+        await expect(page.locator('#tui-output')).toContainText('OK TO RUN');
       }
 
       const metrics = await page.evaluate(() => {
