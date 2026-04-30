@@ -69,11 +69,11 @@ describe('compiled CLI scenario matrix', () => {
 
     expect(result.status).toBe(0);
     expect(result.stderr).toBe('');
-    expect(result.stdout).toContain('RECOURSEOS PREFLIGHT');
-    expect(result.stdout).toContain('Shell command adapter');
-    expect(result.stdout).toContain('MCP tool calls');
-    expect(result.stdout).toContain('CONSEQUENCE DECISION');
-    expect(result.stdout).toContain('AGENT-SAFE RESPONSE');
+    expect(result.stdout).toContain('RecourseOS Preflight');
+    expect(result.stdout).toContain('REVIEW REQUIRED');
+    expect(result.stdout).toContain('Evidence Found');
+    expect(result.stdout).toContain('Evidence Needed');
+    expect(result.stdout).toContain('Next Steps');
   });
 
   it.each(goldenPlanScenarios)('evaluates golden Terraform fixture: $name', scenario => {
