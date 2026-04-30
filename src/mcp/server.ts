@@ -129,7 +129,7 @@ export async function handleMcpRequest(request: JsonRpcRequest): Promise<Record<
           },
           serverInfo: {
             name: 'recourseos',
-            version: '0.1.2',
+            version: '0.1.3',
           },
         });
       case 'tools/list':
