@@ -56,8 +56,6 @@ export function renderResourceCoverage(types = getSupportedResourceTypes()): str
   const lines: string[] = [
     '# Resource Coverage',
     '',
-    'This document is generated from the public resource handler registry. Do not hand-edit the resource lists; run `npm run docs:coverage` after adding or removing handlers.',
-    '',
     `Total deterministic resource types: ${sortedTypes.length}`,
     '',
     'Known resource handlers are authoritative. Unknown resource types can still be evaluated with `--classifier`, which uses provider-neutral semantic safety signals and returns `needs-review` when evidence is weak.',

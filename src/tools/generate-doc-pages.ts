@@ -225,13 +225,6 @@ export function renderDocPage(page: DocPage, markdown: string): string {
     color: var(--accent);
   }
   tr:last-child td { border-bottom: 0; }
-  .source-note {
-    margin-top: 26px;
-    padding-top: 20px;
-    border-top: 1px solid var(--rule);
-    color: var(--ink-faint);
-    font-size: 13px;
-  }
   @media (max-width: 820px) {
     .container { padding: 0 22px; }
     nav { flex-direction: column; align-items: flex-start; gap: 16px; }
@@ -273,7 +266,6 @@ export function renderDocPage(page: DocPage, markdown: string): string {
   ${renderToc(markdown)}
   <article>
     ${markdownToHtml(markdown)}
-    <p class="source-note">Generated from <code>${escapeHtml(page.source)}</code>. Markdown remains available for source review.</p>
   </article>
 </main>
 </body>

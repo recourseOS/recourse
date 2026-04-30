@@ -170,13 +170,6 @@
     color: var(--accent);
   }
   tr:last-child td { border-bottom: 0; }
-  .source-note {
-    margin-top: 26px;
-    padding-top: 20px;
-    border-top: 1px solid var(--rule);
-    color: var(--ink-faint);
-    font-size: 13px;
-  }
   @media (max-width: 820px) {
     .container { padding: 0 22px; }
     nav { flex-direction: column; align-items: flex-start; gap: 16px; }
@@ -222,7 +215,7 @@
   <p class="lede">Stable public fixtures that validate evaluator and compiled CLI behavior.</p>
 </header>
 <main class="container doc-shell">
-  <aside class="toc"><div class="toc-title">On this page</div><a href="#fixture-set">Fixture Set</a><a href="#run-locally">Run Locally</a><a href="#cloud-contract">Cloud Contract</a></aside>
+  <aside class="toc"><div class="toc-title">On this page</div><a href="#fixture-set">Fixture Set</a><a href="#run-locally">Run Locally</a><a href="#consequence-contract">Consequence Contract</a></aside>
   <article>
     <h1 id="golden-evaluation-fixtures">Golden Evaluation Fixtures</h1>
 <p>These fixtures are stable Terraform plan JSON inputs used to validate Recourse's public evaluator contract. They are intentionally small, provider-specific, and safe to share.</p>
@@ -234,11 +227,10 @@ npx vitest --run tests/golden-plan-fixtures.test.ts
 npx vitest --run tests/cli-scenarios.test.ts</code></pre>
 <p>To inspect a fixture through the CLI:</p>
 <pre><code>node dist/index.js evaluate terraform tests/fixtures/plans/gcp-golden.json --classifier</code></pre>
-<h2 id="cloud-contract">Cloud Contract</h2>
-<p>These fixtures model the payload shape Recourse Cloud should ingest later: a local consequence report with deterministic recoverability tiers, evidence strings, policy decision, actor context, and mutation targets. Cloud can store, compare, and govern these reports without changing the local evaluator behavior.</p>
+<h2 id="consequence-contract">Consequence Contract</h2>
+<p>These fixtures model the consequence report shape used by the CLI and MCP server: deterministic recoverability tiers, evidence strings, policy decision, actor context, and mutation targets.</p>
 <p>Known resource handlers remain authoritative. The unknown semantic fixture verifies that low-evidence destructive resources become <code>needs-review</code> instead of being marked safe.</p>
-<p>For the generated list of deterministic resource handlers, see <code>docs/resource-coverage.md</code>.</p>
-    <p class="source-note">Generated from <code>docs/golden-fixtures.md</code>. Markdown remains available for source review.</p>
+<p>For deterministic resource handler coverage, see <code>docs/resource-coverage.md</code>.</p>
   </article>
 </main>
 </body>

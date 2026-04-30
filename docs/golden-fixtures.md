@@ -25,10 +25,10 @@ To inspect a fixture through the CLI:
 node dist/index.js evaluate terraform tests/fixtures/plans/gcp-golden.json --classifier
 ```
 
-## Cloud Contract
+## Consequence Contract
 
-These fixtures model the payload shape Recourse Cloud should ingest later: a local consequence report with deterministic recoverability tiers, evidence strings, policy decision, actor context, and mutation targets. Cloud can store, compare, and govern these reports without changing the local evaluator behavior.
+These fixtures model the consequence report shape used by the CLI and MCP server: deterministic recoverability tiers, evidence strings, policy decision, actor context, and mutation targets.
 
 Known resource handlers remain authoritative. The unknown semantic fixture verifies that low-evidence destructive resources become `needs-review` instead of being marked safe.
 
-For the generated list of deterministic resource handlers, see `docs/resource-coverage.md`.
+For deterministic resource handler coverage, see `docs/resource-coverage.md`.

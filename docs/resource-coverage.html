@@ -170,13 +170,6 @@
     color: var(--accent);
   }
   tr:last-child td { border-bottom: 0; }
-  .source-note {
-    margin-top: 26px;
-    padding-top: 20px;
-    border-top: 1px solid var(--rule);
-    color: var(--ink-faint);
-    font-size: 13px;
-  }
   @media (max-width: 820px) {
     .container { padding: 0 22px; }
     nav { flex-direction: column; align-items: flex-start; gap: 16px; }
@@ -225,7 +218,6 @@
   <aside class="toc"><div class="toc-title">On this page</div><a href="#aws">AWS</a><a href="#gcp">GCP</a><a href="#azure">Azure</a><a href="#azure-ad">Azure AD</a><a href="#coverage-notes">Coverage Notes</a></aside>
   <article>
     <h1 id="resource-coverage">Resource Coverage</h1>
-<p>This document is generated from the public resource handler registry. Do not hand-edit the resource lists; run <code>npm run docs:coverage</code> after adding or removing handlers.</p>
 <p>Total deterministic resource types: 175</p>
 <p>Known resource handlers are authoritative. Unknown resource types can still be evaluated with <code>--classifier</code>, which uses provider-neutral semantic safety signals and returns <code>needs-review</code> when evidence is weak.</p>
 <pre><code>recourse resources
@@ -273,7 +265,6 @@ recourse evaluate terraform plan.json --classifier</code></pre>
 <ul><li><code>azuread_application</code></li><li><code>azuread_service_principal</code></li><li><code>azuread_service_principal_password</code></li></ul>
 <h2 id="coverage-notes">Coverage Notes</h2>
 <ul><li>Deterministic rules classify known resource types by explicit safety signals such as deletion protection, versioning, soft delete, snapshots, backup retention, PITR, and credential material.</li><li><code>--classifier</code> is for unknown or long-tail resources; it builds a provider-neutral semantic profile and does not override deterministic handlers.</li><li>Low-evidence destructive changes should resolve to <code>needs-review</code> rather than being treated as safe.</li><li>Live cloud state is only available where explicit evidence commands exist; out-of-band backups must be supplied as evidence before Recourse can rely on them.</li></ul>
-    <p class="source-note">Generated from <code>docs/resource-coverage.md</code>. Markdown remains available for source review.</p>
   </article>
 </main>
 </body>
