@@ -7,6 +7,7 @@ import { formatReport } from './output/human.js';
 import { formatJson } from './output/json.js';
 import { formatConsequenceJson } from './output/consequence-json.js';
 import { formatExplain, formatExplainJson } from './output/explain.js';
+import { formatTui } from './output/tui.js';
 import { resolveCloudSubmitConfig, submitConsequenceReport } from './cloud/client.js';
 import {
   evaluateMcpToolCallConsequences,
@@ -39,6 +40,28 @@ import type { ConsequenceDecision } from './core/index.js';
 import { runMcpServer } from './mcp/server.js';
 
 const program = new Command();
+
+type EvaluationSource = 'terraform' | 'shell' | 'mcp';
+
+interface EvaluationOptions {
+  state?: string;
+  classifier: boolean;
+  actor?: string;
+  environment?: string;
+  owner?: string;
+  awsS3Evidence?: string;
+  awsRdsEvidence?: string;
+  awsDynamodbEvidence?: string;
+  awsIamEvidence?: string;
+  awsKmsEvidence?: string;
+}
+
+interface CloudEvaluationOptions extends EvaluationOptions {
+  submit?: boolean;
+  cloudUrl?: string;
+  cloudTimeoutMs: string;
+  failOn: string;
+}
 
 program
   .name('recourse')
@@ -141,6 +164,50 @@ mcp
   });
 
 program
+  .command('preflight')
+  .description('Open the terminal preflight view for a Terraform plan, shell command, or MCP tool call')
+  .argument('<source>', 'Mutation source to evaluate: terraform, shell, or mcp')
+  .argument('<input>', 'Path to input file for terraform, command string for shell, or JSON/file for mcp')
+  .option('-s, --state <file>', 'Path to Terraform state file (for terraform source)')
+  .option('--classifier', 'Use unknown-resource classifier where available')
+  .option('--actor <id>', 'Actor identity to include in the mutation report')
+  .option('--environment <name>', 'Environment name to include in the mutation report')
+  .option('--owner <name>', 'Owner name to include in the mutation report')
+  .option('--aws-s3-evidence <file>', 'Path to S3 evidence JSON from `recourse evidence aws-s3`')
+  .option('--aws-rds-evidence <file>', 'Path to RDS evidence JSON from `recourse evidence aws-rds`')
+  .option('--aws-dynamodb-evidence <file>', 'Path to DynamoDB evidence JSON from `recourse evidence aws-dynamodb`')
+  .option('--aws-iam-evidence <file>', 'Path to IAM evidence JSON from `recourse evidence aws-iam-role`')
+  .option('--aws-kms-evidence <file>', 'Path to KMS evidence JSON from `recourse evidence aws-kms-key`')
+  .option('--format <format>', 'Output format: tui or json', 'tui')
+  .option('--fail-on <decision>', 'Exit with code 1 if decision reaches: warn, escalate, block', 'block')
+  .action(async (source: string, input: string, options: EvaluationOptions & {
+    format: string;
+    failOn: string;
+  }) => {
+    try {
+      const normalizedSource = parseEvaluationSource(source);
+      const report = await evaluateConsequenceInput(normalizedSource, input, options);
+
+      if (options.format === 'json') {
+        console.log(formatConsequenceJson(report));
+      } else if (options.format === 'tui') {
+        console.log(formatTui(report, { source: normalizedSource, inputLabel: input }));
+      } else {
+        console.error(`Error: Unsupported preflight format: ${options.format}`);
+        console.error('Supported formats: tui, json');
+        process.exit(1);
+      }
+
+      if (shouldFailOnDecision(report.decision, options.failOn)) {
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+program
   .command('evaluate')
   .description('Evaluate a proposed mutation as a generic consequence report')
   .argument('<source>', 'Mutation source to evaluate: terraform, shell, or mcp')
@@ -159,47 +226,10 @@ program
   .option('--cloud-url <url>', 'Recourse Cloud base URL (defaults to RECOURSE_CLOUD_URL)')
   .option('--cloud-timeout-ms <ms>', 'Recourse Cloud submission timeout in milliseconds', '5000')
   .option('--fail-on <decision>', 'Exit with code 1 if decision reaches: warn, escalate, block', 'block')
-  .action(async (source: string, input: string, options: {
-    state?: string;
-    classifier: boolean;
-    actor?: string;
-    environment?: string;
-    owner?: string;
-    awsS3Evidence?: string;
-    awsRdsEvidence?: string;
-    awsDynamodbEvidence?: string;
-    awsIamEvidence?: string;
-    awsKmsEvidence?: string;
-    submit?: boolean;
-    cloudUrl?: string;
-    cloudTimeoutMs: string;
-    failOn: string;
-  }) => {
+  .action(async (source: string, input: string, options: CloudEvaluationOptions) => {
     try {
-      if (source !== 'terraform' && source !== 'shell' && source !== 'mcp') {
-        console.error(`Error: Unsupported evaluate source: ${source}`);
-        console.error('Supported sources: terraform, shell, mcp');
-        process.exit(1);
-      }
-
-      const adapterContext = {
-        actorId: options.actor,
-        environment: options.environment,
-        owner: options.owner,
-      };
-      const awsEvidence = {
-        ...(options.awsS3Evidence ? { s3Buckets: parseS3EvidenceFile(options.awsS3Evidence) } : {}),
-        ...(options.awsRdsEvidence ? { rdsInstances: parseRdsEvidenceFile(options.awsRdsEvidence) } : {}),
-        ...(options.awsDynamodbEvidence ? { dynamoDbTables: parseDynamoDbEvidenceFile(options.awsDynamodbEvidence) } : {}),
-        ...(options.awsIamEvidence ? { iamRoles: parseIamEvidenceFile(options.awsIamEvidence) } : {}),
-        ...(options.awsKmsEvidence ? { kmsKeys: parseKmsEvidenceFile(options.awsKmsEvidence) } : {}),
-      };
-
-      const report = source === 'terraform'
-        ? await evaluateTerraformInput(input, options.state, options.classifier, adapterContext)
-        : source === 'shell'
-          ? evaluateShellCommandConsequences(input, { adapterContext, awsEvidence })
-          : evaluateMcpToolCallConsequences(parseMcpInput(input), { adapterContext, awsEvidence });
+      const normalizedSource = parseEvaluationSource(source);
+      const report = await evaluateConsequenceInput(normalizedSource, input, options);
 
       console.log(formatConsequenceJson(report));
 
@@ -210,7 +240,7 @@ program
             organizationId: process.env.RECOURSE_ORGANIZATION_ID,
             actorId: options.actor ?? process.env.RECOURSE_ACTOR_ID,
             environment: options.environment,
-            source,
+            source: normalizedSource,
             timeoutMs: Number(options.cloudTimeoutMs),
           }));
           const policyAction = submitted.policyResult?.action ? ` policy=${submitted.policyResult.action}` : '';
@@ -327,6 +357,45 @@ program
       process.exit(1);
     }
   });
+
+function parseEvaluationSource(source: string): EvaluationSource {
+  if (source !== 'terraform' && source !== 'shell' && source !== 'mcp') {
+    console.error(`Error: Unsupported source: ${source}`);
+    console.error('Supported sources: terraform, shell, mcp');
+    process.exit(1);
+  }
+
+  return source;
+}
+
+async function evaluateConsequenceInput(
+  source: EvaluationSource,
+  input: string,
+  options: EvaluationOptions
+) {
+  const adapterContext = {
+    actorId: options.actor,
+    environment: options.environment,
+    owner: options.owner,
+  };
+  const awsEvidence = {
+    ...(options.awsS3Evidence ? { s3Buckets: parseS3EvidenceFile(options.awsS3Evidence) } : {}),
+    ...(options.awsRdsEvidence ? { rdsInstances: parseRdsEvidenceFile(options.awsRdsEvidence) } : {}),
+    ...(options.awsDynamodbEvidence ? { dynamoDbTables: parseDynamoDbEvidenceFile(options.awsDynamodbEvidence) } : {}),
+    ...(options.awsIamEvidence ? { iamRoles: parseIamEvidenceFile(options.awsIamEvidence) } : {}),
+    ...(options.awsKmsEvidence ? { kmsKeys: parseKmsEvidenceFile(options.awsKmsEvidence) } : {}),
+  };
+
+  if (source === 'terraform') {
+    return evaluateTerraformInput(input, options.state, options.classifier, adapterContext);
+  }
+
+  if (source === 'shell') {
+    return evaluateShellCommandConsequences(input, { adapterContext, awsEvidence });
+  }
+
+  return evaluateMcpToolCallConsequences(parseMcpInput(input), { adapterContext, awsEvidence });
+}
 
 async function evaluateTerraformInput(
   inputFile: string,

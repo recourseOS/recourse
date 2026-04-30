@@ -10,6 +10,7 @@ The public CLI is local-first. No account or cloud service is required.
 
 - Analyzes Terraform plan JSON before `terraform apply`.
 - Evaluates shell commands and MCP tool calls as mutation intents.
+- Renders an operator-friendly terminal preflight view for humans reviewing agent actions.
 - Runs as an MCP stdio server so agents can ask RecourseOS before they act.
 - Classifies destructive AWS, GCP, and Azure resources with deterministic provider rules.
 - Uses a provider-neutral semantic classifier for unknown resource types when `--classifier` is enabled.
@@ -61,6 +62,14 @@ terraform plan -out=plan.bin
 terraform show -json plan.bin > plan.json
 
 recourse plan plan.json
+```
+
+Open the product TUI for a proposed action:
+
+```bash
+recourse preflight terraform plan.json --classifier
+recourse preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'
+recourse preflight mcp '{"server":"aws","tool":"s3.delete_bucket","arguments":{"bucket":"prod-audit-logs"}}'
 ```
 
 Fail CI if a plan contains unrecoverable changes:
@@ -148,6 +157,16 @@ recourse evaluate mcp '{"server":"aws","tool":"s3.delete_bucket","arguments":{"b
 ```
 
 `evaluate` emits a normalized consequence report for Terraform, shell, or MCP inputs. The same report shape is used by the CLI, MCP server, and configured submission endpoints.
+
+### Terminal Preflight
+
+```bash
+recourse preflight terraform plan.json --classifier
+recourse preflight shell 'kubectl delete namespace payments'
+recourse preflight mcp mcp-call.json
+```
+
+`preflight` is the human product surface. It renders a terminal cockpit showing the input adapter, normalized mutation, evaluation pipeline, decision, missing evidence, and agent-safe response. Use `--format json` when you want the same command to emit the machine-readable consequence report.
 
 ### Agent Interface
 
