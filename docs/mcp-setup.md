@@ -39,7 +39,7 @@ If the CLI is not installed globally, use `npx`:
   "mcpServers": {
     "recourseos": {
       "command": "npx",
-      "args": ["-y", "recourse-cli@0.1.3", "mcp", "serve"]
+      "args": ["-y", "recourse-cli@0.1.4", "mcp", "serve"]
     }
   }
 }

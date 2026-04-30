@@ -68,10 +68,15 @@
         <code>recourse preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'</code>
         <button type="button" data-copy="recourse preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'" aria-label="Copy preflight command">Copy</button>
       </div>
+      <div class="command-row">
+        <span class="command-label">tui</span>
+        <code>recourse tui</code>
+        <button type="button" data-copy="recourse tui" aria-label="Copy TUI command">Copy</button>
+      </div>
       <div class="command-row muted">
         <span class="command-label">no install</span>
-        <code>npx -y recourse-cli@latest preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'</code>
-        <button type="button" data-copy="npx -y recourse-cli@latest preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'" aria-label="Copy npx command">Copy</button>
+        <code>npx -y recourse-cli@latest tui --source shell --input 'aws s3 rm s3://prod-audit-logs --recursive'</code>
+        <button type="button" data-copy="npx -y recourse-cli@latest tui --source shell --input 'aws s3 rm s3://prod-audit-logs --recursive'" aria-label="Copy npx command">Copy</button>
       </div>
     </div>
   </div>

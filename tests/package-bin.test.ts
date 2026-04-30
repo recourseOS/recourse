@@ -20,7 +20,7 @@ describe('published package bin', () => {
     expect(result.stdout.trim()).toBe(packageJson.version);
   });
 
-  it('includes preflight in the package bin help output', () => {
+  it('includes product commands in the package bin help output', () => {
     expect(existsSync('dist/index.js'), 'dist/index.js must exist; run npm run build before package bin tests').toBe(true);
 
     const result = spawnSync(process.execPath, ['bin/recourse', '--help'], {
@@ -31,6 +31,7 @@ describe('published package bin', () => {
     expect(result.status).toBe(0);
     expect(result.stderr).toBe('');
     expect(result.stdout).toContain('preflight');
+    expect(result.stdout).toContain('tui');
     expect(result.stdout).toContain('mcp');
     expect(result.stdout).toContain('evaluate');
   });
