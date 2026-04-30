@@ -43,18 +43,36 @@
 
 <header class="hero container">
   <div>
-    <div class="eyebrow">MCP-native · CLI-ready · multi-cloud</div>
+    <div class="eyebrow">Install Recourse · run preflight · stop bad changes</div>
     <h1>The consequence layer <span class="accent">agents call before they act.</span></h1>
     <p class="lede">
-      RecourseOS gives agents and engineers a terminal preflight surface plus structured recoverability reports for Terraform plans, shell commands, and MCP tool calls before destructive infrastructure changes land.
+      Install the Recourse CLI, then run <code>recourse preflight</code> before Terraform plans, shell commands, or MCP tool calls that could destroy infrastructure. It returns a clear run, warn, review, or block decision with the evidence behind it.
     </p>
     <div class="hero-actions">
-      <a class="button primary" href="/playground.html">Open TUI preview</a>
+      <a class="button primary" href="#install">Install CLI</a>
+      <a class="button secondary" href="/playground.html">Open terminal sandbox</a>
       <a class="button secondary" href="/mcp-setup.html">Wire MCP server</a>
     </div>
-    <div class="install-line">
-      <span><span class="prompt">$</span> <span class="cmd" id="install-cmd">npx recourse-cli@0.1.3 preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'</span></span>
-      <button id="copy-btn" aria-label="Copy preflight command">Copy</button>
+    <div class="quickstart-card" id="install" aria-label="Recourse CLI install commands">
+      <div class="quickstart-head">
+        <span>CLI quickstart</span>
+        <span>package: recourse-cli · command: recourse</span>
+      </div>
+      <div class="command-row">
+        <span class="command-label">install</span>
+        <code>npm install -g recourse-cli@latest</code>
+        <button type="button" data-copy="npm install -g recourse-cli@latest" aria-label="Copy install command">Copy</button>
+      </div>
+      <div class="command-row">
+        <span class="command-label">preflight</span>
+        <code>recourse preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'</code>
+        <button type="button" data-copy="recourse preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'" aria-label="Copy preflight command">Copy</button>
+      </div>
+      <div class="command-row muted">
+        <span class="command-label">no install</span>
+        <code>npx -y recourse-cli@latest preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'</code>
+        <button type="button" data-copy="npx -y recourse-cli@latest preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'" aria-label="Copy npx command">Copy</button>
+      </div>
     </div>
   </div>
 
@@ -140,6 +158,40 @@
 </div>
 
 <main>
+  <section class="section compact-section">
+    <div class="container split">
+      <div>
+        <div class="section-label">Why preflight?</div>
+        <h2>It is the check you run before the risky action runs.</h2>
+        <p class="section-copy">
+          <code>preflight</code> is not a separate install. It is the Recourse command that evaluates a proposed action while there is still time to stop, change, or approve it.
+        </p>
+      </div>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-kicker">before</div>
+          <div class="card-title">Catches destructive intent early</div>
+          <div class="card-body">Run it before `terraform apply`, a shell delete, or an agent MCP call.</div>
+        </div>
+        <div class="card">
+          <div class="card-kicker">decision</div>
+          <div class="card-title">Gives an operator verdict</div>
+          <div class="card-body">Outputs run, warn, review, or block instead of leaving people to interpret raw diffs.</div>
+        </div>
+        <div class="card">
+          <div class="card-kicker">evidence</div>
+          <div class="card-title">Explains what is missing</div>
+          <div class="card-body">Shows the detected target, recovery evidence found, and evidence needed for approval.</div>
+        </div>
+        <div class="card">
+          <div class="card-kicker">agents</div>
+          <div class="card-title">Works as an agent safety layer</div>
+          <div class="card-body">The same evaluator can be called through MCP before an agent touches infrastructure.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="section" id="platform">
     <div class="container split">
       <div>
@@ -286,17 +338,15 @@
 </footer>
 
 <script>
-  const btn = document.getElementById('copy-btn');
-  const cmd = document.getElementById('install-cmd');
-
-  if (btn && cmd) {
+  document.querySelectorAll('[data-copy]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       try {
-        await navigator.clipboard.writeText(cmd.textContent);
+        await navigator.clipboard.writeText(btn.dataset.copy);
+        const original = btn.textContent;
         btn.textContent = 'Copied';
         btn.classList.add('copied');
         setTimeout(() => {
-          btn.textContent = 'Copy';
+          btn.textContent = original || 'Copy';
           btn.classList.remove('copied');
         }, 1600);
       } catch (error) {
@@ -304,7 +354,7 @@
         setTimeout(() => { btn.textContent = 'Copy'; }, 1600);
       }
     });
-  }
+  });
 </script>
 </body>
 </html>

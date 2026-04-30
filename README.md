@@ -43,19 +43,26 @@ This is not limited to Terraform. Terraform plan is one input source. The same c
 
 ## Install
 
+Install the npm package named `recourse-cli`. It installs the terminal command named `recourse`.
+
 ```bash
-npm install -g recourse-cli
+npm install -g recourse-cli@latest
+recourse --version
+```
+
+Run a preflight check before a risky action:
+
+```bash
+recourse preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'
 ```
 
 Or run without installing:
 
 ```bash
-npx recourse-cli plan plan.json
+npx -y recourse-cli@latest preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'
 ```
 
-The installed command is `recourse`.
-
-`preflight`, `evaluate`, and `mcp serve` require `recourse-cli` 0.1.3 or newer. If `npx` offers `recourse-cli@0.1.2`, that package is stale and will not include `preflight`; pin the current package:
+`preflight`, `evaluate`, and `mcp serve` require `recourse-cli` 0.1.3 or newer. If an old npm cache offers `recourse-cli@0.1.2`, pin the current package:
 
 ```bash
 npx recourse-cli@0.1.3 preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'
