@@ -130,6 +130,11 @@ h3 { font-size: 24px; }
   line-height: 1.65;
   max-width: 68ch;
 }
+.lede code,
+.section-copy code {
+  color: var(--green);
+  font-size: 0.92em;
+}
 .section-copy {
   color: var(--ink-soft);
   font-size: 17px;
@@ -224,6 +229,65 @@ h3 { font-size: 24px; }
   justify-self: end;
 }
 .install-line button.copied { color: var(--green); border-color: var(--green); }
+
+.quickstart-card {
+  margin-top: 24px;
+  width: min(100%, 860px);
+  border: 1px solid rgba(236, 247, 239, 0.15);
+  border-radius: 20px;
+  background: rgba(236, 247, 239, 0.065);
+  box-shadow: 0 26px 72px -54px rgba(0, 0, 0, 0.9);
+  overflow: hidden;
+}
+.quickstart-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid rgba(236, 247, 239, 0.12);
+  padding: 13px 16px;
+  color: rgba(236, 247, 239, 0.78);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+}
+.quickstart-head span:first-child {
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.command-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 13px 16px;
+  border-top: 1px solid rgba(236, 247, 239, 0.08);
+}
+.command-row:first-of-type { border-top: 0; }
+.command-row.muted { background: rgba(0, 0, 0, 0.12); }
+.command-label {
+  color: rgba(236, 247, 239, 0.5);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.command-row code {
+  min-width: 0;
+  color: rgba(236, 247, 239, 0.9);
+  font-size: 12px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.command-row button {
+  border: 1px solid rgba(236, 247, 239, 0.18);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(236, 247, 239, 0.72);
+  padding: 8px 11px;
+  font-size: 10px;
+  cursor: pointer;
+}
+.command-row button.copied { color: var(--green); border-color: var(--green); }
 
 .product-shell {
   position: relative;
@@ -359,6 +423,7 @@ h3 { font-size: 24px; }
 }
 
 .section { padding: 86px 0; border-top: 1px solid var(--line); }
+.compact-section { padding: 72px 0; }
 .top-band + main .section:first-child { border-top: 0; }
 .section.dark {
   background: var(--night);
@@ -1604,6 +1669,347 @@ footer {
 footer a { color: var(--ink-soft); text-decoration: none; border-bottom: 1px solid var(--line); padding-bottom: 2px; margin-left: 18px; }
 footer a:hover { color: var(--ink); border-bottom-color: #2b856b; }
 
+.terminal-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% -10%, rgba(99, 230, 184, 0.16), transparent 34rem),
+    radial-gradient(circle at 88% 0%, rgba(130, 183, 255, 0.1), transparent 32rem),
+    #020806;
+  color: #effbf3;
+}
+.terminal-app {
+  min-height: 100vh;
+  padding: 20px;
+}
+.terminal-frame-full {
+  max-width: 1680px;
+  min-height: calc(100vh - 40px);
+  margin: 0 auto;
+  border: 1px solid rgba(236, 247, 239, 0.14);
+  border-radius: 22px;
+  background:
+    linear-gradient(rgba(236, 247, 239, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(236, 247, 239, 0.018) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(17, 38, 31, 0.96), rgba(2, 8, 6, 0.98));
+  background-size: 30px 30px, 30px 30px, auto;
+  box-shadow: 0 34px 120px -70px rgba(0, 0, 0, 0.9);
+  overflow: hidden;
+}
+.terminal-topbar-full {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(236, 247, 239, 0.1);
+  background: rgba(0, 0, 0, 0.18);
+}
+.terminal-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  color: inherit;
+  text-decoration: none;
+}
+.terminal-logo-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(99, 230, 184, 0.42);
+  border-radius: 10px;
+  color: var(--green);
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 700;
+}
+.terminal-logo strong {
+  display: block;
+  font-size: 14px;
+  line-height: 1.1;
+}
+.terminal-logo small {
+  display: block;
+  margin-top: 3px;
+  color: rgba(236, 247, 239, 0.5);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+}
+.terminal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  color: rgba(236, 247, 239, 0.58);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+}
+.terminal-links a {
+  color: inherit;
+  text-decoration: none;
+}
+.terminal-links a:hover { color: var(--green); }
+.terminal-titlebar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.36fr);
+  gap: 18px;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(236, 247, 239, 0.1);
+}
+.terminal-titlebar h1 {
+  max-width: none;
+  margin-top: 5px;
+  font-size: clamp(26px, 2.8vw, 38px);
+  line-height: 1.05;
+}
+.terminal-subtitle {
+  max-width: 78ch;
+  margin-top: 6px;
+  color: rgba(236, 247, 239, 0.62);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.terminal-kicker,
+.pane-label {
+  color: var(--green);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.terminal-install-box {
+  border: 1px solid rgba(236, 247, 239, 0.13);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 14px;
+}
+.terminal-install-box span {
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(236, 247, 239, 0.45);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.terminal-install-box code {
+  display: block;
+  color: rgba(236, 247, 239, 0.9);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.terminal-grid-full {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr) 360px;
+  min-height: 720px;
+}
+.terminal-left-pane,
+.terminal-right-pane {
+  background: rgba(0, 0, 0, 0.18);
+}
+.terminal-left-pane {
+  border-right: 1px solid rgba(236, 247, 239, 0.1);
+  padding: 16px;
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+.terminal-right-pane {
+  border-left: 1px solid rgba(236, 247, 239, 0.1);
+  padding: 16px;
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  min-width: 0;
+}
+.terminal-pane-section {
+  display: grid;
+  gap: 10px;
+}
+.terminal-select {
+  border: 1px solid rgba(236, 247, 239, 0.14);
+  border-radius: 12px;
+  background: rgba(2, 8, 6, 0.72);
+  color: #effbf3;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+}
+.source-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.source-button,
+.command-palette button {
+  border: 1px solid rgba(236, 247, 239, 0.12);
+  background: rgba(236, 247, 239, 0.045);
+  color: rgba(236, 247, 239, 0.7);
+  cursor: pointer;
+  text-align: left;
+}
+.source-button {
+  min-height: 38px;
+  border-radius: 10px;
+  padding: 8px;
+  font-size: 10px;
+}
+.source-button.active {
+  border-color: rgba(99, 230, 184, 0.52);
+  background: rgba(99, 230, 184, 0.12);
+  color: #effbf3;
+}
+.command-palette {
+  display: grid;
+  gap: 8px;
+}
+.command-palette button {
+  border-radius: 12px;
+  padding: 10px;
+  min-width: 0;
+}
+.command-palette button:hover {
+  border-color: rgba(99, 230, 184, 0.38);
+  color: #effbf3;
+}
+.command-palette strong {
+  display: block;
+  color: #effbf3;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.command-palette span {
+  display: block;
+  margin-top: 5px;
+  color: rgba(236, 247, 239, 0.48);
+  font-size: 10px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.terminal-note-list {
+  display: grid;
+  gap: 7px;
+}
+.terminal-note-list span {
+  border: 1px solid rgba(236, 247, 239, 0.09);
+  border-radius: 10px;
+  background: rgba(236, 247, 239, 0.035);
+  color: rgba(236, 247, 239, 0.62);
+  padding: 8px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+}
+.terminal-main-pane {
+  display: grid;
+  grid-template-rows: auto minmax(380px, 1fr) auto auto;
+  min-width: 0;
+}
+.terminal-window-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  border-bottom: 1px solid rgba(236, 247, 239, 0.1);
+  padding: 12px 16px;
+  color: rgba(236, 247, 239, 0.58);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+}
+.terminal-window-bar strong {
+  margin-left: auto;
+  color: var(--green);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.terminal-scroll {
+  min-height: 420px;
+  max-height: 640px;
+  overflow: auto;
+  padding: 20px;
+  color: rgba(236, 247, 239, 0.9);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  line-height: 1.58;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.terminal-prompt-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border-top: 1px solid rgba(236, 247, 239, 0.1);
+  border-bottom: 1px solid rgba(236, 247, 239, 0.1);
+  padding: 12px 14px;
+  background: rgba(0, 0, 0, 0.22);
+}
+.terminal-prompt-row span {
+  color: var(--green);
+  font-family: "JetBrains Mono", monospace;
+}
+.terminal-prompt-row input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #effbf3;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  min-width: 0;
+}
+.terminal-prompt-row button {
+  border: 1px solid rgba(99, 230, 184, 0.5);
+  border-radius: 10px;
+  background: rgba(99, 230, 184, 0.14);
+  color: #effbf3;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+.terminal-stdin {
+  padding: 14px;
+  background: rgba(236, 247, 239, 0.035);
+}
+.terminal-stdin-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  color: rgba(236, 247, 239, 0.5);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+}
+.terminal-stdin textarea {
+  min-height: 180px;
+  border-color: rgba(236, 247, 239, 0.12);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(236, 247, 239, 0.86);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+}
+.terminal-json-card {
+  min-width: 0;
+  border: 1px solid rgba(236, 247, 239, 0.11);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.24);
+  overflow: hidden;
+}
+.terminal-json-card .pane-label {
+  padding: 12px 12px 0;
+}
+.terminal-json-card pre {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  max-height: 330px;
+  overflow: auto;
+  background: transparent;
+  color: rgba(236, 247, 239, 0.76);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 980px) {
   body { background: linear-gradient(180deg, #08130f 0%, #0b1814 50rem, var(--paper) 50rem, var(--paper) 100%); }
   .hero, .split, .sandbox, .doc-shell { grid-template-columns: 1fr; }
@@ -1620,6 +2026,24 @@ footer a:hover { color: var(--ink); border-bottom-color: #2b856b; }
   .summary-strip,
   .evidence-grid {
     grid-template-columns: 1fr;
+  }
+  .terminal-titlebar,
+  .terminal-grid-full {
+    grid-template-columns: 1fr;
+  }
+  .terminal-grid-full {
+    min-height: auto;
+  }
+  .terminal-left-pane {
+    border-right: 0;
+    border-bottom: 1px solid rgba(236, 247, 239, 0.1);
+  }
+  .terminal-right-pane {
+    border-left: 0;
+    border-top: 1px solid rgba(236, 247, 239, 0.1);
+  }
+  .terminal-scroll {
+    max-height: none;
   }
   .console-frame { min-height: auto; }
   .console-sidebar { border-right: 0; border-bottom: 1px solid var(--line-dark); }
@@ -1648,6 +2072,16 @@ footer a:hover { color: var(--ink); border-bottom-color: #2b856b; }
   .install-line { width: 100%; grid-template-columns: 1fr; border-radius: 16px; align-items: flex-start; }
   .install-line .cmd { font-size: 11px; }
   .install-line button { justify-self: start; }
+  .quickstart-head,
+  .command-row {
+    grid-template-columns: 1fr;
+  }
+  .quickstart-head {
+    display: grid;
+  }
+  .command-row button {
+    justify-self: start;
+  }
   .signal-grid, .card-grid, .control-row, .facts, .facts.three, .workflow, .hero-metrics, .dash-controls { grid-template-columns: 1fr; }
   .product-hero { padding-top: 56px; }
   .app-shell { padding: 28px 22px 58px; }
@@ -1666,6 +2100,31 @@ footer a:hover { color: var(--ink); border-bottom-color: #2b856b; }
   .compact-controls { grid-template-columns: 1fr; }
   .app-actions { width: 100%; }
   .app-actions button { flex: 1; min-width: 0; max-width: 100%; white-space: normal; }
+  .terminal-app { padding: 10px; }
+  .terminal-frame-full { border-radius: 16px; }
+  .terminal-topbar-full,
+  .terminal-titlebar,
+  .terminal-stdin-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .terminal-titlebar h1 {
+    max-width: none;
+    font-size: clamp(28px, 9vw, 38px);
+  }
+  .terminal-links { gap: 10px; }
+  .source-buttons { grid-template-columns: 1fr; }
+  .terminal-prompt-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .terminal-prompt-row button {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .terminal-scroll {
+    min-height: 360px;
+    font-size: 12px;
+  }
   .product-dashboard { padding-bottom: 58px; }
   .dash-sidebar { gap: 10px; }
   .action-panel textarea { min-height: 300px; }
