@@ -1132,6 +1132,117 @@ tr:last-child td { border-bottom: 0; }
   overflow-wrap: anywhere;
   line-height: 1.55;
 }
+.terminal-sandbox {
+  border: 1px solid rgba(236, 247, 239, 0.16);
+  border-radius: 24px;
+  background: #020806;
+  box-shadow: 0 34px 95px rgba(0, 0, 0, 0.42);
+  overflow: hidden;
+}
+.terminal-sandbox .terminal-bar {
+  padding: 13px 16px;
+  border-bottom: 1px solid rgba(236, 247, 239, 0.1);
+  background: linear-gradient(180deg, rgba(236, 247, 239, 0.08), rgba(236, 247, 239, 0.025));
+}
+.terminal-status {
+  margin-left: auto;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(99, 230, 184, 0.72);
+}
+.terminal-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(236, 247, 239, 0.1);
+  background: rgba(236, 247, 239, 0.035);
+}
+.terminal-tab {
+  border-color: rgba(236, 247, 239, 0.14);
+  background: rgba(236, 247, 239, 0.045);
+  color: rgba(236, 247, 239, 0.72);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-family: "JetBrains Mono", monospace;
+  white-space: normal;
+}
+.terminal-tab.active {
+  border-color: rgba(99, 230, 184, 0.5);
+  background: rgba(99, 230, 184, 0.13);
+  color: #effbf3;
+}
+.terminal-screen {
+  background:
+    linear-gradient(rgba(236, 247, 239, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(236, 247, 239, 0.018) 1px, transparent 1px),
+    radial-gradient(circle at 76% 14%, rgba(99, 230, 184, 0.08), transparent 30%),
+    #020806;
+  background-size: 26px 26px, 26px 26px, auto, auto;
+  min-height: 610px;
+}
+.terminal-command-line {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 20px 22px 0;
+  font-family: "JetBrains Mono", monospace;
+  color: rgba(236, 247, 239, 0.86);
+}
+.terminal-command-line span {
+  color: var(--green);
+}
+.terminal-command-line code {
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+.terminal-screen pre {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: rgba(236, 247, 239, 0.9);
+  min-height: 548px;
+  padding: 18px 22px 26px;
+  overflow: auto;
+  font-family: "JetBrains Mono", monospace;
+  font-size: clamp(9px, 0.88vw, 12px);
+  line-height: 1.54;
+  white-space: pre;
+}
+.terminal-input-panel {
+  border-top: 1px solid rgba(236, 247, 239, 0.1);
+  background: rgba(236, 247, 239, 0.045);
+  padding: 16px;
+}
+.terminal-input-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 0.8fr);
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+.terminal-input-head p {
+  color: rgba(236, 247, 239, 0.62);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+.terminal-input-panel textarea {
+  min-height: 230px;
+  border-color: rgba(236, 247, 239, 0.12);
+  background: rgba(0, 0, 0, 0.3);
+  color: rgba(236, 247, 239, 0.88);
+  font-family: "JetBrains Mono", monospace;
+}
+.terminal-contract {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+  gap: 16px;
+}
 .tui-grid {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr) 260px;
@@ -1499,6 +1610,8 @@ footer a:hover { color: var(--ink); border-bottom-color: #2b856b; }
   .tui-hero,
   .tui-grid,
   .operator-workbench,
+  .terminal-input-head,
+  .terminal-contract,
   .app-controls,
   .summary-strip,
   .evidence-grid {
@@ -1538,10 +1651,15 @@ footer a:hover { color: var(--ink); border-bottom-color: #2b856b; }
   .console-workspace { padding: 14px; }
   .console-topbar h1 { font-size: clamp(34px, 11vw, 48px); }
   .tui-product { padding: 46px 22px 58px; }
-  .terminal-product pre { min-height: 430px; font-size: 11px; }
+  .terminal-screen { min-height: 460px; }
+  .terminal-screen pre,
+  .terminal-product pre { min-height: 390px; font-size: 10px; }
+  .terminal-input-panel { padding: 12px; }
+  .terminal-tabs { padding: 10px; }
+  .terminal-status { display: none; }
   .compact-controls { grid-template-columns: 1fr; }
   .app-actions { width: 100%; }
-  .app-actions button { flex: 1; }
+  .app-actions button { flex: 1; min-width: 0; max-width: 100%; white-space: normal; }
   .product-dashboard { padding-bottom: 58px; }
   .dash-sidebar { gap: 10px; }
   .action-panel textarea { min-height: 300px; }

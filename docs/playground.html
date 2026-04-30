@@ -49,50 +49,32 @@
     </div>
   </header>
 
-  <section class="tui-grid" aria-label="RecourseOS terminal product preview">
-    <aside class="plug-panel">
-      <div class="panel-title">Inputs that plug in</div>
-      <button class="plug-item active" type="button" data-source="terraform">
-        <span>Terraform</span>
-        <strong>plan JSON</strong>
-      </button>
-      <button class="plug-item" type="button" data-source="shell">
-        <span>Shell</span>
-        <strong>aws, kubectl, git, sql</strong>
-      </button>
-      <button class="plug-item" type="button" data-source="mcp">
-        <span>MCP</span>
-        <strong>tool-call payloads</strong>
-      </button>
-      <div class="plug-item passive">
-        <span>Next</span>
-        <strong>cloud APIs, SQL, SaaS</strong>
-      </div>
-    </aside>
+  <section class="terminal-sandbox" aria-label="Sandboxed terminal preflight">
+    <div class="terminal-bar">
+      <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
+      <span class="terminal-title">recourse preflight - sandboxed terminal</span>
+      <span class="terminal-status">local preview</span>
+    </div>
 
-    <section class="terminal-product" aria-label="Terminal preflight output">
-      <div class="terminal-bar">
-        <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
-        <span class="terminal-title">recourse preflight</span>
+    <div class="terminal-tabs" aria-label="Input source">
+      <button class="terminal-tab active" type="button" data-source="terraform">Terraform plan</button>
+      <button class="terminal-tab" type="button" data-source="shell">Shell command</button>
+      <button class="terminal-tab" type="button" data-source="mcp">MCP tool call</button>
+    </div>
+
+    <div class="terminal-screen">
+      <div class="terminal-command-line">
+        <span>$</span>
+        <code id="command-preview">recourse preflight terraform ./plan.json</code>
       </div>
       <pre id="tui-output"></pre>
-    </section>
+    </div>
 
-    <aside class="plug-panel">
-      <div class="panel-title">Pipeline</div>
-      <div class="pipeline-step"><span>01</span><strong>Adapter</strong><p id="adapter-copy">Terraform plan JSON becomes mutation intent.</p></div>
-      <div class="pipeline-step"><span>02</span><strong>Rules first</strong><p>Known provider resources use deterministic recovery behavior.</p></div>
-      <div class="pipeline-step"><span>03</span><strong>Unknowns</strong><p>Semantic fallback stays conservative when evidence is thin.</p></div>
-      <div class="pipeline-step"><span>04</span><strong>Decision</strong><p>Agents get allow, warn, block, or escalate with structured evidence.</p></div>
-    </aside>
-  </section>
-
-  <section class="operator-workbench" aria-label="Interactive preflight sample">
-    <div class="work-card action-card">
-      <div class="work-card-head">
+    <div class="terminal-input-panel">
+      <div class="terminal-input-head">
         <div>
-          <div class="panel-title">Sample input</div>
-          <p>Change source and scenario to see the TUI, MCP request, and JSON report update.</p>
+          <div class="panel-title">Sandbox stdin</div>
+          <p id="adapter-copy">Terraform plan JSON becomes mutation intent.</p>
         </div>
         <div class="app-controls compact-controls">
           <label>
@@ -108,29 +90,29 @@
             <select id="scenario-select" aria-label="Scenario"></select>
           </label>
           <div class="app-actions">
-            <button id="evaluate" type="button">Run</button>
+            <button id="evaluate" type="button">Run preflight</button>
           </div>
         </div>
       </div>
       <textarea id="input" spellcheck="false" aria-label="Mutation input"></textarea>
     </div>
+  </section>
 
-    <div class="inspector-grid">
-      <section class="inspector-card">
-        <div class="work-card-head">
-          <div class="panel-title">MCP request</div>
-          <span>tools/call</span>
-        </div>
-        <pre id="mcp-call"></pre>
-      </section>
-      <section class="inspector-card result">
-        <div class="work-card-head">
-          <div class="panel-title">Consequence JSON</div>
-          <span>recourse.consequence.v1</span>
-        </div>
-        <pre id="result"></pre>
-      </section>
-    </div>
+  <section class="terminal-contract" aria-label="Machine-readable outputs">
+    <section class="inspector-card">
+      <div class="work-card-head">
+        <div class="panel-title">MCP request</div>
+        <span>tools/call</span>
+      </div>
+      <pre id="mcp-call"></pre>
+    </section>
+    <section class="inspector-card result">
+      <div class="work-card-head">
+        <div class="panel-title">Consequence JSON</div>
+        <span>recourse.consequence.v1</span>
+      </div>
+      <pre id="result"></pre>
+    </section>
   </section>
 </main>
 
@@ -283,6 +265,7 @@ const mcpCall = document.getElementById('mcp-call');
 const jsonOutput = document.getElementById('result');
 const adapterCopy = document.getElementById('adapter-copy');
 const evaluateButton = document.getElementById('evaluate');
+const commandPreview = document.getElementById('command-preview');
 const plugButtons = Array.from(document.querySelectorAll('[data-source]'));
 
 function populateScenarios() {
@@ -579,9 +562,19 @@ function render(report, source, value) {
     shell: 'Shell and cloud CLI commands become mutation intent.',
     mcp: 'MCP tool-call arguments become mutation intent before invocation.'
   }[source];
+  commandPreview.textContent = commandFor(source, value);
   tuiOutput.textContent = renderTui(report, source);
   mcpCall.textContent = JSON.stringify(buildMcpInvocation(source, value), null, 2);
   jsonOutput.textContent = JSON.stringify(buildReport(report, source), null, 2);
+}
+
+function commandFor(source, value) {
+  if (source === 'shell') {
+    const command = typeof value === 'string' && value.trim() ? value.trim() : '<shell command>';
+    return `recourse preflight shell '${command.replace(/'/g, "'\\''")}'`;
+  }
+  if (source === 'mcp') return 'recourse preflight mcp ./tool-call.json';
+  return 'recourse preflight terraform ./plan.json';
 }
 
 function renderTui(report, source) {
@@ -618,7 +611,7 @@ function renderTui(report, source) {
   ].join('\n');
 }
 
-const tuiWidths = { left: 22, center: 31, right: 24 };
+const tuiWidths = { left: 31, center: 43, right: 34 };
 const tuiWidth = tuiWidths.left + tuiWidths.center + tuiWidths.right + 10;
 
 function line() {
@@ -634,12 +627,28 @@ function padRow(left, center, right) {
 }
 
 function fullRow(value) {
-  return `| ${cell(value, tuiWidth - 4)} |`;
+  return wrapRows(value, tuiWidth - 4).map(line => `| ${line.padEnd(tuiWidth - 4)} |`).join('\n');
 }
 
 function cell(value, length) {
   const clean = String(value).replace(/\s+/g, ' ').trim();
   return clean.length > length ? `${clean.slice(0, length - 3)}...` : clean.padEnd(length);
+}
+
+function wrapRows(value, length) {
+  const words = String(value).replace(/\s+/g, ' ').trim().split(' ');
+  const rows = [];
+  let row = '';
+  for (const word of words) {
+    if (!row) row = word;
+    else if (row.length + word.length + 1 <= length) row = `${row} ${word}`;
+    else {
+      rows.push(row);
+      row = word;
+    }
+  }
+  if (row) rows.push(row);
+  return rows.length ? rows : [''];
 }
 
 function buildReport(report, source) {
