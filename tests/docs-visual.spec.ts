@@ -9,6 +9,7 @@ const pages = [
   '/schema-gaps.html',
   '/agent-interface.html',
   '/mcp-setup.html',
+  '/playground.html',
 ];
 
 test.describe('public docs visual QA', () => {
@@ -34,6 +35,12 @@ test.describe('public docs visual QA', () => {
       await expect(page.locator('h1').first()).toBeVisible();
       if (path === '/') {
         await expect(page.locator('.hero-card')).toHaveCSS('opacity', '1');
+      }
+      if (path === '/playground.html') {
+        await page.locator('#source-select').selectOption('shell');
+        await page.locator('#evaluate').click();
+        await expect(page.locator('#result')).toContainText('escalate');
+        await expect(page.locator('#result')).toContainText('schemaVersion');
       }
 
       const metrics = await page.evaluate(() => {
