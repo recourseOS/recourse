@@ -41,105 +41,20 @@
   </div>
 </nav>
 
-<header class="hero container">
-  <div>
-    <div class="eyebrow">Install Recourse · run preflight · stop bad changes</div>
-    <h1>The consequence layer <span class="accent">agents call before they act.</span></h1>
-    <p class="lede">
-      Install the Recourse CLI, then run <code>recourse preflight</code> before Terraform plans, shell commands, or MCP tool calls that could destroy infrastructure. It returns a clear run, warn, review, or block decision with the evidence behind it.
-    </p>
-    <div class="hero-actions">
-      <a class="button primary" href="#install">Install CLI</a>
-      <a class="button secondary" href="/playground.html">Open terminal sandbox</a>
-      <a class="button secondary" href="/mcp-setup.html">Wire MCP server</a>
-    </div>
-    <div class="quickstart-card" id="install" aria-label="Recourse CLI install commands">
-      <div class="quickstart-head">
-        <span>CLI quickstart</span>
-        <span>package: recourse-cli · command: recourse</span>
-      </div>
-      <div class="command-row">
-        <span class="command-label">install</span>
-        <code>npm install -g recourse-cli@latest</code>
-        <button type="button" data-copy="npm install -g recourse-cli@latest" aria-label="Copy install command">Copy</button>
-      </div>
-      <div class="command-row">
-        <span class="command-label">preflight</span>
-        <code>recourse preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'</code>
-        <button type="button" data-copy="recourse preflight shell 'aws s3 rm s3://prod-audit-logs --recursive'" aria-label="Copy preflight command">Copy</button>
-      </div>
-      <div class="command-row">
-        <span class="command-label">tui</span>
-        <code>recourse tui</code>
-        <button type="button" data-copy="recourse tui" aria-label="Copy TUI command">Copy</button>
-      </div>
-      <div class="command-row muted">
-        <span class="command-label">no install</span>
-        <code>npx -y recourse-cli@latest tui --source shell --input 'aws s3 rm s3://prod-audit-logs --recursive'</code>
-        <button type="button" data-copy="npx -y recourse-cli@latest tui --source shell --input 'aws s3 rm s3://prod-audit-logs --recursive'" aria-label="Copy npx command">Copy</button>
-      </div>
-    </div>
+<header class="hero hero-simple container">
+  <div class="eyebrow">Consequence layer for infrastructure</div>
+  <h1>Know what breaks <span class="accent">before it breaks.</span></h1>
+  <p class="lede">
+    Run <code>recourse preflight</code> before destructive changes. Get a clear decision: run, warn, review, or block.
+  </p>
+  <div class="hero-actions">
+    <a class="button primary" href="/playground.html">Try it</a>
+    <a class="button secondary" href="https://github.com/recourseOS/recourse">View on GitHub</a>
   </div>
-
-  <aside class="product-shell hero-card" aria-label="RecourseOS product preview">
-    <div class="product-window">
-      <div class="window-bar">
-        <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
-        <span class="window-title">recourse.consequence.v1</span>
-      </div>
-      <div class="status-card">
-        <div class="status-top">
-          <div>
-            <div class="status-label">Agent preflight verdict</div>
-            <div class="status-value">Block</div>
-          </div>
-          <span class="pill red">unrecoverable</span>
-        </div>
-      </div>
-      <div class="status-card">
-        <div class="status-label">Mutations in proposed action</div>
-        <div class="verdict-list">
-          <div class="verdict-row">
-            <span class="red-text">x</span>
-            <span class="resource">aws_db_instance.main</span>
-            <span class="pill red">block</span>
-          </div>
-          <div class="verdict-row">
-            <span class="green-text">✓</span>
-            <span class="resource">google_storage_bucket.audit</span>
-            <span class="pill green">backup</span>
-          </div>
-          <div class="verdict-row">
-            <span class="green-text">✓</span>
-            <span class="resource">azurerm_role_assignment.reader</span>
-            <span class="pill green">reversible</span>
-          </div>
-          <div class="verdict-row">
-            <span class="amber-text">!</span>
-            <span class="resource">acme_custom_resource.unknown</span>
-            <span class="pill">review</span>
-          </div>
-        </div>
-      </div>
-      <div class="signal-grid">
-        <div class="signal-card">
-          <div class="signal-key">rules</div>
-          <div class="signal-value">first</div>
-          <div class="signal-note">Known providers stay deterministic.</div>
-        </div>
-        <div class="signal-card">
-          <div class="signal-key">unknowns</div>
-          <div class="signal-value">safe</div>
-          <div class="signal-note">Weak evidence becomes review.</div>
-        </div>
-        <div class="signal-card">
-          <div class="signal-key">agents</div>
-          <div class="signal-value">MCP</div>
-          <div class="signal-note">Structured output, no parsing.</div>
-        </div>
-      </div>
-    </div>
-  </aside>
+  <div class="hero-command">
+    <code>npx recourse-cli preflight shell 'aws s3 rm s3://prod --recursive'</code>
+    <button type="button" data-copy="npx recourse-cli preflight shell 'aws s3 rm s3://prod --recursive'" aria-label="Copy command">Copy</button>
+  </div>
 </header>
 
 <div class="logo-strip">
