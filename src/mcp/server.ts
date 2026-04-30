@@ -180,7 +180,7 @@ export async function handleMcpRequest(request: JsonRpcRequest): Promise<Record<
           },
           serverInfo: {
             name: 'recourseos',
-            version: '0.1.9',
+            version: '0.1.10',
           },
         });
       case 'tools/list':
@@ -223,14 +223,17 @@ async function callTool(params: unknown): Promise<Record<string, unknown>> {
     case 'recourse_evaluate_terraform': {
       const report = evaluateTerraform(args);
       const mutation = report.mutations[0];
-      const target = mutation ? `${mutation.intent.target.type}.${mutation.intent.target.id}` : 'terraform plan';
+      const target = mutation?.intent.target.id || 'terraform plan';
       const tier = mutation?.recoverability?.label || 'unknown';
       logDecision('terraform', target, report.decision, tier);
       return toolResult(withSchemaVersion(report));
     }
     case 'recourse_evaluate_shell': {
       const report = evaluateShell(args);
-      const cmd = typeof args.command === 'string' ? args.command.slice(0, 50) : 'shell';
+      let cmd = 'shell';
+      if (typeof args.command === 'string') {
+        cmd = args.command.length > 50 ? args.command.slice(0, 47) + '...' : args.command;
+      }
       const tier = report.mutations[0]?.recoverability?.label || 'unknown';
       logDecision('shell', cmd, report.decision, tier);
       return toolResult(withSchemaVersion(report));
