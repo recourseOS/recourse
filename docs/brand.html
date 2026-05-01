@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>RecourseOS - Brand Assets</title>
+<meta name="description" content="Download RecourseOS logos, icons, and brand assets for press, partnerships, and integrations." />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="site.css" />
+<style>
+.brand-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin: 32px 0;
+}
+.brand-card {
+  background: var(--paper-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.brand-preview {
+  padding: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+}
+.brand-preview.dark {
+  background: var(--night);
+}
+.brand-preview.light {
+  background: var(--paper-soft);
+}
+.brand-preview img, .brand-preview svg {
+  max-width: 120px;
+  max-height: 120px;
+}
+.brand-info {
+  padding: 20px;
+  border-top: 1px solid var(--line);
+}
+.brand-name {
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.brand-format {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-bottom: 12px;
+}
+.brand-downloads {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.brand-downloads a {
+  display: inline-flex;
+  padding: 6px 12px;
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  transition: all 0.15s;
+}
+.brand-downloads a:hover {
+  border-color: var(--green);
+  color: var(--green-dark);
+}
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+.color-swatch {
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.color-preview {
+  height: 80px;
+}
+.color-info {
+  padding: 12px;
+  background: var(--paper-card);
+}
+.color-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink);
+}
+.color-value {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+</style>
+</head>
+<body>
+<div class="top-band">
+<nav class="container site-nav">
+  <a href="/" class="brand" aria-label="RecourseOS home">
+    <svg class="brand-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M50 5 L88.97 27.5 V72.5 L50 95 L11.03 72.5 V27.5 Z" fill="#06110e"/>
+      <path d="M50 9.8 L84.8 29.9 V70.1 L50 90.2 L15.2 70.1 V29.9 Z" stroke="#effbf3" stroke-width="5.6" stroke-linejoin="round"/>
+      <path d="M34 70 V30 H57.5 C67.2 30 74 36 74 44.6 C74 53.2 67.2 59.2 57.5 59.2 H34" stroke="#effbf3" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M55.5 59.5 L74 70.5" stroke="#effbf3" stroke-width="7" stroke-linecap="round"/>
+      <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round"/>
+      <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>
+      <span class="brand-name">Recourse<span class="os">OS</span></span>
+      <span class="brand-kicker">Consequence layer</span>
+    </span>
+  </a>
+  <div class="links">
+    <a href="/">home</a>
+    <a href="/resource-coverage.html">coverage</a>
+    <a href="/golden-fixtures.html">fixtures</a>
+    <a href="/agent-interface.html">agents</a>
+    <a href="/mcp-setup.html">mcp</a>
+    <a href="/console.html">console</a>
+    <a href="/about.html">about</a>
+    <a href="https://github.com/recourseOS/recourse" class="nav-cta">github</a>
+  </div>
+</nav>
+<header class="container doc-header">
+  <div class="eyebrow">press &amp; partners</div>
+  <h1>Brand Assets</h1>
+  <p class="lede">Logos, icons, and colors for press coverage, integrations, and partnerships.</p>
+</header>
+</div>
+
+<main class="container" style="padding: 48px 0 80px;">
+  <h2>Logos</h2>
+  <p style="color: var(--ink-soft); margin-bottom: 24px;">Use the mark on dark backgrounds. The full logo includes the wordmark for contexts where the name isn't otherwise visible.</p>
+
+  <div class="brand-grid">
+    <div class="brand-card">
+      <div class="brand-preview dark">
+        <img src="/brand/logo-mark.svg" alt="RecourseOS mark" />
+      </div>
+      <div class="brand-info">
+        <div class="brand-name">Mark</div>
+        <div class="brand-format">For icons, favicons, small contexts</div>
+        <div class="brand-downloads">
+          <a href="/brand/logo-mark.svg" download>SVG</a>
+          <a href="/brand/logo-mark-512.png" download>PNG 512</a>
+          <a href="/brand/logo-mark-256.png" download>PNG 256</a>
+          <a href="/brand/logo-mark-128.png" download>PNG 128</a>
+        </div>
+      </div>
+    </div>
+    <div class="brand-card">
+      <div class="brand-preview light">
+        <img src="/brand/logo-full.svg" alt="RecourseOS full logo" style="max-width: 200px;" />
+      </div>
+      <div class="brand-info">
+        <div class="brand-name">Full Logo</div>
+        <div class="brand-format">Mark + wordmark for headers, press</div>
+        <div class="brand-downloads">
+          <a href="/brand/logo-full.svg" download>SVG</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2 style="margin-top: 48px;">Colors</h2>
+  <p style="color: var(--ink-soft); margin-bottom: 16px;">The primary palette. Emerald green is the accent; use sparingly for emphasis.</p>
+
+  <div class="color-grid">
+    <div class="color-swatch">
+      <div class="color-preview" style="background: #10b981;"></div>
+      <div class="color-info">
+        <div class="color-name">Emerald</div>
+        <div class="color-value">#10b981</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="color-preview" style="background: #0a1210;"></div>
+      <div class="color-info">
+        <div class="color-name">Night</div>
+        <div class="color-value">#0a1210</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="color-preview" style="background: #fafbfa;"></div>
+      <div class="color-info">
+        <div class="color-name">Paper</div>
+        <div class="color-value">#fafbfa</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="color-preview" style="background: #059669;"></div>
+      <div class="color-info">
+        <div class="color-name">Green Dark</div>
+        <div class="color-value">#059669</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="color-preview" style="background: #34d399;"></div>
+      <div class="color-info">
+        <div class="color-name">Green Soft</div>
+        <div class="color-value">#34d399</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 style="margin-top: 48px;">Usage Guidelines</h2>
+  <div style="color: var(--ink-soft); line-height: 1.8;">
+    <p><strong style="color: var(--ink);">Do:</strong> Use the mark on dark backgrounds. Maintain clear space around the logo. Link to recourseos.com when featuring the brand.</p>
+    <p><strong style="color: var(--ink);">Don't:</strong> Stretch, rotate, or recolor the logo. Place on busy backgrounds. Use the mark as a generic "security" icon.</p>
+    <p style="margin-top: 24px;">For press inquiries or partnership assets, reach out via <a href="https://github.com/recourseOS/recourse" style="color: var(--green-dark);">GitHub</a>.</p>
+  </div>
+</main>
+
+<footer class="container">
+  <span>&copy; 2026 RecourseOS</span>
+  <span>
+    <a href="/brand.html">brand</a>
+    <a href="https://github.com/recourseOS/recourse">github</a>
+    <a href="https://www.npmjs.com/package/recourse-cli">npm</a>
+  </span>
+</footer>
+</body>
+</html>
