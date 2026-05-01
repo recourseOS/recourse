@@ -251,6 +251,9 @@ h3 { font-size: 24px; }
   color: rgba(240, 253, 244, 0.8);
   font-size: 13px;
   white-space: nowrap;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 .hero-command button {
