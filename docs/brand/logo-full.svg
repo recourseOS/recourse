@@ -7,5 +7,5 @@
   <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#10b981" stroke-width="6.5" stroke-linecap="round"/>
   <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#10b981" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
   <!-- Wordmark -->
-  <text x="105" y="58" font-family="Inter, system-ui, sans-serif" font-size="32" font-weight="700" fill="#0a1210">Recourse<tspan fill="#10b981" font-weight="500">OS</tspan></text>
+  <text x="105" y="58" font-family="Inter, system-ui, sans-serif" font-size="32" font-weight="700" fill="#effbf3">Recourse<tspan fill="#10b981" font-weight="500">OS</tspan></text>
 </svg>
