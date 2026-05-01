@@ -850,6 +850,7 @@ pre code {
 
 table {
   width: 100%;
+  max-width: 100%;
   border-collapse: collapse;
   margin: 20px 0;
   background: var(--paper-card);
@@ -907,23 +908,47 @@ pre code {
   min-width: 500px;
 }
 
-/* Mobile responsive tables and code */
+/* Article content overflow control */
+article {
+  overflow: hidden;
+  max-width: 100%;
+}
+
+article > * {
+  max-width: 100%;
+}
+
+/* Mobile responsive */
 @media (max-width: 768px) {
-  article table {
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+  .doc-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .toc {
+    display: none;
+  }
+
+  article {
+    padding: 24px;
   }
 
   pre {
+    font-size: 11px;
+    padding: 12px;
+    overflow-x: auto;
+  }
+
+  table {
     font-size: 12px;
-    padding: 14px;
   }
 
   th, td {
-    padding: 10px 12px;
-    font-size: 13px;
-    white-space: nowrap;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  code {
+    font-size: 0.8em;
   }
 }
 
