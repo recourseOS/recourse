@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>RecourseOS - Attestation Protocol Design</title>
+<meta name="description" content="Design draft for cryptographic attestation of consequence evaluations. Proof that the check actually happened." />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="site.css" />
+</head>
+<body>
+<div class="top-band">
+<nav class="container site-nav">
+  <a href="/" class="brand" aria-label="RecourseOS home">
+    <svg class="brand-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M50 5 L88.97 27.5 V72.5 L50 95 L11.03 72.5 V27.5 Z" fill="#06110e"/>
+      <path d="M50 9.8 L84.8 29.9 V70.1 L50 90.2 L15.2 70.1 V29.9 Z" stroke="#effbf3" stroke-width="5.6" stroke-linejoin="round"/>
+      <path d="M34 70 V30 H57.5 C67.2 30 74 36 74 44.6 C74 53.2 67.2 59.2 57.5 59.2 H34" stroke="#effbf3" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M55.5 59.5 L74 70.5" stroke="#effbf3" stroke-width="7" stroke-linecap="round"/>
+      <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round"/>
+      <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>
+      <span class="brand-name">Recourse<span class="os">OS</span></span>
+      <span class="brand-kicker">Consequence layer</span>
+    </span>
+  </a>
+  <div class="links">
+    <a href="/">home</a>
+    <a href="/resource-coverage.html">coverage</a>
+    <a href="/golden-fixtures.html">fixtures</a>
+    <a href="/agent-interface.html">agents</a>
+    <a href="/mcp-setup.html">mcp</a>
+    <a href="/console.html">console</a>
+    <a href="/about.html">about</a>
+    <a href="https://github.com/recourseOS/recourse" class="nav-cta">github</a>
+  </div>
+</nav>
+<header class="container doc-header">
+  <div class="eyebrow">design draft &middot; may 2026</div>
+  <h1>Attestation Protocol</h1>
+  <p class="lede">Cryptographic proof that consequence evaluation happened. Non-repudiation for agent actions.</p>
+  <p style="background: rgba(99, 230, 184, 0.15); border: 1px solid rgba(99, 230, 184, 0.3); padding: 12px 16px; border-radius: 6px; font-size: 14px; margin-top: 16px;">
+    <strong>Status:</strong> Design exploration, not committed work. Implementation timeline pending capacity review.
+  </p>
+</header>
+</div>
+<main class="container doc-shell">
+  <aside class="toc">
+    <div class="toc-title">On this page</div>
+    <a href="#problem">Problem</a>
+    <a href="#solution">Solution</a>
+    <a href="#schema">Schema</a>
+    <a href="#verification">Verification Model</a>
+    <a href="#trust">Trust Anchor</a>
+    <a href="#non-goals">Non-Goals</a>
+    <a href="#threat-model">Threat Model</a>
+    <a href="#v1-scope">v1 Scope</a>
+  </aside>
+  <article>
+    <h2 id="problem">Problem Statement</h2>
+    <p>RecourseOS evaluates consequences of actions before execution. But there's no way to <em>prove</em> that evaluation happened.</p>
+    <p>Today, an agent can claim "I checked with RecourseOS and it said allow" without verification. The agent might have:</p>
+    <ul>
+      <li>Lied about checking</li>
+      <li>Hallucinated the response</li>
+      <li>Skipped evaluation entirely</li>
+      <li>Received a different verdict than claimed</li>
+    </ul>
+    <p>This makes consequence evaluation <strong>advisory</strong>. The agent can ignore it with no evidence trail.</p>
+
+    <h2 id="solution">Solution: Cryptographic Attestation</h2>
+    <p>Attestations provide cryptographic proof that:</p>
+    <ol>
+      <li>A specific input was evaluated</li>
+      <li>By a specific RecourseOS instance</li>
+      <li>At a specific time</li>
+      <li>Producing a specific verdict</li>
+    </ol>
+    <p>With attestations, third parties (CI systems, approval workflows, audit logs, agent platforms) can <strong>require proof of evaluation</strong> before allowing execution. The advisory tool becomes a <strong>gating</strong> tool.</p>
+    <p>The killer feature is <strong>non-repudiation</strong>: agents cannot claim they checked without producing a signed artifact from RecourseOS.</p>
+
+    <h2 id="schema">Attestation Schema</h2>
+<pre><code>interface ConsequenceAttestation {
+  // Protocol version
+  version: 'recourse.attestation.v1';
+
+  // What was evaluated
+  input: {
+    hash: string;                    // SHA-256 of canonical input
+    source: 'terraform' | 'shell' | 'mcp';
+    timestamp: string;               // ISO 8601, evaluation time
+  };
+
+  // Replay/freshness protection
+  nonce: string;                     // Random 128-bit value, hex-encoded
+  expires_at: string;                // ISO 8601, attestation validity window
+
+  // Chain to related attestations
+  chain_id?: string;                 // Links approval attestations to evaluation
+  parent_attestation?: string;       // Hash of attestation this one references
+
+  // The evaluation result
+  evaluation: {
+    decision: 'allow' | 'warn' | 'escalate' | 'block';
+    worstTier: 1 | 2 | 3 | 4 | 5;
+    reportHash: string;              // SHA-256 of full ConsequenceReport
+    mutationCount: number;
+    hasUnrecoverable: boolean;
+  };
+
+  // Who evaluated
+  evaluator: {
+    instanceId: string;              // Unique RecourseOS instance identifier
+    version: string;                 // RecourseOS version
+    publicKey: string;               // PEM-encoded public key
+    keyAttestation?: string;         // Optional: HSM/TPM provenance
+  };
+
+  // Cryptographic binding
+  signature: string;                 // Ed25519 signature over all fields
+  signatureAlgorithm: 'Ed25519';
+}</code></pre>
+
+    <h3>Schema Design Notes</h3>
+    <table>
+      <thead><tr><th>Field</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>nonce</code></td><td>Prevents replay attacks. Each evaluation generates a fresh nonce.</td></tr>
+        <tr><td><code>expires_at</code></td><td>Verdicts have a shelf life. Default: 15 minutes. Configurable.</td></tr>
+        <tr><td><code>chain_id</code></td><td>Links approval attestations to evaluation attestations for audit trails.</td></tr>
+        <tr><td><code>keyAttestation</code></td><td>Future-proofing for HSM/TPM-backed keys. Not required for v1.</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="verification">Verification Model</h2>
+    <p>Four verification models exist. v1 targets <strong>opt-in inline by the agent</strong>.</p>
+
+    <table>
+      <thead><tr><th>Model</th><th>Description</th><th>v1?</th></tr></thead>
+      <tbody>
+        <tr><td>Inline (execution)</td><td>Target system refuses to execute without attestation</td><td>No</td></tr>
+        <tr><td>Async (audit)</td><td>Actions execute, attestations logged, audit later</td><td>Partial</td></tr>
+        <tr><td>Hybrid</td><td>Inline for high-stakes, async otherwise</td><td>Future</td></tr>
+        <tr><td><strong>Opt-in by agent</strong></td><td>Agent decides whether to verify before proceeding</td><td><strong>Yes</strong></td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Why opt-in by agent for v1:</strong> RecourseOS doesn't control terraform, kubectl, or AWS CLI. It <em>does</em> influence agent behavior through MCP. The agent's decision loop is the boundary where RecourseOS has leverage.</p>
+
+    <h2 id="trust">Trust Anchor</h2>
+    <h3>v1: Self-signed, published keys</h3>
+    <p>Each RecourseOS instance:</p>
+    <ol>
+      <li>Generates an Ed25519 keypair on first run</li>
+      <li>Persists the keypair in a config directory</li>
+      <li>Exposes the public key via API endpoint</li>
+      <li>Signs all attestations with the private key</li>
+    </ol>
+    <p><strong>Trust model:</strong> Agent operators choose which RecourseOS instances to trust and fetch those public keys. Similar to SSH host key verification.</p>
+
+    <h3>v2+ (future)</h3>
+    <ul>
+      <li>Organizational CAs for enterprise deployments</li>
+      <li>Transparency logs</li>
+      <li>Federation between organizations</li>
+    </ul>
+
+    <h2 id="non-goals">Non-Goals (v1)</h2>
+    <p>The following are explicitly <strong>out of scope</strong> for v1:</p>
+    <table>
+      <thead><tr><th>Non-Goal</th><th>Reason</th></tr></thead>
+      <tbody>
+        <tr><td>Execution attestation</td><td>Requires cooperation from AWS/kubectl/etc. RecourseOS provides evaluation attestation.</td></tr>
+        <tr><td>Distributed witnesses</td><td>Threshold signatures add complexity. Reserve schema slot, defer implementation.</td></tr>
+        <tr><td>Credit systems</td><td>Agent economy thinking is orthogonal. Attestation-as-proof is cleaner than attestation-as-currency.</td></tr>
+        <tr><td>Centralized service</td><td>Conflicts with offline/local-first architecture. Self-signed keys are the right default.</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="threat-model">Threat Model</h2>
+    <h3>What the protocol protects against</h3>
+    <ul>
+      <li>Agents that fabricate or hallucinate consequence reports</li>
+      <li>Compromised agents that bypass evaluation entirely</li>
+      <li>Audit trail tampering</li>
+      <li>Repudiation by agent operators</li>
+    </ul>
+
+    <h3>What it does NOT protect against</h3>
+    <ul>
+      <li>Compromised RecourseOS instances (attacker can sign anything)</li>
+      <li>Compromised signing keys</li>
+      <li>Coercion (operators can force specific verdicts)</li>
+      <li>Out-of-band actions that skip evaluation</li>
+    </ul>
+    <p><strong>Honest framing:</strong> The protocol provides <em>integrity</em> of the evaluation chain, not <em>correctness</em> of the evaluation itself.</p>
+
+    <h2 id="v1-scope">v1 Implementation Scope</h2>
+    <h3>Deliverables</h3>
+    <ol>
+      <li><strong>Specification document</strong> &mdash; complete schema, signing/verification procedures, versioning</li>
+      <li><strong>RecourseOS integration</strong> &mdash; attestation in ConsequenceReport, keypair generation, public key API, <code>recourse_verify_attestation</code> MCP tool</li>
+      <li><strong>Verification library</strong> &mdash; standalone TypeScript, no RecourseOS dependency</li>
+      <li><strong>Documentation</strong> &mdash; how agents request and verify attestations</li>
+      <li><strong>Partner integration</strong> &mdash; one MCP server or agent platform consuming attestations</li>
+    </ol>
+    <h3>Estimated effort</h3>
+    <p>8-12 weeks of focused work for complete v1 with documentation and partner integration.</p>
+
+    <hr style="margin: 48px 0; border: none; border-top: 1px solid rgba(255,255,255,0.1);">
+
+    <h2>Why Attestation Matters</h2>
+    <p>The shift from advisory to verifiable changes RecourseOS's security posture:</p>
+
+    <h3>Advisory (today)</h3>
+<pre><code>Agent: "Should I delete this bucket?"
+RecourseOS: "Block: unrecoverable data loss"
+Agent: *deletes bucket anyway*
+Audit log: *nothing*</code></pre>
+
+    <h3>Verifiable (with attestation)</h3>
+<pre><code>Agent: "Should I delete this bucket?"
+RecourseOS: ConsequenceReport + Attestation(block)
+Agent: *attempts to delete*
+CI system: "Show attestation"
+Agent: *presents block attestation*
+CI system: "Attestation says block. Denied."</code></pre>
+
+    <p>The attestation protocol doesn't change how evaluation works. It changes whether evaluation <em>matters</em>.</p>
+
+    <hr style="margin: 48px 0; border: none; border-top: 1px solid rgba(255,255,255,0.1);">
+    <p style="font-size: 14px; opacity: 0.7;">
+      Related: <a href="/agent-interface.html">Agent Interface</a> &middot;
+      <a href="/mcp-setup.html">MCP Setup</a> &middot;
+      <a href="/schema-gaps.html">Schema Gaps</a> &middot;
+      <a href="https://github.com/recourseOS/recourse/blob/main/docs/attestation-protocol-design.md">View markdown source</a>
+    </p>
+  </article>
+</main>
+
+<footer class="container">
+  <span>&copy; 2026 RecourseOS</span>
+  <span>
+    <a href="/brand.html">brand</a>
+    <a href="https://github.com/recourseOS/recourse">github</a>
+    <a href="https://www.npmjs.com/package/recourse-cli">npm</a>
+  </span>
+</footer>
+</body>
+</html>
