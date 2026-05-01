@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 
 const pages = [
   '/',
+  '/about.html',
   '/resource-coverage.html',
   '/golden-fixtures.html',
   '/live-aws-tests.html',
@@ -10,6 +11,8 @@ const pages = [
   '/agent-interface.html',
   '/mcp-setup.html',
   '/console.html',
+  '/brand.html',
+  '/mcp_arch_diagram.html',
 ];
 
 test.describe('public docs visual QA', () => {
@@ -48,6 +51,14 @@ test.describe('public docs visual QA', () => {
         await page.locator('#input').fill('aws s3 rm s3://prod-audit-logs --recursive');
         await page.locator('#evaluate').click();
         await expect(page.locator('#decision-banner')).toContainText(/escalate|block|warn/i, { timeout: 10000 });
+      }
+      // Test copy button on homepage
+      if (path === '/') {
+        const copyButton = page.locator('.hero-command button[data-copy]').first();
+        if (await copyButton.isVisible()) {
+          await copyButton.click();
+          // Should not throw error
+        }
       }
 
       const metrics = await page.evaluate(() => {
