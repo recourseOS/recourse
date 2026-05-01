@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="https://recourseos.com/brand/logo-mark-512.png" alt="RecourseOS" width="120" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://recourseos.com/brand/logo-mark-light-512.png">
+    <source media="(prefers-color-scheme: light)" srcset="https://recourseos.com/brand/logo-mark-512.png">
+    <img src="https://recourseos.com/brand/logo-mark-512.png" alt="RecourseOS" width="120" />
+  </picture>
 </p>
 
 <h1 align="center">RecourseOS</h1>

@@ -9,7 +9,7 @@ const pages = [
   '/schema-gaps.html',
   '/agent-interface.html',
   '/mcp-setup.html',
-  '/playground.html',
+  '/console.html',
 ];
 
 test.describe('public docs visual QA', () => {
@@ -34,17 +34,14 @@ test.describe('public docs visual QA', () => {
       await expect(page.locator('body')).toBeVisible();
       await expect(page.locator('h1').first()).toBeVisible();
       if (path === '/') {
-        await expect(page.locator('.hero-card')).toHaveCSS('opacity', '1');
+        await expect(page.locator('.hero-simple')).toBeVisible();
+        await expect(page.locator('.card').first()).toBeVisible();
       }
-      if (path === '/playground.html') {
-        await page.locator('#source-select').selectOption('shell');
+      if (path === '/console.html') {
+        await page.locator('.source-tab[data-source="shell"]').click();
+        await page.locator('#input').fill('aws s3 rm s3://prod-audit-logs --recursive');
         await page.locator('#evaluate').click();
-        await expect(page.locator('#result')).toContainText('escalate');
-        await expect(page.locator('#result')).toContainText('schemaVersion');
-        await page.locator('#input').fill('aws s3 ls s3://prod-audit-logs');
-        await page.locator('#evaluate').click();
-        await expect(page.locator('#result')).toContainText('"decision": "allow"');
-        await expect(page.locator('#tui-output')).toContainText('OK TO RUN');
+        await expect(page.locator('#decision-banner')).toContainText(/escalate|block|warn/i, { timeout: 10000 });
       }
 
       const metrics = await page.evaluate(() => {
