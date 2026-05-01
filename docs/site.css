@@ -858,13 +858,14 @@ th {
 tr:last-child td { border-bottom: none; }
 
 /* ─────────────────────────────────────────────────────────────
-   About Section
+   About Page
    ───────────────────────────────────────────────────────────── */
-.about-section {
+.about-page {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 300px 1fr;
   gap: 64px;
   align-items: start;
+  max-width: 960px;
 }
 
 .about-photo {
@@ -875,39 +876,35 @@ tr:last-child td { border-bottom: none; }
 .about-photo img {
   width: 100%;
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(240, 253, 244, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lg);
 }
 
-.about-content h2 {
-  margin-bottom: 24px;
-}
-
-.about-body p {
-  color: rgba(240, 253, 244, 0.75);
-  font-size: 16px;
-  line-height: 1.75;
+.about-content p {
+  color: var(--ink-soft);
+  font-size: 17px;
+  line-height: 1.8;
   margin-bottom: 20px;
 }
 
-.about-body p:last-of-type {
+.about-content p:last-of-type {
   margin-bottom: 0;
 }
 
-.about-body strong {
-  color: #f0fdf4;
+.about-content strong {
+  color: var(--ink);
 }
 
 .about-signature {
   margin-top: 32px !important;
   padding-top: 24px;
-  border-top: 1px solid rgba(240, 253, 244, 0.1);
-  color: var(--green) !important;
-  font-weight: 500;
+  border-top: 1px solid var(--line);
+  color: var(--green-dark) !important;
+  font-weight: 600;
 }
 
 @media (max-width: 980px) {
-  .about-section {
+  .about-page {
     grid-template-columns: 1fr;
     gap: 40px;
   }
@@ -919,7 +916,10 @@ tr:last-child td { border-bottom: none; }
 
 @media (max-width: 680px) {
   .about-photo {
-    max-width: 240px;
+    max-width: 260px;
+  }
+  .about-content p {
+    font-size: 16px;
   }
 }
 

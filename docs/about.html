@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>RecourseOS - About</title>
+<meta name="description" content="Why RecourseOS exists. 15 years of mission-critical infrastructure, now building the consequence layer AI agents need." />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="site.css" />
+</head>
+<body>
+<div class="top-band">
+<nav class="container site-nav">
+  <a href="/" class="brand" aria-label="RecourseOS home">
+    <svg class="brand-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M50 5 L88.97 27.5 V72.5 L50 95 L11.03 72.5 V27.5 Z" fill="#06110e"/>
+      <path d="M50 9.8 L84.8 29.9 V70.1 L50 90.2 L15.2 70.1 V29.9 Z" stroke="#effbf3" stroke-width="5.6" stroke-linejoin="round"/>
+      <path d="M34 70 V30 H57.5 C67.2 30 74 36 74 44.6 C74 53.2 67.2 59.2 57.5 59.2 H34" stroke="#effbf3" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M55.5 59.5 L74 70.5" stroke="#effbf3" stroke-width="7" stroke-linecap="round"/>
+      <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round"/>
+      <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>
+      <span class="brand-name">Recourse<span class="os">OS</span></span>
+      <span class="brand-kicker">Consequence layer</span>
+    </span>
+  </a>
+  <div class="links">
+    <a href="/">home</a>
+    <a href="/resource-coverage.html">coverage</a>
+    <a href="/golden-fixtures.html">fixtures</a>
+    <a href="/agent-interface.html">agents</a>
+    <a href="/mcp-setup.html">mcp</a>
+    <a href="/console.html">console</a>
+    <a href="/about.html">about</a>
+    <a href="https://github.com/recourseOS/recourse" class="nav-cta">github</a>
+  </div>
+</nav>
+<header class="container doc-header">
+  <div class="eyebrow">founder</div>
+  <h1>Why I built this.</h1>
+  <p class="lede">15 years operating mission-critical infrastructure. Now building the consequence layer AI agents need before they touch production.</p>
+</header>
+</div>
+<main class="container" style="padding: 64px 0 80px;">
+  <div class="about-page">
+    <div class="about-photo">
+      <img src="/images/a-site-reliability-engineer---.png" alt="Jessie, Founder of RecourseOS" />
+    </div>
+    <div class="about-content">
+      <p>I'm Jessie. I've spent 15 years operating mission-critical infrastructure across payments, regulated financial services, government systems, and evidence platforms. The kinds of environments where a wrong destructive operation against production isn't a learning experience. It's an incident that goes to the board.</p>
+      <p>For the last few years I've also been doing something else: building and operating LLM-driven systems for production operations. I've watched, up close, what changes when AI agents are the ones acting on infrastructure, and what doesn't.</p>
+      <p><strong>What doesn't change:</strong> production data still goes away if you delete it wrong. Backups don't restore themselves. The blast radius of a destructive call is the same whether a tired engineer made it at 2am or an autonomous agent made it in nine seconds.</p>
+      <p><strong>What changes:</strong> nobody pauses to read the plan anymore.</p>
+      <p>RecourseOS is the layer I wanted to exist before agents started touching the systems I'd spent my career protecting. It evaluates destructive infrastructure operations and tells the agent, or the human, whether the action is recoverable, before it executes. Not a guess, not a vibe. A deterministic verdict from the actual configuration of what's about to be destroyed.</p>
+      <p>It's open source because I want agents to use it. The bad rap AI agents have been getting in production isn't unfair. The incidents are real, the losses are documented. I'd rather help close that gap than write more about it.</p>
+      <p>If you're integrating an agent with infrastructure access and you want it to know what it can and can't get back, that's what this is for.</p>
+      <p class="about-signature">— Jessie, Founder of RecourseOS</p>
+    </div>
+  </div>
+</main>
+<footer class="container">
+  <span>RecourseOS · MCP server for infrastructure safety</span>
+  <span>
+    <a href="https://github.com/recourseOS/recourse">github</a>
+    <a href="https://www.npmjs.com/package/recourse-cli">npm</a>
+  </span>
+</footer>
+</body>
+</html>

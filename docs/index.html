@@ -43,6 +43,7 @@
     <a href="/agent-interface.html">agents</a>
     <a href="/mcp-setup.html">mcp</a>
     <a href="/console.html">console</a>
+    <a href="/about.html">about</a>
     <a href="https://github.com/recourseOS/recourse" class="nav-cta">github</a>
   </div>
 </nav>
@@ -397,28 +398,6 @@
         <a class="card" href="/golden-fixtures.html"><div class="card-kicker">fixtures</div><div class="card-title">Golden fixtures</div><div class="card-body">Stable test inputs to verify your agent integration works correctly.</div></a>
         <a class="card" href="/live-aws-tests.html"><div class="card-kicker">evidence</div><div class="card-title">Live AWS tests</div><div class="card-body">Collect read-only AWS evidence for accurate recovery verdicts.</div></a>
         <a class="card" href="/schema-gaps.html"><div class="card-kicker">classifier</div><div class="card-title">Classifier notes</div><div class="card-body">How unknown resources get classified when no deterministic rule exists.</div></a>
-      </div>
-    </div>
-  </section>
-
-  <section class="section dark reveal" id="about">
-    <div class="container about-section">
-      <div class="about-photo">
-        <img src="/images/a-site-reliability-engineer---.png" alt="Jessie, Founder of RecourseOS" />
-      </div>
-      <div class="about-content">
-        <div class="section-label">About</div>
-        <h2>Why I built this.</h2>
-        <div class="about-body">
-          <p>I'm Jessie. I've spent 15 years operating mission-critical infrastructure across payments, regulated financial services, government systems, and evidence platforms. The kinds of environments where a wrong destructive operation against production isn't a learning experience. It's an incident that goes to the board.</p>
-          <p>For the last few years I've also been doing something else: building and operating LLM-driven systems for production operations. I've watched, up close, what changes when AI agents are the ones acting on infrastructure, and what doesn't.</p>
-          <p><strong>What doesn't change:</strong> production data still goes away if you delete it wrong. Backups don't restore themselves. The blast radius of a destructive call is the same whether a tired engineer made it at 2am or an autonomous agent made it in nine seconds.</p>
-          <p><strong>What changes:</strong> nobody pauses to read the plan anymore.</p>
-          <p>RecourseOS is the layer I wanted to exist before agents started touching the systems I'd spent my career protecting. It evaluates destructive infrastructure operations and tells the agent, or the human, whether the action is recoverable, before it executes. Not a guess, not a vibe. A deterministic verdict from the actual configuration of what's about to be destroyed.</p>
-          <p>It's open source because I want agents to use it. The bad rap AI agents have been getting in production isn't unfair. The incidents are real, the losses are documented. I'd rather help close that gap than write more about it.</p>
-          <p>If you're integrating an agent with infrastructure access and you want it to know what it can and can't get back, that's what this is for.</p>
-          <p class="about-signature">— Jessie, Founder of RecourseOS</p>
-        </div>
       </div>
     </div>
   </section>
