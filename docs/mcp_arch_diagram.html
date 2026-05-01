@@ -3,109 +3,30 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>RecourseOS — Agent + MCP Architecture Diagram</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>RecourseOS - Architecture Diagram</title>
+<meta name="description" content="Interactive diagram showing where RecourseOS sits in the agent to MCP to cloud path." />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="site.css" />
 <style>
-  :root {
-    --bg: #f0fdf4;
-    --paper: #fafbfa;
-    --ink: #0a1210;
-    --ink-soft: #374a42;
-    --ink-faint: #5f7a6e;
-    --line: rgba(10, 18, 16, 0.12);
-    --dark: #0a1210;
-    --dark-2: #111f1a;
-    --cream: #f0fdf4;
-    --cream-soft: rgba(240,253,244,.68);
-    --accent: #10b981;
-    --accent-2: #34d399;
-    --red: #ef4444;
-    --amber: #f59e0b;
-    --green: #10b981;
-    --blue: #06b6d4;
-    --shadow: 0 34px 100px -65px rgba(10, 18, 16, .65);
-  }
-
-  * { box-sizing: border-box; }
-
-  html {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  body {
-    margin: 0;
-    color: var(--ink);
-    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background:
-      radial-gradient(circle at 10% 0%, rgba(16,185,129,.12), transparent 30rem),
-      radial-gradient(circle at 88% 6%, rgba(10,18,16,.08), transparent 34rem),
-      linear-gradient(180deg, #f0fdf4 0%, var(--bg) 45%, #dcfce7 100%);
-    min-height: 100vh;
-  }
-
-  code, .mono {
-    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  }
-
-  .page {
+  /* Architecture diagram custom styles */
+  .arch-page {
     width: min(1440px, calc(100% - 40px));
     margin: 0 auto;
     padding: 34px 0 80px;
-  }
-
-  .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 22px;
-    margin-bottom: 42px;
-  }
-
-  .brand {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .brand-mark {
-    width: 56px;
-    height: 56px;
-    display: block;
-    filter: drop-shadow(0 10px 16px rgba(30,20,10,.12));
-  }
-
-  .brand-name {
-    font-family: Fraunces, Georgia, serif;
-    font-size: 26px;
-    line-height: 1;
-    font-weight: 700;
-    letter-spacing: -.045em;
-  }
-
-  .brand-name .os { color: var(--accent); font-weight: 600; }
-
-  .brand-sub {
-    margin-top: 4px;
-    display: block;
-    font-family: "JetBrains Mono", monospace;
-    color: var(--ink-faint);
-    font-size: 10px;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    font-weight: 700;
   }
 
   .mode-toggle {
     border: 1px solid var(--line);
     background: rgba(250,251,250,.72);
     border-radius: 999px;
-    display: flex;
+    display: inline-flex;
     gap: 4px;
     padding: 6px;
     box-shadow: 0 18px 44px -36px rgba(0,0,0,.3);
+    margin-bottom: 24px;
   }
 
   .mode-toggle button {
@@ -131,7 +52,7 @@
     color: var(--cream);
   }
 
-  .hero {
+  .arch-hero {
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: end;
@@ -139,7 +60,7 @@
     margin-bottom: 34px;
   }
 
-  h1 {
+  .arch-hero h1 {
     margin: 0;
     font-family: Fraunces, Georgia, serif;
     font-size: clamp(48px, 6vw, 86px);
@@ -149,9 +70,9 @@
     max-width: 960px;
   }
 
-  h1 .accent { color: var(--accent); }
+  .arch-hero h1 .accent { color: var(--accent); }
 
-  .lede {
+  .arch-lede {
     margin: 22px 0 0;
     max-width: 840px;
     color: var(--ink-soft);
@@ -387,7 +308,7 @@
     gap: 14px;
   }
 
-  .core-lockup .brand-mark {
+  .core-lockup .core-mark {
     width: 76px;
     height: 76px;
     filter: none;
@@ -591,7 +512,7 @@
   }
 
   @media (max-width: 1160px) {
-    .hero { grid-template-columns: 1fr; }
+    .arch-hero { grid-template-columns: 1fr; }
     .legend { min-width: 0; grid-template-columns: repeat(2, minmax(0,1fr)); }
     .flow { grid-template-columns: 1fr 1fr; min-height: auto; }
     .arrow-layer { display: none; }
@@ -599,12 +520,11 @@
   }
 
   @media (max-width: 760px) {
-    .page { width: min(100% - 28px, 1440px); padding-top: 18px; }
-    .topbar { flex-direction: column; align-items: flex-start; }
+    .arch-page { width: min(100% - 28px, 1440px); padding-top: 18px; }
     .mode-toggle { width: 100%; overflow-x: auto; border-radius: 18px; justify-content: flex-start; }
     .mode-toggle button { white-space: nowrap; }
-    h1 { font-size: clamp(44px, 15vw, 68px); }
-    .lede { font-size: 16px; }
+    .arch-hero h1 { font-size: clamp(44px, 15vw, 68px); }
+    .arch-lede { font-size: 16px; }
     .legend { grid-template-columns: 1fr; }
     .diagram-shell { padding: 14px; border-radius: 24px; }
     .flow { grid-template-columns: 1fr; }
@@ -614,246 +534,263 @@
 </style>
 </head>
 <body>
-  <main class="page">
-    <header class="topbar">
-      <div class="brand">
-        <svg class="brand-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M50 5 L88.97 27.5 V72.5 L50 95 L11.03 72.5 V27.5 Z" fill="#14130f"/>
-          <path d="M50 9.8 L84.8 29.9 V70.1 L50 90.2 L15.2 70.1 V29.9 Z" stroke="#f4f0e8" stroke-width="5.6" stroke-linejoin="round"/>
-          <path d="M34 70 V30 H57.5 C67.2 30 74 36 74 44.6 C74 53.2 67.2 59.2 57.5 59.2 H34" stroke="#f4f0e8" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M55.5 59.5 L74 70.5" stroke="#f4f0e8" stroke-width="7" stroke-linecap="round"/>
-          <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#10b981" stroke-width="6.5" stroke-linecap="round"/>
-          <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#10b981" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <div>
-          <div class="brand-name">Recourse<span class="os">OS</span></div>
-          <span class="brand-sub">MCP consequence layer</span>
+<div class="top-band">
+<nav class="container site-nav">
+  <a href="/" class="brand" aria-label="RecourseOS home">
+    <svg class="brand-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M50 5 L88.97 27.5 V72.5 L50 95 L11.03 72.5 V27.5 Z" fill="#06110e"/>
+      <path d="M50 9.8 L84.8 29.9 V70.1 L50 90.2 L15.2 70.1 V29.9 Z" stroke="#effbf3" stroke-width="5.6" stroke-linejoin="round"/>
+      <path d="M34 70 V30 H57.5 C67.2 30 74 36 74 44.6 C74 53.2 67.2 59.2 57.5 59.2 H34" stroke="#effbf3" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M55.5 59.5 L74 70.5" stroke="#effbf3" stroke-width="7" stroke-linecap="round"/>
+      <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round"/>
+      <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>
+      <span class="brand-name">Recourse<span class="os">OS</span></span>
+      <span class="brand-kicker">Consequence layer</span>
+    </span>
+  </a>
+  <div class="links">
+    <a href="/">home</a>
+    <a href="/resource-coverage.html">coverage</a>
+    <a href="/golden-fixtures.html">fixtures</a>
+    <a href="/agent-interface.html">agents</a>
+    <a href="/mcp-setup.html">mcp</a>
+    <a href="/console.html">console</a>
+    <a href="/about.html">about</a>
+    <a href="https://github.com/recourseOS/recourse" class="nav-cta">github</a>
+  </div>
+</nav>
+<header class="container doc-header">
+  <div class="eyebrow">system overview</div>
+  <h1>Architecture Diagram</h1>
+  <p class="lede">Interactive diagram showing where RecourseOS sits in the agent to MCP to cloud path.</p>
+</header>
+</div>
+
+<main class="arch-page">
+  <div class="mode-toggle" aria-label="Diagram mode selector">
+    <button class="active" data-mode="gateway">Gateway mode</button>
+    <button data-mode="advisory">Advisory mode</button>
+    <button data-mode="ci">CLI / CI mode</button>
+  </div>
+
+  <section class="arch-hero">
+    <div>
+      <h1>Where RecourseOS sits in the <span class="accent">agent → MCP → cloud</span> path.</h1>
+      <p class="arch-lede">
+        RecourseOS should sit between intent and mutation. Agents, humans, CI jobs, and MCP clients can all ask one question before a destructive action runs:
+        <strong>what happens if this lands, and can we get back?</strong>
+      </p>
+    </div>
+
+    <aside class="legend">
+      <div class="legend-item"><span class="swatch accent"></span> RecourseOS consequence check</div>
+      <div class="legend-item"><span class="swatch red"></span> Block / irreversible</div>
+      <div class="legend-item"><span class="swatch amber"></span> Needs review / weak evidence</div>
+      <div class="legend-item"><span class="swatch green"></span> Allow / recoverable</div>
+      <div class="legend-item"><span class="swatch blue"></span> Read-only evidence</div>
+    </aside>
+  </section>
+
+  <section class="diagram-shell" aria-label="Interactive architecture diagram">
+    <svg class="arrow-layer" viewBox="0 0 1400 660" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L9,3 z" fill="#10b981"></path>
+        </marker>
+      </defs>
+
+      <path id="a-agent-client" class="arrow hot" d="M270 170 C340 170 355 170 420 170"/>
+      <text class="arrow-label" x="322" y="151">intent</text>
+      <path id="a-client-recourse" class="arrow hot" d="M615 170 C675 170 690 170 735 170"/>
+      <text class="arrow-label" x="643" y="151">preflight</text>
+      <path id="a-recourse-tools" class="arrow hot" d="M980 170 C1040 170 1055 170 1125 170"/>
+      <text class="arrow-label" x="1012" y="151">verdict gates tool use</text>
+      <path id="a-tools-cloud" class="arrow hot" d="M1248 330 C1248 380 1248 400 1248 454"/>
+      <text class="arrow-label" x="1266" y="394">mutation</text>
+      <path id="a-cloud-evidence" class="arrow dashed hot" d="M1135 510 C1018 528 958 510 910 455"/>
+      <text class="arrow-label" x="962" y="536">read-only evidence</text>
+      <path id="a-recourse-policy" class="arrow dashed hot" d="M875 350 C875 395 875 410 875 455"/>
+      <text class="arrow-label" x="895" y="405">policy / approval</text>
+      <path id="a-agent-direct-tools" class="arrow dashed dim" d="M250 266 C514 314 840 316 1120 246"/>
+      <text class="arrow-label" x="570" y="304">advisory mode: agent may still call tools directly</text>
+      <path id="a-ci-recourse" class="arrow dashed dim" d="M260 492 C450 560 630 542 735 410"/>
+      <text class="arrow-label" x="410" y="545">CLI / CI submits plan</text>
+    </svg>
+
+    <div class="flow">
+      <section class="zone" data-zone="intent">
+        <div class="zone-title">1 · Intent sources <span class="pill">request</span></div>
+
+        <article class="node hot" data-node="agent">
+          <h3>AI agent</h3>
+          <p>Claude Code, Cursor, Codex-style agents, internal SRE bots, autonomous remediation agents.</p>
+          <span class="mono">"I need to change infrastructure."</span>
+        </article>
+
+        <article class="node" data-node="human">
+          <h3>Human operator</h3>
+          <p>An engineer runs Terraform, shell, kubectl, AWS CLI, gcloud, or az commands locally.</p>
+          <span class="mono">recourse shell -- "aws rds delete..."</span>
+        </article>
+
+        <article class="node" data-node="ci">
+          <h3>CI / PR workflow</h3>
+          <p>GitHub Actions, GitLab, Jenkins, Atlantis, Spacelift, Azure DevOps, or Terraform Cloud-style pipelines.</p>
+          <span class="mono">terraform show -json tfplan &gt; plan.json</span>
+        </article>
+      </section>
+
+      <section class="zone" data-zone="client">
+        <div class="zone-title">2 · Client layer <span class="pill">transport</span></div>
+
+        <article class="node hot" data-node="mcpclient">
+          <h3>MCP client</h3>
+          <p>The agent runtime discovers tools and decides whether to call RecourseOS before acting.</p>
+          <span class="mono">recourse_evaluate_terraform | _shell | _mcp_call</span>
+        </article>
+
+        <div class="small-group">
+          <article class="mini-node" data-node="cli">
+            <h4>CLI</h4>
+            <p>Manual checks, debugging, local reports, shell wrapping.</p>
+          </article>
+          <article class="mini-node" data-node="ciadapter">
+            <h4>CI adapter</h4>
+            <p>Exit codes, PR comments, merge gates, artifact uploads.</p>
+          </article>
         </div>
-      </div>
 
-      <div class="mode-toggle" aria-label="Diagram mode selector">
-        <button class="active" data-mode="gateway">Gateway mode</button>
-        <button data-mode="advisory">Advisory mode</button>
-        <button data-mode="ci">CLI / CI mode</button>
-      </div>
-    </header>
+        <article class="node" data-node="app">
+          <h3>Local / team UI</h3>
+          <p>Shows recent reports, blocked actions, approval history, evidence, and explanations.</p>
+          <span class="mono">recourse ui</span>
+        </article>
+      </section>
 
-    <section class="hero">
-      <div>
-        <h1>Where RecourseOS sits in the <span class="accent">agent → MCP → cloud</span> path.</h1>
-        <p class="lede">
-          RecourseOS should sit between intent and mutation. Agents, humans, CI jobs, and MCP clients can all ask one question before a destructive action runs:
-          <strong>what happens if this lands, and can we get back?</strong>
-        </p>
-      </div>
+      <section class="zone dark" data-zone="recourse">
+        <div class="zone-title">3 · RecourseOS <span class="pill">gate</span></div>
 
-      <aside class="legend">
-        <div class="legend-item"><span class="swatch accent"></span> RecourseOS consequence check</div>
-        <div class="legend-item"><span class="swatch red"></span> Block / irreversible</div>
-        <div class="legend-item"><span class="swatch amber"></span> Needs review / weak evidence</div>
-        <div class="legend-item"><span class="swatch green"></span> Allow / recoverable</div>
-        <div class="legend-item"><span class="swatch blue"></span> Read-only evidence</div>
-      </aside>
-    </section>
+        <div class="recourse-core">
+          <div class="core-header">
+            <div class="core-lockup">
+              <svg class="core-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M50 5 L88.97 27.5 V72.5 L50 95 L11.03 72.5 V27.5 Z" fill="transparent"/>
+                <path d="M50 9.8 L84.8 29.9 V70.1 L50 90.2 L15.2 70.1 V29.9 Z" stroke="#f4f0e8" stroke-width="5.6" stroke-linejoin="round"/>
+                <path d="M34 70 V30 H57.5 C67.2 30 74 36 74 44.6 C74 53.2 67.2 59.2 57.5 59.2 H34" stroke="#f4f0e8" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M55.5 59.5 L74 70.5" stroke="#f4f0e8" stroke-width="7" stroke-linecap="round"/>
+                <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#10b981" stroke-width="6.5" stroke-linecap="round"/>
+                <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#10b981" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <div>
+                <div class="core-name">Recourse<span class="os">OS</span></div>
+                <div class="core-tag">The pre-action consequence layer for infrastructure agents.</div>
+              </div>
+            </div>
+          </div>
 
-    <section class="diagram-shell" aria-label="Interactive architecture diagram">
-      <svg class="arrow-layer" viewBox="0 0 1400 660" preserveAspectRatio="none" aria-hidden="true">
-        <defs>
-          <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
-            <path d="M0,0 L0,6 L9,3 z" fill="#10b981"></path>
-          </marker>
-        </defs>
-
-        <path id="a-agent-client" class="arrow hot" d="M270 170 C340 170 355 170 420 170"/>
-        <text class="arrow-label" x="322" y="151">intent</text>
-        <path id="a-client-recourse" class="arrow hot" d="M615 170 C675 170 690 170 735 170"/>
-        <text class="arrow-label" x="643" y="151">preflight</text>
-        <path id="a-recourse-tools" class="arrow hot" d="M980 170 C1040 170 1055 170 1125 170"/>
-        <text class="arrow-label" x="1012" y="151">verdict gates tool use</text>
-        <path id="a-tools-cloud" class="arrow hot" d="M1248 330 C1248 380 1248 400 1248 454"/>
-        <text class="arrow-label" x="1266" y="394">mutation</text>
-        <path id="a-cloud-evidence" class="arrow dashed hot" d="M1135 510 C1018 528 958 510 910 455"/>
-        <text class="arrow-label" x="962" y="536">read-only evidence</text>
-        <path id="a-recourse-policy" class="arrow dashed hot" d="M875 350 C875 395 875 410 875 455"/>
-        <text class="arrow-label" x="895" y="405">policy / approval</text>
-        <path id="a-agent-direct-tools" class="arrow dashed dim" d="M250 266 C514 314 840 316 1120 246"/>
-        <text class="arrow-label" x="570" y="304">advisory mode: agent may still call tools directly</text>
-        <path id="a-ci-recourse" class="arrow dashed dim" d="M260 492 C450 560 630 542 735 410"/>
-        <text class="arrow-label" x="410" y="545">CLI / CI submits plan</text>
-      </svg>
-
-      <div class="flow">
-        <section class="zone" data-zone="intent">
-          <div class="zone-title">1 · Intent sources <span class="pill">request</span></div>
-
-          <article class="node hot" data-node="agent">
-            <h3>AI agent</h3>
-            <p>Claude Code, Cursor, Codex-style agents, internal SRE bots, autonomous remediation agents.</p>
-            <span class="mono">“I need to change infrastructure.”</span>
-          </article>
-
-          <article class="node" data-node="human">
-            <h3>Human operator</h3>
-            <p>An engineer runs Terraform, shell, kubectl, AWS CLI, gcloud, or az commands locally.</p>
-            <span class="mono">recourse shell -- "aws rds delete..."</span>
-          </article>
-
-          <article class="node" data-node="ci">
-            <h3>CI / PR workflow</h3>
-            <p>GitHub Actions, GitLab, Jenkins, Atlantis, Spacelift, Azure DevOps, or Terraform Cloud-style pipelines.</p>
-            <span class="mono">terraform show -json tfplan &gt; plan.json</span>
-          </article>
-        </section>
-
-        <section class="zone" data-zone="client">
-          <div class="zone-title">2 · Client layer <span class="pill">transport</span></div>
-
-          <article class="node hot" data-node="mcpclient">
-            <h3>MCP client</h3>
-            <p>The agent runtime discovers tools and decides whether to call RecourseOS before acting.</p>
-            <span class="mono">recourse_evaluate_terraform | _shell | _mcp_call</span>
+          <article class="node hot" data-node="mcpserver">
+            <h3>MCP server</h3>
+            <p>Front door for agents. Exposes tools with descriptions that teach the agent to call before destructive work.</p>
+            <span class="mono">npx recourse-cli mcp serve</span>
           </article>
 
           <div class="small-group">
-            <article class="mini-node" data-node="cli">
-              <h4>CLI</h4>
-              <p>Manual checks, debugging, local reports, shell wrapping.</p>
+            <article class="mini-node" data-node="adapters">
+              <h4>Adapters</h4>
+              <p>Terraform plan, shell command, MCP tool call, kubectl/cloud CLI patterns.</p>
             </article>
-            <article class="mini-node" data-node="ciadapter">
-              <h4>CI adapter</h4>
-              <p>Exit codes, PR comments, merge gates, artifact uploads.</p>
-            </article>
-          </div>
-
-          <article class="node" data-node="app">
-            <h3>Local / team UI</h3>
-            <p>Shows recent reports, blocked actions, approval history, evidence, and explanations.</p>
-            <span class="mono">recourse ui</span>
-          </article>
-        </section>
-
-        <section class="zone dark" data-zone="recourse">
-          <div class="zone-title">3 · RecourseOS <span class="pill">gate</span></div>
-
-          <div class="recourse-core">
-            <div class="core-header">
-              <div class="core-lockup">
-                <svg class="brand-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path d="M50 5 L88.97 27.5 V72.5 L50 95 L11.03 72.5 V27.5 Z" fill="transparent"/>
-                  <path d="M50 9.8 L84.8 29.9 V70.1 L50 90.2 L15.2 70.1 V29.9 Z" stroke="#f4f0e8" stroke-width="5.6" stroke-linejoin="round"/>
-                  <path d="M34 70 V30 H57.5 C67.2 30 74 36 74 44.6 C74 53.2 67.2 59.2 57.5 59.2 H34" stroke="#f4f0e8" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M55.5 59.5 L74 70.5" stroke="#f4f0e8" stroke-width="7" stroke-linecap="round"/>
-                  <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#10b981" stroke-width="6.5" stroke-linecap="round"/>
-                  <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#10b981" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <div>
-                  <div class="core-name">Recourse<span class="os">OS</span></div>
-                  <div class="core-tag">The pre-action consequence layer for infrastructure agents.</div>
-                </div>
-              </div>
-            </div>
-
-            <article class="node hot" data-node="mcpserver">
-              <h3>MCP server</h3>
-              <p>Front door for agents. Exposes tools with descriptions that teach the agent to call before destructive work.</p>
-              <span class="mono">npx recourse-cli mcp serve</span>
-            </article>
-
-            <div class="small-group">
-              <article class="mini-node" data-node="adapters">
-                <h4>Adapters</h4>
-                <p>Terraform plan, shell command, MCP tool call, kubectl/cloud CLI patterns.</p>
-              </article>
-              <article class="mini-node" data-node="engine">
-                <h4>Consequence engine</h4>
-                <p>Rules-first known resources, BitNet-ready classifier for unknowns.</p>
-              </article>
-            </div>
-
-            <div class="decision-stack">
-              <div class="decision">
-                <span class="red">✗</span>
-                <span class="label">Block</span>
-                <span class="badge red">unrecoverable</span>
-                <span class="desc">No verified recovery path or destructive command skips safety mechanisms.</span>
-              </div>
-
-              <div class="decision">
-                <span class="amber">!</span>
-                <span class="label">Review</span>
-                <span class="badge amber">ambiguous</span>
-                <span class="desc">Unknown resource semantics, weak evidence, or policy requires approval.</span>
-              </div>
-
-              <div class="decision">
-                <span class="green">✓</span>
-                <span class="label">Allow</span>
-                <span class="badge green">recoverable</span>
-                <span class="desc">Reversible or verified recovery evidence exists.</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="zone" data-zone="tools">
-          <div class="zone-title">4 · Tools + targets <span class="pill">action</span></div>
-
-          <article class="node hot" data-node="mcptools">
-            <h3>MCP tools</h3>
-            <p>The actual tools the agent wanted to call: Terraform, cloud APIs, Kubernetes, GitHub, CI, runbooks.</p>
-            <span class="mono">create · update · delete · rotate · revoke · apply</span>
-          </article>
-
-          <div class="small-group">
-            <article class="mini-node" data-node="terraform">
-              <h4>Terraform</h4>
-              <p>plan, show JSON, apply, destroy, workspace changes.</p>
-            </article>
-            <article class="mini-node" data-node="shell">
-              <h4>Shell / CLI</h4>
-              <p>aws, gcloud, az, kubectl, rm, chmod, psql, scripts.</p>
+            <article class="mini-node" data-node="engine">
+              <h4>Consequence engine</h4>
+              <p>Rules-first known resources, BitNet-ready classifier for unknowns.</p>
             </article>
           </div>
 
-          <article class="node" data-node="cloud">
-            <h3>Cloud + production</h3>
-            <p>AWS, GCP, Azure, Kubernetes, databases, buckets, secrets, IAM, networks, queues.</p>
-            <span class="mono">mutation happens here only after verdict</span>
+          <div class="decision-stack">
+            <div class="decision">
+              <span class="red">✗</span>
+              <span class="label">Block</span>
+              <span class="badge red">unrecoverable</span>
+              <span class="desc">No verified recovery path or destructive command skips safety mechanisms.</span>
+            </div>
+
+            <div class="decision">
+              <span class="amber">!</span>
+              <span class="label">Review</span>
+              <span class="badge amber">ambiguous</span>
+              <span class="desc">Unknown resource semantics, weak evidence, or policy requires approval.</span>
+            </div>
+
+            <div class="decision">
+              <span class="green">✓</span>
+              <span class="label">Allow</span>
+              <span class="badge green">recoverable</span>
+              <span class="desc">Reversible or verified recovery evidence exists.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="zone" data-zone="tools">
+        <div class="zone-title">4 · Tools + targets <span class="pill">action</span></div>
+
+        <article class="node hot" data-node="mcptools">
+          <h3>MCP tools</h3>
+          <p>The actual tools the agent wanted to call: Terraform, cloud APIs, Kubernetes, GitHub, CI, runbooks.</p>
+          <span class="mono">create · update · delete · rotate · revoke · apply</span>
+        </article>
+
+        <div class="small-group">
+          <article class="mini-node" data-node="terraform">
+            <h4>Terraform</h4>
+            <p>plan, show JSON, apply, destroy, workspace changes.</p>
           </article>
-
-          <article class="node" data-node="evidence">
-            <h3>Read-only evidence</h3>
-            <p>Optional enrichment: snapshots, backup retention, object lock, versioning, deletion windows, IAM dependencies.</p>
-            <span class="mono">describe/list/read only</span>
+          <article class="mini-node" data-node="shell">
+            <h4>Shell / CLI</h4>
+            <p>aws, gcloud, az, kubectl, rm, chmod, psql, scripts.</p>
           </article>
-
-          <article class="node" data-node="policy">
-            <h3>Policy + approval</h3>
-            <p>Local policy, team policy, human approval, exception tracking, audit history.</p>
-            <span class="mono">block | review | allow</span>
-          </article>
-        </section>
-      </div>
-    </section>
-
-    <section class="details">
-      <article class="panel">
-        <h2 id="mode-title">Gateway mode: RecourseOS gates tool access.</h2>
-        <p id="mode-copy">
-          This is the strongest architecture. The agent does not get direct access to dangerous infrastructure tools. It must call RecourseOS first, receive a consequence report, and only then receive permission to call the mutation tool.
-        </p>
-
-        <div class="sequence" id="steps">
-          <div class="step"><span class="step-num">1</span><div><strong>Agent proposes action.</strong><span>“Delete this database,” “run terraform apply,” or “call this MCP tool.”</span></div></div>
-          <div class="step"><span class="step-num">2</span><div><strong>MCP client calls RecourseOS.</strong><span>The preflight tool description tells the agent this is required before destructive actions.</span></div></div>
-          <div class="step"><span class="step-num">3</span><div><strong>RecourseOS evaluates consequence.</strong><span>Adapters normalize the intent, evidence enriches the report, and policy decides block/review/allow.</span></div></div>
-          <div class="step"><span class="step-num">4</span><div><strong>Only safe or approved actions reach cloud tools.</strong><span>Unrecoverable actions are blocked before they mutate AWS, GCP, Azure, Kubernetes, or Terraform state.</span></div></div>
         </div>
 
-        <p class="caption">Gateway mode is the product-grade version: RecourseOS is in the action path, not just beside it.</p>
-      </article>
+        <article class="node" data-node="cloud">
+          <h3>Cloud + production</h3>
+          <p>AWS, GCP, Azure, Kubernetes, databases, buckets, secrets, IAM, networks, queues.</p>
+          <span class="mono">mutation happens here only after verdict</span>
+        </article>
 
-      <article class="panel schema">
+        <article class="node" data-node="evidence">
+          <h3>Read-only evidence</h3>
+          <p>Optional enrichment: snapshots, backup retention, object lock, versioning, deletion windows, IAM dependencies.</p>
+          <span class="mono">describe/list/read only</span>
+        </article>
+
+        <article class="node" data-node="policy">
+          <h3>Policy + approval</h3>
+          <p>Local policy, team policy, human approval, exception tracking, audit history.</p>
+          <span class="mono">block | review | allow</span>
+        </article>
+      </section>
+    </div>
+  </section>
+
+  <section class="details">
+    <article class="panel">
+      <h2 id="mode-title">Gateway mode: RecourseOS gates tool access.</h2>
+      <p id="mode-copy">
+        This is the strongest architecture. The agent does not get direct access to dangerous infrastructure tools. It must call RecourseOS first, receive a consequence report, and only then receive permission to call the mutation tool.
+      </p>
+
+      <div class="sequence" id="steps">
+        <div class="step"><span class="step-num">1</span><div><strong>Agent proposes action.</strong><span>"Delete this database," "run terraform apply," or "call this MCP tool."</span></div></div>
+        <div class="step"><span class="step-num">2</span><div><strong>MCP client calls RecourseOS.</strong><span>The preflight tool description tells the agent this is required before destructive actions.</span></div></div>
+        <div class="step"><span class="step-num">3</span><div><strong>RecourseOS evaluates consequence.</strong><span>Adapters normalize the intent, evidence enriches the report, and policy decides block/review/allow.</span></div></div>
+        <div class="step"><span class="step-num">4</span><div><strong>Only safe or approved actions reach cloud tools.</strong><span>Unrecoverable actions are blocked before they mutate AWS, GCP, Azure, Kubernetes, or Terraform state.</span></div></div>
+      </div>
+
+      <p class="caption">Gateway mode is the product-grade version: RecourseOS is in the action path, not just beside it.</p>
+    </article>
+
+    <article class="panel schema">
 <pre>{
   <span class="key">"tool"</span>: <span class="string">"recourse_evaluate_terraform"</span>,
   <span class="key">"input"</span>: {
@@ -876,9 +813,18 @@
 <span class="string">recourse_evaluate_shell</span>      <span class="warn">// Shell commands</span>
 <span class="string">recourse_evaluate_mcp_call</span>   <span class="warn">// MCP tool calls</span>
 <span class="string">recourse_supported_resources</span> <span class="warn">// List coverage</span></pre>
-      </article>
-    </section>
-  </main>
+    </article>
+  </section>
+</main>
+
+<footer class="container">
+  <span>&copy; 2026 RecourseOS</span>
+  <span>
+    <a href="/brand.html">brand</a>
+    <a href="https://github.com/recourseOS/recourse">github</a>
+    <a href="https://www.npmjs.com/package/recourse-cli">npm</a>
+  </span>
+</footer>
 
 <script>
   const modes = {
@@ -890,7 +836,7 @@
       hotArrows: ["a-agent-client", "a-client-recourse", "a-recourse-tools", "a-tools-cloud", "a-cloud-evidence", "a-recourse-policy"],
       dimArrows: ["a-agent-direct-tools", "a-ci-recourse"],
       steps: [
-        ["Agent proposes action.", "“Delete this database,” “run terraform apply,” or “call this MCP tool.”"],
+        ["Agent proposes action.", "\"Delete this database,\" \"run terraform apply,\" or \"call this MCP tool.\""],
         ["MCP client calls RecourseOS.", "The preflight tool description tells the agent this is required before destructive actions."],
         ["RecourseOS evaluates consequence.", "Adapters normalize the intent, evidence enriches the report, and policy decides block/review/allow."],
         ["Only safe or approved actions reach cloud tools.", "Unrecoverable actions are blocked before they mutate AWS, GCP, Azure, Kubernetes, or Terraform state."]
