@@ -3,7 +3,7 @@
   "name": "io.github.recourseOS/recourse",
   "title": "RecourseOS",
   "description": "Consequence evaluation for AI agents. Check recoverability before destructive actions.",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "websiteUrl": "https://recourseos.com",
   "repository": {
     "url": "https://github.com/recourseOS/recourse",
@@ -13,7 +13,7 @@
     {
       "registryType": "npm",
       "identifier": "recourse-cli",
-      "version": "0.1.12",
+      "version": "0.1.13",
       "transport": {
         "type": "stdio",
         "args": ["mcp", "serve"]
