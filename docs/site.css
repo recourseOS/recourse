@@ -243,11 +243,14 @@ h3 { font-size: 24px; }
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(240, 253, 244, 0.12);
   border-radius: 8px;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .hero-command code {
   color: rgba(240, 253, 244, 0.8);
   font-size: 13px;
+  white-space: nowrap;
 }
 
 .hero-command button {
@@ -1091,8 +1094,19 @@ select:focus, textarea:focus, button:focus-visible {
   .brand-kicker { display: none; }
   .hero { padding: 36px 0 32px; }
   .hero.hero-simple { padding: 48px 0 36px; }
-  .hero-command { flex-direction: column; gap: 8px; }
-  .hero-command code { font-size: 11px; }
+  .hero-command {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .hero-command code {
+    font-size: 10px;
+    word-break: break-all;
+    white-space: normal;
+    display: block;
+  }
   h1 { font-size: clamp(28px, 8vw, 36px); }
   h2 { font-size: clamp(24px, 6vw, 32px); }
   .section { padding: 56px 0; }
