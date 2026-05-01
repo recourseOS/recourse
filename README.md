@@ -1,6 +1,28 @@
-# recourse
+<p align="center">
+  <img src="https://recourseos.com/brand/logo-mark-512.png" alt="RecourseOS" width="120" />
+</p>
 
-Consequence layer for AI agents. Check recoverability before destructive actions.
+<h1 align="center">RecourseOS</h1>
+
+<p align="center">
+  <strong>Consequence layer for AI agents</strong><br>
+  Check recoverability before destructive actions
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/recourse-cli"><img src="https://img.shields.io/npm/v/recourse-cli.svg" alt="npm version"></a>
+  <a href="https://github.com/recourseOS/recourse/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
+  <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-Registry-10b981.svg" alt="MCP Registry"></a>
+</p>
+
+<p align="center">
+  <a href="https://recourseos.com">Website</a> ·
+  <a href="https://recourseos.com/mcp-setup.html">MCP Setup</a> ·
+  <a href="https://recourseos.com/console.html">Console</a> ·
+  <a href="https://recourseos.com/resource-coverage.html">Coverage</a>
+</p>
+
+---
 
 Recourse is an MCP server that evaluates Terraform plans, shell commands, and tool calls before execution. It returns a structured verdict — `allow`, `warn`, `escalate`, or `block` — with recoverability tier and evidence. Agents call Recourse before they act; humans see what the agent checked.
 
