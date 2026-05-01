@@ -101,7 +101,8 @@ export function renderDocPage(page: DocPage, markdown: string): string {
     <a href="/agent-interface.html">agents</a>
     <a href="/mcp-setup.html">mcp</a>
     <a href="/console.html">console</a>
-    <a href="https://github.com/recourseOS/recourse">github</a>
+    <a href="/about.html">about</a>
+    <a href="https://github.com/recourseOS/recourse" class="nav-cta">github</a>
   </div>
 </nav>
 <header class="container doc-header">
