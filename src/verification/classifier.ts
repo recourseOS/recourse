@@ -462,7 +462,7 @@ export class BitNetResourceClassifier implements VerificationClassifier {
    */
   private classifyWithModel(resourceType: string): { category: VerificationCategory; confidence: number } {
     const model = this.model!;
-    const tokens = resourceType.toLowerCase().split(/[_\-\.]+/).filter(t => t.length > 0);
+    const tokens = resourceType.toLowerCase().split(/[_\-.]+/).filter(t => t.length > 0);
 
     // Average pool embeddings
     const pooled = new Array(model.config.embedDim).fill(0);

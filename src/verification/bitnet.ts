@@ -39,7 +39,7 @@ const NUM_CATEGORIES = CATEGORIES.length;
  * "aws_db_instance" → ["aws", "db", "instance"]
  */
 function tokenize(resourceType: string): string[] {
-  return resourceType.toLowerCase().split(/[_\-\.]+/).filter(t => t.length > 0);
+  return resourceType.toLowerCase().split(/[_\-.]+/).filter(t => t.length > 0);
 }
 
 /**
