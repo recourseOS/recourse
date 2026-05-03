@@ -10,6 +10,7 @@ import {
   type ClassificationTrace,
 } from '../types.js';
 import { ClassificationContext } from '../../analyzer/trace.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const kmsHandler: ResourceHandler = {
   resourceTypes: [
@@ -17,6 +18,43 @@ export const kmsHandler: ResourceHandler = {
     'aws_kms_alias',
     'aws_kms_grant',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'kms.key_state',
+        level: 'required',
+        description: 'Current key state (Enabled/Disabled/PendingDeletion)',
+        blocksSafeVerdict: true,
+        defaultAssumption: 'Enabled',
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'kms.pending_deletion_window',
+        level: 'required',
+        description: 'Scheduled deletion waiting period in days',
+        blocksSafeVerdict: true,
+        defaultAssumption: 7,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'kms.aliases',
+        level: 'recommended',
+        description: 'Aliases pointing to this key',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'kms.grants',
+        level: 'recommended',
+        description: 'Grants allowing use of this key',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(
     change: ResourceChange,

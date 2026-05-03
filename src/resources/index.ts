@@ -183,6 +183,46 @@ export function hasDetailedTracing(resourceType: string): boolean {
   return !!handler?.getRecoverabilityTraced;
 }
 
+/**
+ * Get evidence requirements from a handler, if the handler declares them.
+ * Supports both simple form (same for all types) and per-type form.
+ * Returns undefined if the handler doesn't have requirements for the given action.
+ */
+export function getHandlerEvidenceRequirements(
+  resourceType: string,
+  action: 'create' | 'update' | 'delete'
+): import('../core/state-schema.js').EvidenceRequirement[] | undefined {
+  const handler = handlerMap.get(resourceType);
+  if (!handler?.evidenceRequirements) {
+    return undefined;
+  }
+
+  const reqs = handler.evidenceRequirements;
+
+  // Check if it's per-type form (keyed by resource type)
+  if (resourceType in reqs) {
+    const perTypeReqs = reqs as Record<string, { create?: unknown[]; update?: unknown[]; delete?: unknown[] }>;
+    return perTypeReqs[resourceType]?.[action] as import('../core/state-schema.js').EvidenceRequirement[] | undefined;
+  }
+
+  // Simple form (same for all resource types)
+  const simpleReqs = reqs as { create?: unknown[]; update?: unknown[]; delete?: unknown[] };
+  return simpleReqs[action] as import('../core/state-schema.js').EvidenceRequirement[] | undefined;
+}
+
+/**
+ * Get all resource types where the handler declares evidence requirements.
+ */
+export function getHandlerResourceTypesWithRequirements(): string[] {
+  const types: string[] = [];
+  for (const handler of handlers) {
+    if (handler.evidenceRequirements) {
+      types.push(...handler.resourceTypes);
+    }
+  }
+  return types;
+}
+
 // Re-export types
 export * from './types.js';
 export type { ClassificationTrace } from '../analyzer/trace.js';

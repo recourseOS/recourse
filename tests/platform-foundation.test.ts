@@ -113,6 +113,7 @@ describe('platform foundation', () => {
   });
 
   it('maps recoverability tiers to local policy decisions', () => {
+    // PolicyEvaluation uses .decision internally; ConsequenceReport uses .riskAssessment externally
     expect(evaluateRecoverability({
       tier: RecoverabilityTier.REVERSIBLE,
       label: RecoverabilityLabels[RecoverabilityTier.REVERSIBLE],
@@ -168,7 +169,7 @@ describe('platform foundation', () => {
       },
     });
 
-    expect(report.decision).toBe('block');
+    expect(report.riskAssessment).toBe('block');
     expect(report.summary.totalMutations).toBe(1);
     expect(report.summary.hasUnrecoverable).toBe(true);
     expect(report.summary.worstRecoverability.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
@@ -185,7 +186,7 @@ describe('platform foundation', () => {
       },
     });
 
-    expect(report.decision).toBe('escalate');
+    expect(report.riskAssessment).toBe('escalate');
     expect(report.summary.needsReview).toBe(true);
     expect(report.summary.worstRecoverability.tier).toBe(RecoverabilityTier.NEEDS_REVIEW);
     expect(report.mutations[0].intent.target.service).toBe('aws-s3');
@@ -205,7 +206,7 @@ describe('platform foundation', () => {
       },
     });
 
-    expect(report.decision).toBe('warn');
+    expect(report.riskAssessment).toBe('warn');
     expect(report.summary.worstRecoverability.tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
     expect(report.mutations[0].evidence.some(item => item.key === 's3.versioning')).toBe(true);
     expect(report.mutations[0].missingEvidence).toEqual([]);
@@ -230,7 +231,7 @@ describe('platform foundation', () => {
       }
     );
 
-    expect(report.decision).toBe('warn');
+    expect(report.riskAssessment).toBe('warn');
     expect(report.summary.worstRecoverability.tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
     expect(report.mutations[0].intent.target.service).toBe('aws-rds');
     expect(report.mutations[0].evidence.some(item => item.key === 'rds.backup_retention_period')).toBe(true);
@@ -254,7 +255,7 @@ describe('platform foundation', () => {
       }
     );
 
-    expect(report.decision).toBe('warn');
+    expect(report.riskAssessment).toBe('warn');
     expect(report.summary.worstRecoverability.tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
     expect(report.mutations[0].intent.target.service).toBe('aws-dynamodb');
     expect(report.mutations[0].evidence.some(item => item.key === 'dynamodb.pitr')).toBe(true);
@@ -278,7 +279,7 @@ describe('platform foundation', () => {
       }
     );
 
-    expect(report.decision).toBe('allow');
+    expect(report.riskAssessment).toBe('allow');
     expect(report.summary.worstRecoverability.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
     expect(report.mutations[0].intent.target.service).toBe('aws-iam');
     expect(report.mutations[0].evidence.some(item => item.key === 'iam.attached_policy_count')).toBe(true);
@@ -302,7 +303,7 @@ describe('platform foundation', () => {
       }
     );
 
-    expect(report.decision).toBe('escalate');
+    expect(report.riskAssessment).toBe('escalate');
     expect(report.summary.worstRecoverability.tier).toBe(RecoverabilityTier.NEEDS_REVIEW);
     expect(report.mutations[0].intent.target.service).toBe('aws-kms');
     expect(report.mutations[0].evidence.some(item => item.key === 'kms.key_state')).toBe(true);
@@ -311,7 +312,7 @@ describe('platform foundation', () => {
   it('allows shell commands with no recognized high-risk mutation pattern', () => {
     const report = evaluateShellCommandConsequences('ls -la');
 
-    expect(report.decision).toBe('allow');
+    expect(report.riskAssessment).toBe('allow');
     expect(report.summary.needsReview).toBe(false);
     expect(report.summary.worstRecoverability.tier).toBe(RecoverabilityTier.REVERSIBLE);
   });
@@ -330,7 +331,7 @@ describe('platform foundation', () => {
       },
     });
 
-    expect(report.decision).toBe('escalate');
+    expect(report.riskAssessment).toBe('escalate');
     expect(report.summary.needsReview).toBe(true);
     expect(report.mutations[0].intent.source).toBe('mcp');
     expect(report.mutations[0].intent.target.id).toBe('prod-audit-logs');
@@ -356,7 +357,7 @@ describe('platform foundation', () => {
       },
     });
 
-    expect(report.decision).toBe('allow');
+    expect(report.riskAssessment).toBe('allow');
     expect(report.summary.worstRecoverability.tier).toBe(RecoverabilityTier.REVERSIBLE);
     expect(report.mutations[0].intent.target.type).toBe('s3_bucket');
     expect(report.mutations[0].evidence.some(item => item.key === 's3.object_lock')).toBe(true);
@@ -383,7 +384,7 @@ describe('platform foundation', () => {
       },
     });
 
-    expect(report.decision).toBe('allow');
+    expect(report.riskAssessment).toBe('allow');
     expect(report.summary.worstRecoverability.tier).toBe(RecoverabilityTier.REVERSIBLE);
     expect(report.mutations[0].intent.target.type).toBe('rds_db_instance');
     expect(report.mutations[0].evidence.some(item => item.key === 'rds.deletion_protection')).toBe(true);
@@ -410,7 +411,7 @@ describe('platform foundation', () => {
       },
     });
 
-    expect(report.decision).toBe('allow');
+    expect(report.riskAssessment).toBe('allow');
     expect(report.summary.worstRecoverability.tier).toBe(RecoverabilityTier.REVERSIBLE);
     expect(report.mutations[0].intent.target.type).toBe('dynamodb_table');
     expect(report.mutations[0].evidence.some(item => item.key === 'dynamodb.deletion_protection')).toBe(true);
@@ -437,7 +438,7 @@ describe('platform foundation', () => {
       },
     });
 
-    expect(report.decision).toBe('allow');
+    expect(report.riskAssessment).toBe('allow');
     expect(report.summary.worstRecoverability.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
     expect(report.mutations[0].intent.target.type).toBe('iam_role');
     expect(report.mutations[0].evidence.some(item => item.key === 'iam.instance_profile_count')).toBe(true);
@@ -464,7 +465,7 @@ describe('platform foundation', () => {
       },
     });
 
-    expect(report.decision).toBe('escalate');
+    expect(report.riskAssessment).toBe('escalate');
     expect(report.summary.worstRecoverability.tier).toBe(RecoverabilityTier.NEEDS_REVIEW);
     expect(report.mutations[0].intent.target.type).toBe('kms_key');
     expect(report.mutations[0].evidence.some(item => item.key === 'kms.deletion_date')).toBe(true);
@@ -477,7 +478,7 @@ describe('platform foundation', () => {
       arguments: {},
     });
 
-    expect(report.decision).toBe('allow');
+    expect(report.riskAssessment).toBe('allow');
     expect(report.summary.needsReview).toBe(false);
     expect(report.summary.worstRecoverability.tier).toBe(RecoverabilityTier.REVERSIBLE);
   });

@@ -15,17 +15,15 @@ describe('themed documentation pages', () => {
   it('links the landing page to themed docs instead of raw Markdown', () => {
     const index = readFileSync('docs/index.html', 'utf8');
 
+    // Main doc pages are linked
     expect(index).toContain('href="/resource-coverage.html"');
-    expect(index).toContain('href="/golden-fixtures.html"');
-    expect(index).toContain('href="/live-aws-tests.html"');
-    expect(index).toContain('href="/schema-gaps.html"');
     expect(index).toContain('href="/agent-interface.html"');
     expect(index).toContain('href="/mcp-setup.html"');
     expect(index).toContain('href="/console.html"');
+    expect(index).toContain('href="/docs.html"');
+
+    // No raw markdown links
     expect(index).not.toContain('href="/resource-coverage.md"');
-    expect(index).not.toContain('href="/golden-fixtures.md"');
-    expect(index).not.toContain('href="/live-aws-tests.md"');
-    expect(index).not.toContain('href="/schema-gaps.md"');
     expect(index).not.toContain('href="/agent-interface.md"');
     expect(index).not.toContain('href="/mcp-setup.md"');
   });

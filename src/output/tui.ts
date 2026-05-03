@@ -26,13 +26,13 @@ export function formatTui(report: ConsequenceReport, options: TuiOptions): strin
     keyValue('Source', source),
     keyValue('Actor', actorLine(primary)),
     '',
-    paint(decisionTitle(report.decision), decisionColor(report.decision), color),
+    paint(decisionTitle(report.riskAssessment), decisionColor(report.riskAssessment), color),
     decisionSummary(report),
     '',
-    keyValue('Decision', paint(report.decision, decisionColor(report.decision), color)),
+    keyValue('Decision', paint(report.riskAssessment, decisionColor(report.riskAssessment), color)),
     keyValue('Recoverability', report.summary.worstRecoverability.label),
     keyValue('Confidence', confidenceLabel),
-    keyValue('Policy', policyAction(report.decision)),
+    keyValue('Policy', policyAction(report.riskAssessment)),
     '',
     section('Action'),
     keyValue('Type', actionValue(primary)),
@@ -149,7 +149,7 @@ function normalizeSource(source: string): string {
   return source === 'mcp' ? 'MCP tool call' : source;
 }
 
-function policyAction(decision: ConsequenceReport['decision']): string {
+function policyAction(decision: ConsequenceReport['riskAssessment']): string {
   return {
     allow: 'continue',
     warn: 'surface warning',
@@ -158,7 +158,7 @@ function policyAction(decision: ConsequenceReport['decision']): string {
   }[decision];
 }
 
-function decisionTitle(decision: ConsequenceReport['decision']): string {
+function decisionTitle(decision: ConsequenceReport['riskAssessment']): string {
   return {
     allow: 'OK TO RUN',
     warn: 'RUN WITH WARNING',
@@ -167,8 +167,8 @@ function decisionTitle(decision: ConsequenceReport['decision']): string {
   }[decision];
 }
 
-function decisionColor(decision: ConsequenceReport['decision']): ColorName {
-  const colors: Record<ConsequenceReport['decision'], ColorName> = {
+function decisionColor(decision: ConsequenceReport['riskAssessment']): ColorName {
+  const colors: Record<ConsequenceReport['riskAssessment'], ColorName> = {
     allow: 'green',
     warn: 'yellow',
     escalate: 'yellow',
@@ -196,13 +196,13 @@ function paint(value: string, color: ColorName, enabled: boolean): string {
 }
 
 function decisionSummary(report: ConsequenceReport): string {
-  if (report.decision === 'block') {
+  if (report.riskAssessment === 'block') {
     return 'This change can cause unrecoverable loss. Change the recovery posture before running it.';
   }
-  if (report.decision === 'escalate') {
+  if (report.riskAssessment === 'escalate') {
     return 'Recourse needs more recovery evidence or a human approval before this action runs.';
   }
-  if (report.decision === 'warn') {
+  if (report.riskAssessment === 'warn') {
     return 'This action may be recoverable, but the recovery path should be surfaced before running it.';
   }
   return 'Current evidence says this action is reversible under policy.';
@@ -210,33 +210,33 @@ function decisionSummary(report: ConsequenceReport): string {
 
 function whyText(report: ConsequenceReport, mutation: AnalyzedMutation | undefined): string {
   if (!mutation) {
-    return report.decisionReason;
+    return report.assessmentReason;
   }
-  if (report.decision === 'escalate') {
+  if (report.riskAssessment === 'escalate') {
     return `Recourse recognized ${actionValue(mutation)} on ${targetValue(mutation)}, but it does not have enough recovery evidence to call it safe.`;
   }
-  if (report.decision === 'allow') {
+  if (report.riskAssessment === 'allow') {
     return mutation.recoverability.reasoning;
   }
-  return report.decisionReason || mutation.recoverability.reasoning;
+  return report.assessmentReason || mutation.recoverability.reasoning;
 }
 
 function nextSteps(report: ConsequenceReport): string[] {
-  if (report.decision === 'block') {
+  if (report.riskAssessment === 'block') {
     return [
       '1. Do not run this action.',
       '2. Enable protection, backups, snapshots, retention, or another recovery path.',
       '3. Re-run Recourse before applying or invoking the tool.',
     ];
   }
-  if (report.decision === 'escalate') {
+  if (report.riskAssessment === 'escalate') {
     return [
       '1. Pause before running this action.',
       '2. Attach the missing evidence or get human approval.',
       '3. Re-run Recourse with the evidence file or use --format json for agent handoff.',
     ];
   }
-  if (report.decision === 'warn') {
+  if (report.riskAssessment === 'warn') {
     return [
       '1. Surface the recovery dependency to the operator.',
       '2. Confirm the backup, versioning, retention, or restore path is acceptable.',

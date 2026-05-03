@@ -30,10 +30,7 @@
   </a>
   <div class="links">
     <a href="/">home</a>
-    <a href="/resource-coverage.html">coverage</a>
-    <a href="/golden-fixtures.html">fixtures</a>
-    <a href="/agent-interface.html">agents</a>
-    <a href="/mcp-setup.html">mcp</a>
+    <a href="/docs.html">docs</a>
     <a href="/console.html">console</a>
     <a href="/about.html">about</a>
     <a href="https://github.com/recourseOS/recourse" class="nav-cta">github</a>
@@ -56,8 +53,8 @@
 <p>The server uses standard MCP JSON-RPC messages over stdio with <code>Content-Length</code> framing. It does not require a hosted account or network access.</p>
 <h2 id="agent-contract">Agent Contract</h2>
 <p>Agents should call Recourse before destructive or privileged actions, especially infrastructure, cloud, shell, MCP, or deployment operations.</p>
-<p>Decision meanings:</p>
-<table><thead><tr><th>Decision</th><th>Agent behavior</th></tr></thead><tbody><tr><td><code>allow</code></td><td>Continue. The mutation is expected to be reversible or non-destructive.</td></tr><tr><td><code>warn</code></td><td>Continue only after surfacing recovery requirements to the user.</td></tr><tr><td><code>block</code></td><td>Do not execute unless the user changes the plan or policy.</td></tr><tr><td><code>escalate</code></td><td>Ask a human for review; evidence is insufficient for safe automation.</td></tr></tbody></table>
+<p>Risk assessment meanings:</p>
+<table><thead><tr><th>riskAssessment</th><th>Agent behavior</th></tr></thead><tbody><tr><td><code>allow</code></td><td>Continue. The mutation is expected to be reversible or non-destructive.</td></tr><tr><td><code>warn</code></td><td>Continue only after surfacing recovery requirements to the user.</td></tr><tr><td><code>block</code></td><td>Do not execute unless the user changes the plan or policy.</td></tr><tr><td><code>escalate</code></td><td>Ask a human for review; evidence is insufficient for safe automation.</td></tr></tbody></table>
 <h2 id="mcp-tools">MCP Tools</h2>
 <p>The MCP server exposes small, explicit tools over the existing evaluator.</p>
 <h3 id="recourse-evaluate-terraform"><code>recourse_evaluate_terraform</code></h3>
@@ -95,8 +92,8 @@
 <p>All evaluator tools return a <code>ConsequenceReport</code>.</p>
 <pre><code>{
   &quot;schemaVersion&quot;: &quot;recourse.consequence.v1&quot;,
-  &quot;decision&quot;: &quot;block&quot;,
-  &quot;decisionReason&quot;: &quot;Recoverability is unrecoverable&quot;,
+  &quot;riskAssessment&quot;: &quot;block&quot;,
+  &quot;assessmentReason&quot;: &quot;Recoverability is unrecoverable&quot;,
   &quot;summary&quot;: {
     &quot;totalMutations&quot;: 1,
     &quot;needsReview&quot;: false,
@@ -113,15 +110,24 @@
 <p>MCP tool responses include <code>schemaVersion: &quot;recourse.consequence.v1&quot;</code> at the top level. The existing CLI <code>evaluate</code> JSON remains backward-compatible and does not require agents to use MCP.</p>
 <h2 id="agent-instructions">Agent Instructions</h2>
 <p>Agents consuming Recourse should follow these rules:</p>
-<ul><li>Never execute a mutation when <code>decision</code> is <code>block</code>.</li><li>Never silently continue when <code>decision</code> is <code>escalate</code>.</li><li>For <code>warn</code>, include the recovery requirement in the user-facing response.</li><li>Prefer structured fields over parsing <code>reasoning</code> strings.</li><li>Treat <code>recoverability.source: &quot;rules&quot;</code> as authoritative for known resources.</li><li>Treat classifier verdicts as useful but lower confidence than rules.</li><li>Preserve <code>missingEvidence</code> when asking a human for review.</li></ul>
+<ul><li>Never execute a mutation when <code>riskAssessment</code> is <code>block</code>.</li><li>Never silently continue when <code>riskAssessment</code> is <code>escalate</code>.</li><li>For <code>warn</code>, include the recovery requirement in the user-facing response.</li><li>Prefer structured fields over parsing <code>reasoning</code> strings.</li><li>Treat <code>recoverability.source: &quot;rules&quot;</code> as authoritative for known resources.</li><li>Treat classifier verdicts as useful but lower confidence than rules.</li><li>Preserve <code>missingEvidence</code> when asking a human for review.</li></ul>
 <p>Example response:</p>
 <pre><code>I checked this with RecourseOS. It blocks the deletion because the RDS instance has skip_final_snapshot=true and backup_retention_period=0, so the database would be unrecoverable. I will not apply this plan unless you enable a final snapshot, backups, or explicitly override policy.</code></pre>
 <h2 id="error-behavior">Error Behavior</h2>
 <p>MCP tools should fail closed:</p>
-<ul><li>Invalid input: return an MCP error with validation details.</li><li>Unsupported source: return <code>decision: &quot;escalate&quot;</code> when the action can be parsed but not classified.</li><li>Internal error: return an MCP error; do not return <code>allow</code>.</li><li>Missing evidence: return <code>needs-review</code> or <code>escalate</code>, not <code>allow</code>.</li></ul>
+<ul><li>Invalid input: return an MCP error with validation details.</li><li>Unsupported source: return <code>riskAssessment: &quot;escalate&quot;</code> when the action can be parsed but not classified.</li><li>Internal error: return an MCP error; do not return <code>allow</code>.</li><li>Missing evidence: return <code>needs-review</code> or <code>escalate</code>, not <code>allow</code>.</li></ul>
 <h2 id="bitnet-placement">BitNet Placement</h2>
 <p>BitNet is intended for unknown-resource classification, not deterministic handlers. Known rules remain first because they encode provider-specific recovery behavior. Any model-backed classifier must preserve the same consequence report contract, include confidence and evidence, and default to <code>needs-review</code> when evidence is weak.</p>
   </article>
 </main>
+
+<footer class="container">
+  <span>&copy; 2026 RecourseOS</span>
+  <span>
+    <a href="/brand.html">brand</a>
+    <a href="https://github.com/recourseOS/recourse">github</a>
+    <a href="https://www.npmjs.com/package/recourse-cli">npm</a>
+  </span>
+</footer>
 </body>
 </html>

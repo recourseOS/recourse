@@ -28,7 +28,7 @@ describe('compiled CLI scenario matrix', () => {
 
     const report = JSON.parse(result.stdout) as ConsequenceReport;
     expect(report.summary.worstRecoverability.tier).toBe(scenario.expectedTier);
-    expect(report.decision).toBe(scenario.expectedDecision);
+    expect(report.riskAssessment).toBe(scenario.expectedDecision);
 
     const evidenceKeys = report.mutations.flatMap(mutation =>
       mutation.evidence.map(item => item.key)
@@ -105,7 +105,7 @@ describe('compiled CLI scenario matrix', () => {
     expect(result.stdout).toContain('RecourseOS Preflight');
     expect(result.stdout).toContain('REVIEW REQUIRED');
     expect(result.stdout).toContain('"version": "0.1.0"');
-    expect(result.stdout).toContain('"decision": "escalate"');
+    expect(result.stdout).toContain('"riskAssessment": "escalate"');
   });
 
   it.each(goldenPlanScenarios)('evaluates golden Terraform fixture: $name', scenario => {
@@ -116,7 +116,7 @@ describe('compiled CLI scenario matrix', () => {
     expect(result.stderr).toBe('');
 
     const report = JSON.parse(result.stdout) as ConsequenceReport;
-    expect(report.decision).toBe(scenario.expectedDecision);
+    expect(report.riskAssessment).toBe(scenario.expectedDecision);
     expect(report.summary.worstRecoverability.tier).toBe(scenario.expectedWorstTier);
     expect(report.summary.totalMutations).toBe(Object.keys(scenario.expectedByAddress).length);
     expect(tiersByAddress(report)).toEqual(scenario.expectedByAddress);
@@ -162,7 +162,7 @@ describe('compiled CLI scenario matrix', () => {
       });
 
       expect(result.status).toBe(0);
-      expect(JSON.parse(result.stdout).decision).toBeDefined();
+      expect(JSON.parse(result.stdout).riskAssessment).toBeDefined();
       expect(result.stderr).toContain('Recourse Cloud: submitted evaluation eval_cloud_123 policy=require-approval');
       expect(captured?.headers['x-recourse-organization-id']).toBe('org_123');
       expect(captured?.headers['x-recourse-actor-id']).toBe('agent/deploy');
@@ -170,7 +170,7 @@ describe('compiled CLI scenario matrix', () => {
       expect(captured?.body.actor).toEqual({ id: 'agent/deploy', kind: 'agent' });
       expect(captured?.body.environment).toBe('production');
       expect(captured?.body.source).toBe('shell');
-      expect(captured?.body.consequenceReport.decision).toBeDefined();
+      expect(captured?.body.consequenceReport.riskAssessment).toBeDefined();
     } finally {
       server.close();
     }
@@ -203,7 +203,7 @@ describe('compiled CLI scenario matrix', () => {
       });
 
       expect(result.status).toBe(0);
-      expect(JSON.parse(result.stdout).decision).toBeDefined();
+      expect(JSON.parse(result.stdout).riskAssessment).toBeDefined();
       expect(result.stderr).toContain('Recourse Cloud: submission failed: cloud returned HTTP 500: boom');
     } finally {
       server.close();
@@ -254,7 +254,7 @@ describe('compiled CLI scenario matrix', () => {
       const payload = response.result.structuredContent;
       expect(payload.schemaVersion).toBe('recourse.consequence.v1');
       expect(payload.version).toBe('0.1.0');
-      expect(payload.decision).toBeDefined();
+      expect(payload.riskAssessment).toBeDefined();
       expect(payload.mutations[0].intent.actor.id).toBe('agent/deploy');
       expect(response.result.content[0].type).toBe('text');
     } finally {
@@ -284,7 +284,7 @@ describe('compiled CLI scenario matrix', () => {
 
       const payload = response.result.structuredContent;
       expect(payload.schemaVersion).toBe('recourse.consequence.v1');
-      expect(payload.decision).toBe('block');
+      expect(payload.riskAssessment).toBe('block');
       expect(payload.summary.totalMutations).toBeGreaterThan(0);
     } finally {
       server.kill();

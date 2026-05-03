@@ -20,7 +20,7 @@ describe('golden Terraform plan fixtures', () => {
     });
 
     expect(plan.resourceChanges).toHaveLength(Object.keys(scenario.expectedByAddress).length);
-    expect(report.decision).toBe(scenario.expectedDecision);
+    expect(report.riskAssessment).toBe(scenario.expectedDecision);
     expect(report.summary.worstRecoverability.tier).toBe(scenario.expectedWorstTier);
     expect(report.summary.totalMutations).toBe(Object.keys(scenario.expectedByAddress).length);
 

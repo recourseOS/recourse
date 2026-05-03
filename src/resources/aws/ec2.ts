@@ -10,6 +10,7 @@ import {
   type ClassificationTrace,
 } from '../types.js';
 import { ClassificationContext } from '../../analyzer/trace.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const ec2Handler: ResourceHandler = {
   resourceTypes: [
@@ -19,6 +20,42 @@ export const ec2Handler: ResourceHandler = {
     'aws_launch_template',
     'aws_spot_instance_request',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'ec2.termination_protection',
+        level: 'required',
+        description: 'Whether termination protection is enabled',
+        blocksSafeVerdict: false,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'ec2.ebs_volumes',
+        level: 'required',
+        description: 'Attached EBS volumes and their delete_on_termination settings',
+        blocksSafeVerdict: true,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'ec2.instance_state',
+        level: 'recommended',
+        description: 'Current instance state (running/stopped/etc)',
+        blocksSafeVerdict: false,
+        defaultAssumption: 'running',
+        maxFreshnessSeconds: 300,
+      },
+      {
+        key: 'ec2.ami_id',
+        level: 'optional',
+        description: 'AMI used to launch the instance',
+        blocksSafeVerdict: false,
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(
     change: ResourceChange,

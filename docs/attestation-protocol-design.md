@@ -61,7 +61,7 @@ interface ConsequenceAttestation {
 
   // The evaluation result
   evaluation: {
-    decision: 'allow' | 'warn' | 'escalate' | 'block';
+    riskAssessment: 'allow' | 'warn' | 'escalate' | 'block';
     worstTier: 1 | 2 | 3 | 4 | 5;
     reportHash: string;              // SHA-256 of full ConsequenceReport
     mutationCount: number;

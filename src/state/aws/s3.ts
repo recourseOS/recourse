@@ -1,4 +1,8 @@
-import type { EvidenceItem, MissingEvidence } from '../../core/index.js';
+import type { EvidenceItem, MissingEvidence, TrackedEvidence, StateAssessment } from '../../core/index.js';
+import {
+  assessState,
+  getEvidenceRequirements,
+} from '../../core/index.js';
 import {
   RecoverabilityLabels,
   RecoverabilityTier,
@@ -169,6 +173,10 @@ function isUnavailable(statusCode: number): boolean {
 }
 
 function toEvidenceItems(evidence: S3BucketEvidence): EvidenceItem[] {
+  // Note: 'present' means "we gathered this evidence" not "feature is enabled"
+  // A value of 'Unknown' or undefined means evidence was not gathered
+  const missingSet = new Set(evidence.missingEvidence ?? []);
+
   return [
     {
       key: 's3.bucket',
@@ -179,31 +187,31 @@ function toEvidenceItems(evidence: S3BucketEvidence): EvidenceItem[] {
     {
       key: 's3.versioning',
       value: evidence.versioning,
-      present: evidence.versioning === 'Enabled',
+      present: evidence.versioning !== 'Unknown' && !missingSet.has('s3.versioning'),
       description: 'S3 bucket versioning status',
     },
     {
       key: 's3.object_lock',
       value: evidence.objectLockEnabled,
-      present: evidence.objectLockEnabled === true,
+      present: evidence.objectLockEnabled !== undefined && !missingSet.has('s3.object_lock'),
       description: 'S3 object lock retention controls',
     },
     {
       key: 's3.replication',
       value: evidence.hasReplication,
-      present: evidence.hasReplication === true,
+      present: evidence.hasReplication !== undefined && !missingSet.has('s3.replication'),
       description: 'S3 replication configuration',
     },
     {
       key: 's3.lifecycle',
       value: evidence.hasLifecycleRules,
-      present: evidence.hasLifecycleRules === true,
+      present: evidence.hasLifecycleRules !== undefined && !missingSet.has('s3.lifecycle'),
       description: 'S3 lifecycle configuration',
     },
     {
       key: 's3.empty',
       value: evidence.isEmpty,
-      present: evidence.isEmpty === true,
+      present: evidence.isEmpty !== undefined && !missingSet.has('s3.object_listing'),
       description: 'Whether live listing found objects in the bucket',
     },
   ];
@@ -215,4 +223,32 @@ function toMissingEvidence(keys: string[]): MissingEvidence[] {
     description: `Unable to verify ${key} from live S3 state`,
     effect: 'requires-review',
   }));
+}
+
+/**
+ * Convert S3 evidence to tracked evidence with source and timestamp.
+ */
+export function toTrackedEvidence(
+  evidence: S3BucketEvidence,
+  gatheredAt?: string
+): TrackedEvidence[] {
+  const items = toEvidenceItems(evidence);
+  return items.map(item => ({
+    ...item,
+    source: 'live_api' as const,
+    gatheredAt,
+  }));
+}
+
+/**
+ * Assess the quality of S3 bucket evidence for deletion classification.
+ * Returns a StateAssessment indicating whether classification is safe.
+ */
+export function assessS3BucketDeletionState(
+  evidence: S3BucketEvidence,
+  gatheredAt?: string
+): StateAssessment {
+  const requirements = getEvidenceRequirements('aws_s3_bucket', 'delete') ?? [];
+  const tracked = toTrackedEvidence(evidence, gatheredAt);
+  return assessState(tracked, requirements, 300); // 5 min max freshness for S3
 }

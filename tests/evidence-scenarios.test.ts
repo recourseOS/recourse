@@ -11,7 +11,7 @@ describe('evidence scenario matrix', () => {
       : evaluateMcpToolCallConsequences(scenario.input as never, { awsEvidence });
 
     expect(report.summary.worstRecoverability.tier).toBe(scenario.expectedTier);
-    expect(report.decision).toBe(scenario.expectedDecision);
+    expect(report.riskAssessment).toBe(scenario.expectedDecision);
 
     const evidenceKeys = report.mutations.flatMap(mutation =>
       mutation.evidence.map(item => item.key)

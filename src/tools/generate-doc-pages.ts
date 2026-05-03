@@ -7,13 +7,10 @@ interface DocPage {
   description: string;
 }
 
+// Note: resource-coverage.html is a custom page (not auto-generated from markdown)
+// It was hand-edited to have accurate signal information and custom styling.
+
 const docPages: DocPage[] = [
-  {
-    source: 'docs/resource-coverage.md',
-    output: 'docs/resource-coverage.html',
-    title: 'Resource Coverage',
-    description: 'Which resources get deterministic rules vs semantic fallback. Agents can check source to know which verdict type they received.',
-  },
   {
     source: 'docs/golden-fixtures.md',
     output: 'docs/golden-fixtures.html',
@@ -48,7 +45,6 @@ const docPages: DocPage[] = [
 
 function getEyebrow(output: string): string {
   const eyebrows: Record<string, string> = {
-    'docs/resource-coverage.html': 'coverage reference',
     'docs/golden-fixtures.html': 'test fixtures',
     'docs/live-aws-tests.html': 'evidence collection',
     'docs/schema-gaps.html': 'classifier behavior',
@@ -96,10 +92,7 @@ export function renderDocPage(page: DocPage, markdown: string): string {
   </a>
   <div class="links">
     <a href="/">home</a>
-    <a href="/resource-coverage.html">coverage</a>
-    <a href="/golden-fixtures.html">fixtures</a>
-    <a href="/agent-interface.html">agents</a>
-    <a href="/mcp-setup.html">mcp</a>
+    <a href="/docs.html">docs</a>
     <a href="/console.html">console</a>
     <a href="/about.html">about</a>
     <a href="https://github.com/recourseOS/recourse" class="nav-cta">github</a>
@@ -117,6 +110,15 @@ export function renderDocPage(page: DocPage, markdown: string): string {
     ${markdownToHtml(markdown)}
   </article>
 </main>
+
+<footer class="container">
+  <span>&copy; 2026 RecourseOS</span>
+  <span>
+    <a href="/brand.html">brand</a>
+    <a href="https://github.com/recourseOS/recourse">github</a>
+    <a href="https://www.npmjs.com/package/recourse-cli">npm</a>
+  </span>
+</footer>
 </body>
 </html>
 `;
@@ -257,7 +259,7 @@ function brandSvg(): string {
     </svg>`;
 }
 
-if (process.argv[1]?.endsWith('generate-doc-pages.js')) {
+if (process.argv[1]?.includes('generate-doc-pages')) {
   for (const page of await renderDocPages()) {
     await writeFile(page.output, page.html, 'utf8');
     console.log(`wrote ${page.output}`);

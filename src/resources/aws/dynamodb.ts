@@ -10,6 +10,7 @@ import {
   type ClassificationTrace,
 } from '../types.js';
 import { ClassificationContext } from '../../analyzer/trace.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const dynamodbHandler: ResourceHandler = {
   resourceTypes: [
@@ -17,6 +18,51 @@ export const dynamodbHandler: ResourceHandler = {
     'aws_dynamodb_global_table',
     'aws_dynamodb_table_item',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'dynamodb.deletion_protection',
+        level: 'required',
+        description: 'Whether deletion protection is enabled',
+        blocksSafeVerdict: false,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'dynamodb.pitr_enabled',
+        level: 'required',
+        description: 'Point-in-time recovery status',
+        blocksSafeVerdict: false,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'dynamodb.item_count',
+        level: 'required',
+        description: 'Approximate number of items in the table',
+        blocksSafeVerdict: true,
+        defaultAssumption: undefined,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'dynamodb.backups',
+        level: 'recommended',
+        description: 'Existing on-demand backups',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'dynamodb.global_tables',
+        level: 'recommended',
+        description: 'Global table replicas',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(
     change: ResourceChange,

@@ -10,6 +10,7 @@ import {
   type ClassificationTrace,
 } from '../types.js';
 import { ClassificationContext } from '../../analyzer/trace.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const route53Handler: ResourceHandler = {
   resourceTypes: [
@@ -17,6 +18,50 @@ export const route53Handler: ResourceHandler = {
     'aws_route53_record',
     'aws_route53_health_check',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'route53.record_count',
+        level: 'required',
+        description: 'Number of DNS records in the zone',
+        blocksSafeVerdict: true,
+        defaultAssumption: undefined,
+        maxFreshnessSeconds: 300,
+      },
+      {
+        key: 'route53.is_private',
+        level: 'required',
+        description: 'Whether this is a private hosted zone',
+        blocksSafeVerdict: true,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'route53.zone_name',
+        level: 'required',
+        description: 'The domain name of the hosted zone',
+        blocksSafeVerdict: false,
+        defaultAssumption: undefined,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'route53.associated_vpcs',
+        level: 'recommended',
+        description: 'VPCs associated with private hosted zone',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'route53.delegation_set_id',
+        level: 'optional',
+        description: 'Reusable delegation set ID if configured',
+        blocksSafeVerdict: false,
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(
     change: ResourceChange,

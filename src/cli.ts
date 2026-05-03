@@ -171,8 +171,13 @@ program
   .description('Start the RecourseOS playground for testing evaluations')
   .option('-p, --port <port>', 'Port to listen on', '3001')
   .option('--no-open', 'Do not open browser automatically')
-  .action((options: { port: string; open: boolean }) => {
-    runHttpServer(Number(options.port), options.open);
+  .option('--attestation', 'Enable cryptographic attestation signing (in-memory only; attestations lost on restart)')
+  .action(async (options: { port: string; open: boolean; attestation?: boolean }) => {
+    await runHttpServer({
+      port: Number(options.port),
+      openBrowser: options.open,
+      attestation: options.attestation,
+    });
   });
 
 program
@@ -210,7 +215,7 @@ program
         process.exit(1);
       }
 
-      if (shouldFailOnDecision(report.decision, options.failOn)) {
+      if (shouldFailOnDecision(report.riskAssessment, options.failOn)) {
         process.exit(1);
       }
     } catch (error) {
@@ -246,7 +251,7 @@ program
   }) => {
     try {
       const report = await runInteractiveTui(options);
-      if (report && shouldFailOnDecision(report.decision, options.failOn)) {
+      if (report && shouldFailOnDecision(report.riskAssessment, options.failOn)) {
         process.exit(1);
       }
     } catch (error) {
@@ -298,7 +303,7 @@ program
         }
       }
 
-      if (shouldFailOnDecision(report.decision, options.failOn)) {
+      if (shouldFailOnDecision(report.riskAssessment, options.failOn)) {
         process.exit(1);
       }
     } catch (error) {

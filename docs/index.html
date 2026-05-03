@@ -44,10 +44,7 @@
   </a>
   <div class="links">
     <a href="/">home</a>
-    <a href="/resource-coverage.html">coverage</a>
-    <a href="/golden-fixtures.html">fixtures</a>
-    <a href="/agent-interface.html">agents</a>
-    <a href="/mcp-setup.html">mcp</a>
+    <a href="/docs.html">docs</a>
     <a href="/console.html">console</a>
     <a href="/about.html">about</a>
     <a href="https://github.com/recourseOS/recourse" class="nav-cta">github</a>
@@ -330,7 +327,7 @@
           <div>aws_db_instance.main</div>
           <div class="terminal-indent">recoverability: <span class="red-text">unrecoverable</span></div>
           <div class="terminal-indent">evidence: skip_final_snapshot=true, backup_retention_period=0</div>
-          <div class="terminal-indent">decision: <span class="red-text">block</span></div>
+          <div class="terminal-indent">riskAssessment: <span class="red-text">block</span></div>
           <div class="terminal-heading">Agent can now say</div>
           <div>"I checked with Recourse — this deletes the database with no backup. Blocking."</div>
         </div>
@@ -398,17 +395,13 @@
         <p class="section-copy">
           Everything you need to wire RecourseOS into an agent: MCP setup, consequence report schema, example prompts, resource coverage.
         </p>
+        <a href="/docs.html" class="button primary" style="margin-top: 24px;">View all docs</a>
       </div>
       <div class="card-grid">
         <a class="card" href="/mcp-setup.html"><div class="card-kicker">start here</div><div class="card-title">MCP setup</div><div class="card-body">Add Recourse to your agent's tool list in one config block.</div></a>
         <a class="card" href="/agent-interface.html"><div class="card-kicker">schema</div><div class="card-title">Agent interface</div><div class="card-body">Consequence report format, example agent prompts, and reasoning patterns.</div></a>
-        <a class="card" href="/resource-coverage.html"><div class="card-kicker">coverage</div><div class="card-title">Resource coverage</div><div class="card-body">Which AWS, GCP, Azure resources have deterministic rules vs semantic fallback.</div></a>
         <a class="card" href="/console.html"><div class="card-kicker">try it</div><div class="card-title">Console</div><div class="card-body">Test evaluations with Terraform, shell, and MCP examples before deploying.</div></a>
-        <a class="card" href="/golden-fixtures.html"><div class="card-kicker">fixtures</div><div class="card-title">Golden fixtures</div><div class="card-body">Stable test inputs to verify your agent integration works correctly.</div></a>
-        <a class="card" href="/live-aws-tests.html"><div class="card-kicker">evidence</div><div class="card-title">Live AWS tests</div><div class="card-body">Collect read-only AWS evidence for accurate recovery verdicts.</div></a>
-        <a class="card" href="/schema-gaps.html"><div class="card-kicker">classifier</div><div class="card-title">Classifier notes</div><div class="card-body">How unknown resources get classified when no deterministic rule exists.</div></a>
-        <a class="card" href="/mcp_arch_diagram.html"><div class="card-kicker">architecture</div><div class="card-title">Architecture diagram</div><div class="card-body">Interactive diagram showing where RecourseOS sits in the agent → MCP → cloud path.</div></a>
-        <a class="card" href="/attestation-protocol-design.html"><div class="card-kicker">design draft</div><div class="card-title">Attestation protocol</div><div class="card-body">Cryptographic proof that consequence evaluation happened. Non-repudiation for agent actions.</div></a>
+        <a class="card" href="/resource-coverage.html"><div class="card-kicker">coverage</div><div class="card-title">Resource coverage</div><div class="card-body">Which AWS, GCP, Azure resources have deterministic rules vs semantic fallback.</div></a>
       </div>
     </div>
   </section>

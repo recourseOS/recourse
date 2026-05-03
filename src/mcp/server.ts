@@ -12,10 +12,13 @@ import type { ConsequenceReport, EvidenceSubmission } from '../core/index.js';
 import type { McpToolCall } from '../adapters/index.js';
 import type { AdapterContext } from '../adapters/types.js';
 import type { TerraformPlan, TerraformState } from '../resources/types.js';
+import { getAttestationService, type AttestationService } from '../attestation/service.js';
 
 const SCHEMA_VERSION = 'recourse.consequence.v1';
 
 let verbose = false;
+let attestationEnabled = false;
+let attestationService: AttestationService | null = null;
 
 function log(message: string): void {
   if (verbose) {
@@ -184,19 +187,38 @@ const tools: ToolDefinition[] = [
 
 export interface McpServerOptions {
   verbose?: boolean;
+  /** Enable attestation signing for evaluation responses */
+  attestation?: boolean;
+  /** Base URL for attestation URIs (default: http://localhost:3001) */
+  instanceBaseUrl?: string;
 }
 
-export function runMcpServer(
+export async function runMcpServer(
   input: Readable = process.stdin,
   output: Writable = process.stdout,
   options: McpServerOptions = {}
-): void {
+): Promise<void> {
   verbose = options.verbose ?? false;
+  attestationEnabled = options.attestation ?? false;
+
+  // Initialize attestation service if enabled
+  if (attestationEnabled) {
+    attestationService = getAttestationService({
+      instanceBaseUrl: options.instanceBaseUrl ?? 'http://localhost:3001',
+    });
+    await attestationService.initialize();
+    if (verbose) {
+      process.stderr.write(`[attestation] Initialized with key: ${attestationService.getCurrentKeyId()}\n`);
+    }
+  }
 
   if (verbose) {
     process.stderr.write('\n┌────────────────────────────────────────┐\n');
     process.stderr.write('│  RecourseOS MCP Server                 │\n');
     process.stderr.write('│  Verbose mode enabled                  │\n');
+    if (attestationEnabled) {
+      process.stderr.write('│  Attestation signing enabled           │\n');
+    }
     process.stderr.write('│  Waiting for agent connections...      │\n');
     process.stderr.write('└────────────────────────────────────────┘\n\n');
   }
@@ -216,21 +238,36 @@ export function runMcpServer(
 }
 
 export async function handleMcpRequest(request: JsonRpcRequest): Promise<Record<string, unknown> | null> {
-  if (request.id === undefined) return null;
+  // Handle notifications (no id means no response expected)
+  if (request.id === undefined) {
+    // Log notifications in verbose mode but don't respond
+    if (verbose && request.method === 'notifications/initialized') {
+      log('Client initialized');
+    }
+    return null;
+  }
 
   try {
     switch (request.method) {
-      case 'initialize':
+      case 'initialize': {
+        // Support both 2024-11-05 and 2025-11-25 protocol versions
+        const params = request.params as { protocolVersion?: string } | undefined;
+        const clientVersion = params?.protocolVersion ?? '2024-11-05';
+        const serverVersion = clientVersion === '2025-11-25' ? '2025-11-25' : '2024-11-05';
+        log(`Client protocol version: ${clientVersion}, responding with: ${serverVersion}`);
         return result(request.id, {
-          protocolVersion: '2024-11-05',
+          protocolVersion: serverVersion,
           capabilities: {
-            tools: {},
+            tools: {
+              listChanged: true,
+            },
           },
           serverInfo: {
             name: 'recourseos',
-            version: '0.1.13',
+            version: '0.1.14',
           },
         });
+      }
       case 'tools/list':
         return result(request.id, { tools });
       case 'tools/call':
@@ -251,8 +288,9 @@ export async function handleMcpRequest(request: JsonRpcRequest): Promise<Record<
 
 async function handleAndWrite(body: Buffer, output: Writable): Promise<void> {
   let response: Record<string, unknown> | null;
+  const request = JSON.parse(body.toString('utf8')) as JsonRpcRequest;
   try {
-    response = await handleMcpRequest(JSON.parse(body.toString('utf8')) as JsonRpcRequest);
+    response = await handleMcpRequest(request);
   } catch (caught) {
     response = error(null, -32700, caught instanceof Error ? caught.message : String(caught));
   }
@@ -273,8 +311,10 @@ async function callTool(params: unknown): Promise<Record<string, unknown>> {
       const mutation = report.mutations[0];
       const target = mutation?.intent.target.id || 'terraform plan';
       const tier = mutation?.recoverability?.label || 'unknown';
-      logDecision('terraform', target, report.decision, tier);
-      return toolResult(withSchemaVersion(report));
+      logDecision('terraform', target, report.riskAssessment, tier);
+      // Include input for attestation: source + original input
+      const attestInput = { source: 'terraform', plan: args.plan, state: args.state };
+      return toolResult(withSchemaVersion(report, attestInput));
     }
     case 'recourse_evaluate_shell': {
       const report = evaluateShell(args);
@@ -283,15 +323,17 @@ async function callTool(params: unknown): Promise<Record<string, unknown>> {
         cmd = args.command.length > 50 ? args.command.slice(0, 47) + '...' : args.command;
       }
       const tier = report.mutations[0]?.recoverability?.label || 'unknown';
-      logDecision('shell', cmd, report.decision, tier);
-      return toolResult(withSchemaVersion(report));
+      logDecision('shell', cmd, report.riskAssessment, tier);
+      const attestInput = { source: 'shell', command: args.command, cwd: args.cwd };
+      return toolResult(withSchemaVersion(report, attestInput));
     }
     case 'recourse_evaluate_mcp_call': {
       const report = evaluateMcpCall(args);
       const tool = typeof args.tool === 'string' ? args.tool : 'mcp';
       const tier = report.mutations[0]?.recoverability?.label || 'unknown';
-      logDecision('mcp', tool, report.decision, tier);
-      return toolResult(withSchemaVersion(report));
+      logDecision('mcp', tool, report.riskAssessment, tier);
+      const attestInput = { source: 'mcp', tool: args.tool, server: args.server, arguments: args.arguments };
+      return toolResult(withSchemaVersion(report, attestInput));
     }
     case 'recourse_supported_resources':
       log('Listed supported resources');
@@ -305,8 +347,9 @@ async function callTool(params: unknown): Promise<Record<string, unknown>> {
       const mutation = report.mutations[0];
       const target = mutation?.intent.target.id || 'with-evidence';
       const tier = mutation?.recoverability?.label || 'unknown';
-      logDecision('evidence', target, report.decision, tier);
-      return toolResult(withSchemaVersion(report));
+      logDecision('evidence', target, report.riskAssessment, tier);
+      const attestInput = { source: args.source, original_input: args.original_input, evidence: args.evidence };
+      return toolResult(withSchemaVersion(report, attestInput));
     }
     default:
       throw new Error(`Unknown RecourseOS MCP tool: ${name}`);
@@ -455,18 +498,18 @@ function upgradeVerdictWithEvidence(
     return mutation;
   });
 
-  // Determine new decision based on updated recoverability
+  // Determine new risk assessment based on updated recoverability
   const hasUnrecoverable = updatedMutations.some(m => m.recoverability.tier === 4);
-  const newDecision = hasUnrecoverable ? baseReport.decision : 'warn';
+  const newAssessment = hasUnrecoverable ? baseReport.riskAssessment : 'warn';
   const newReason = hasUnrecoverable
-    ? baseReport.decisionReason
+    ? baseReport.assessmentReason
     : 'External backup verified - proceed with caution';
 
   return {
     ...baseReport,
     mutations: updatedMutations,
-    decision: newDecision,
-    decisionReason: newReason,
+    riskAssessment: newAssessment,
+    assessmentReason: newReason,
     verificationProtocolVersion: 'v1',
     verificationSuggestions: [], // Clear since verification was completed
     summary: {
@@ -496,11 +539,29 @@ function adapterContext(args: Record<string, unknown>): AdapterContext {
   };
 }
 
-function withSchemaVersion(report: ConsequenceReport): Record<string, unknown> {
-  return {
+function withSchemaVersion(
+  report: ConsequenceReport,
+  input?: unknown
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {
     schemaVersion: SCHEMA_VERSION,
     ...toConsequenceJson(report),
   };
+
+  // Add attestation if enabled
+  if (attestationEnabled && attestationService && input !== undefined) {
+    try {
+      const attestation = attestationService.createAttestation(input, result);
+      result.attestation = attestation;
+    } catch (err) {
+      // Log but don't fail the evaluation
+      if (verbose) {
+        process.stderr.write(`[attestation] Failed to create attestation: ${err}\n`);
+      }
+    }
+  }
+
+  return result;
 }
 
 function toolResult(payload: Record<string, unknown>): Record<string, unknown> {
@@ -574,4 +635,11 @@ function requireString(value: unknown, message: string): string {
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Get the attestation service instance (for HTTP endpoints)
+ */
+export function getMcpAttestationService(): AttestationService | null {
+  return attestationService;
 }

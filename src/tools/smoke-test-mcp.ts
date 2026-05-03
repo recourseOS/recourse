@@ -65,8 +65,8 @@ async function main(): Promise<void> {
       environment: 'test',
     });
     assertSchemaVersion(shell.structuredContent);
-    if (!['warn', 'block', 'escalate', 'allow'].includes(shell.structuredContent.decision)) {
-      throw new Error(`Unexpected shell decision: ${String(shell.structuredContent.decision)}`);
+    if (!['warn', 'block', 'escalate', 'allow'].includes(shell.structuredContent.riskAssessment)) {
+      throw new Error(`Unexpected shell decision: ${String(shell.structuredContent.riskAssessment)}`);
     }
 
     const plan = JSON.parse(await readFile('tests/fixtures/plans/aws-golden.json', 'utf8')) as Record<string, unknown>;
@@ -77,15 +77,15 @@ async function main(): Promise<void> {
       environment: 'test',
     });
     assertSchemaVersion(terraform.structuredContent);
-    if (terraform.structuredContent.decision !== 'block') {
-      throw new Error(`Expected Terraform fixture to block, got ${String(terraform.structuredContent.decision)}`);
+    if (terraform.structuredContent.riskAssessment !== 'block') {
+      throw new Error(`Expected Terraform fixture to block, got ${String(terraform.structuredContent.riskAssessment)}`);
     }
 
     console.log('MCP smoke test passed');
     console.log(`tools=${tools.length}`);
     console.log(`resources=${String(resources.structuredContent.total)}`);
-    console.log(`shellDecision=${String(shell.structuredContent.decision)}`);
-    console.log(`terraformDecision=${String(terraform.structuredContent.decision)}`);
+    console.log(`shellRiskAssessment=${String(shell.structuredContent.riskAssessment)}`);
+    console.log(`terraformRiskAssessment=${String(terraform.structuredContent.riskAssessment)}`);
   } finally {
     server.kill();
     if (stderr.trim()) {

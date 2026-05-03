@@ -8,6 +8,7 @@ import {
   type StateResource,
   type TerraformState,
 } from '../types.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const secretsManagerHandler: ResourceHandler = {
   resourceTypes: [
@@ -16,6 +17,42 @@ export const secretsManagerHandler: ResourceHandler = {
     'aws_secretsmanager_secret_policy',
     'aws_secretsmanager_secret_rotation',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'secretsmanager.recovery_window_days',
+        level: 'required',
+        description: 'Recovery window in days before permanent deletion (0 = immediate)',
+        blocksSafeVerdict: true,
+        defaultAssumption: 0,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'secretsmanager.force_delete',
+        level: 'required',
+        description: 'Whether force_delete_without_recovery is enabled',
+        blocksSafeVerdict: true,
+        defaultAssumption: true,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'secretsmanager.replica_regions',
+        level: 'recommended',
+        description: 'Regions where secret is replicated',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'secretsmanager.rotation_enabled',
+        level: 'optional',
+        description: 'Whether automatic rotation is configured',
+        blocksSafeVerdict: false,
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(change: ResourceChange, _state: TerraformState | null): RecoverabilityResult {
     const isDelete = change.actions.includes('delete');

@@ -101,8 +101,8 @@ export function evaluateShellCommandConsequences(
       hasUnrecoverable: recoverability.tier === RecoverabilityTier.UNRECOVERABLE,
       dependencyImpactCount: 0,
     },
-    decision: policyEvaluation.decision,
-    decisionReason: policyEvaluation.reason,
+    riskAssessment: policyEvaluation.decision,
+    assessmentReason: policyEvaluation.reason,
   };
 }
 

@@ -12,7 +12,9 @@ export {
 
 export {
   analyzeS3BucketDeletionEvidence,
+  assessS3BucketDeletionState,
   readS3BucketEvidence,
+  toTrackedEvidence as toS3TrackedEvidence,
   type S3BucketEvidence,
   type S3EvidenceAnalysis,
 } from './s3.js';

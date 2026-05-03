@@ -110,7 +110,7 @@ describe('MCP Server Tests', () => {
           },
         });
 
-        expect(evalResponse.result.structuredContent.decision).toMatch(/block|escalate/);
+        expect(evalResponse.result.structuredContent.riskAssessment).toMatch(/block|escalate/);
 
         // Now submit evidence that confirms backup exists
         const evidenceResponse = await sendMcpRequest(server, {
@@ -288,7 +288,7 @@ describe('MCP Server Tests', () => {
 
         // Ambiguous evidence should not upgrade the verdict
         const result = response.result.structuredContent;
-        expect(result.decision).toMatch(/block|escalate/);
+        expect(result.riskAssessment).toMatch(/block|escalate/);
       } finally {
         server.kill();
       }
@@ -362,7 +362,7 @@ describe('MCP Server Tests', () => {
         });
 
         const result = response.result.structuredContent;
-        expect(result.decision).toMatch(/warn|escalate|block/);
+        expect(result.riskAssessment).toMatch(/warn|escalate|block/);
       } finally {
         server.kill();
       }
@@ -412,7 +412,7 @@ describe('MCP Server Tests', () => {
 
         const result = response.result.structuredContent;
         expect(result.mutations.length).toBeGreaterThan(0);
-        expect(result.decision).toMatch(/escalate|block/);
+        expect(result.riskAssessment).toMatch(/escalate|block/);
       } finally {
         server.kill();
       }
@@ -520,7 +520,7 @@ describe('MCP Server Tests', () => {
         });
 
         const result = response.result.structuredContent;
-        expect(result.decision).toBe('allow');
+        expect(result.riskAssessment).toBe('allow');
       } finally {
         server.kill();
       }
@@ -633,7 +633,7 @@ describe('MCP Server Tests', () => {
           },
         });
 
-        expect(response.result.structuredContent.decision).toBeDefined();
+        expect(response.result.structuredContent.riskAssessment).toBeDefined();
       } finally {
         server.kill();
       }
@@ -682,7 +682,7 @@ describe('MCP Server Tests', () => {
             arguments: { command: 'rm -rf /tmp/test' },
           },
         });
-        expect(response1.result.structuredContent.decision).toBeDefined();
+        expect(response1.result.structuredContent.riskAssessment).toBeDefined();
 
         // Second call
         const response2 = await sendMcpRequest(server, {
@@ -706,7 +706,7 @@ describe('MCP Server Tests', () => {
             arguments: { tool: 'aws_s3_list_buckets' },
           },
         });
-        expect(response3.result.structuredContent.decision).toBe('allow');
+        expect(response3.result.structuredContent.riskAssessment).toBe('allow');
       } finally {
         server.kill();
       }

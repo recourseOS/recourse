@@ -11,6 +11,7 @@ import {
 } from '../types.js';
 import { ClassificationContext } from '../../analyzer/trace.js';
 import type { VerificationSuggestion } from '../../core/mutation.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 import { rdsManualSnapshots, rdsAwsBackupRecoveryPoints, rdsAutomatedBackups } from '../../verification/index.js';
 
 export const rdsHandler: ResourceHandler = {
@@ -21,6 +22,58 @@ export const rdsHandler: ResourceHandler = {
     'aws_db_snapshot',
     'aws_db_cluster_snapshot',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'rds.deletion_protection',
+        level: 'required',
+        description: 'Whether deletion protection is enabled',
+        blocksSafeVerdict: true,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'rds.automated_backups',
+        level: 'required',
+        description: 'Automated backup retention period',
+        blocksSafeVerdict: true,
+        defaultAssumption: 0,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'rds.skip_final_snapshot',
+        level: 'required',
+        description: 'Whether final snapshot will be skipped on deletion',
+        blocksSafeVerdict: true,
+        defaultAssumption: true,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'rds.manual_snapshots',
+        level: 'recommended',
+        description: 'Existing manual snapshots for this instance',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'rds.read_replicas',
+        level: 'recommended',
+        description: 'Read replicas that depend on this instance',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'rds.multi_az',
+        level: 'optional',
+        description: 'Multi-AZ deployment status',
+        blocksSafeVerdict: false,
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(
     change: ResourceChange,

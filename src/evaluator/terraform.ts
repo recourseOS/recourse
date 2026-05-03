@@ -6,6 +6,13 @@ import type {
   ConsequenceReport,
   VerificationSuggestion,
   VerificationStatusInfo,
+  RequiredEvidence,
+  EvidenceItem,
+} from '../core/index.js';
+import {
+  buildRequiredEvidence,
+  getEvidenceRequirements,
+  DEFAULT_UNKNOWN_REQUIREMENTS,
 } from '../core/index.js';
 import {
   RecoverabilityLabels,
@@ -13,6 +20,7 @@ import {
   type RecoverabilityResult,
   type TerraformPlan,
   type TerraformState,
+  type ResourceChange,
 } from '../resources/types.js';
 import {
   evaluateBlastRadiusReport,
@@ -40,32 +48,53 @@ export function evaluateTerraformPlanConsequences(
     options.policy
   );
 
-  const mutations: AnalyzedMutation[] = blastRadiusReport.changes.map(change => ({
-    intent: terraformChangeToMutation(change.resource, options.adapterContext),
-    recoverability: change.recoverability,
-    evidence: [
+  const mutations: AnalyzedMutation[] = blastRadiusReport.changes.map(change => {
+    const evidence: EvidenceItem[] = [
       {
         key: 'recoverability.reasoning',
         value: change.recoverability.reasoning,
         present: true,
         description: 'Reason produced by the recoverability classifier',
       },
-    ],
-    missingEvidence: change.recoverability.tier === RecoverabilityTier.NEEDS_REVIEW
-      ? [
-          {
-            key: 'resource-semantics',
-            description: 'Recourse does not have enough evidence to classify this mutation safely',
-            effect: 'requires-review',
-          },
-        ]
-      : [],
-    dependencyImpact: change.cascadeImpact.map(impact => ({
-      targetId: impact.affectedResource,
-      reason: impact.reason,
-      transitive: true,
-    })),
-  }));
+    ];
+
+    // Add evidence from resource state (before values)
+    if (change.resource.before) {
+      for (const [key, value] of Object.entries(change.resource.before)) {
+        if (value !== null && value !== undefined) {
+          evidence.push({
+            key: `state.${key}`,
+            value,
+            present: true,
+            description: `Resource state: ${key}`,
+          });
+        }
+      }
+    }
+
+    const requiredEvidence = buildRequiredEvidenceForChange(change.resource, evidence);
+
+    return {
+      intent: terraformChangeToMutation(change.resource, options.adapterContext),
+      recoverability: change.recoverability,
+      evidence,
+      missingEvidence: change.recoverability.tier === RecoverabilityTier.NEEDS_REVIEW
+        ? [
+            {
+              key: 'resource-semantics',
+              description: 'Recourse does not have enough evidence to classify this mutation safely',
+              effect: 'requires-review',
+            },
+          ]
+        : [],
+      dependencyImpact: change.cascadeImpact.map(impact => ({
+        targetId: impact.affectedResource,
+        reason: impact.reason,
+        transitive: true,
+      })),
+      requiredEvidence,
+    };
+  });
 
   const worstRecoverability = getWorstRecoverability(
     blastRadiusReport.changes.map(change => change.recoverability)
@@ -150,8 +179,8 @@ export function evaluateTerraformPlanConsequences(
       hasUnrecoverable: blastRadiusReport.summary.hasUnrecoverable,
       dependencyImpactCount: blastRadiusReport.summary.cascadeImpactCount,
     },
-    decision: policyEvaluation.decision,
-    decisionReason: policyEvaluation.reason,
+    riskAssessment: policyEvaluation.decision,
+    assessmentReason: policyEvaluation.reason,
   };
 
   // Add verification protocol fields
@@ -188,4 +217,36 @@ function getWorstRecoverability(results: RecoverabilityResult[]): Recoverability
   return results.reduce((worst, current) =>
     current.tier > worst.tier ? current : worst
   );
+}
+
+/**
+ * Build RequiredEvidence for a Terraform resource change.
+ */
+function buildRequiredEvidenceForChange(
+  change: ResourceChange,
+  evidence: EvidenceItem[]
+): RequiredEvidence {
+  const resourceType = change.type;
+  const action = change.actions.includes('delete')
+    ? 'delete'
+    : change.actions.includes('create')
+    ? 'create'
+    : 'update';
+
+  const requirements = getEvidenceRequirements(resourceType, action);
+
+  if (!requirements) {
+    // No requirements defined for this resource/action
+    return {
+      resourceType,
+      action,
+      requirementsDefined: false,
+      requirements: [],
+      summary: { total: 0, satisfied: 0, missingRequired: 0, missingBlocking: 0 },
+      sufficient: true,
+      sufficiency: 'sufficient',
+    };
+  }
+
+  return buildRequiredEvidence(resourceType, action, evidence, requirements);
 }

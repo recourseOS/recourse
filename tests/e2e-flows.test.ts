@@ -281,7 +281,7 @@ describe('End-to-End Flows', () => {
             },
           },
         });
-        expect(shellResponse.result.structuredContent.decision).toBeDefined();
+        expect(shellResponse.result.structuredContent.riskAssessment).toBeDefined();
 
         // Evaluate terraform plan
         const plan = JSON.parse(readFileSync(goldenPlanFixturePath('aws-golden.json'), 'utf8'));
@@ -297,7 +297,7 @@ describe('End-to-End Flows', () => {
             },
           },
         });
-        expect(tfResponse.result.structuredContent.decision).toBe('block');
+        expect(tfResponse.result.structuredContent.riskAssessment).toBe('block');
       } finally {
         server.kill();
       }
@@ -325,7 +325,7 @@ describe('End-to-End Flows', () => {
         });
 
         const result = response.result.structuredContent;
-        expect(result.decision).toMatch(/escalate|block/);
+        expect(result.riskAssessment).toMatch(/escalate|block/);
         expect(result.mutations[0].intent.action).toBe('delete');
       } finally {
         server.kill();
@@ -351,7 +351,7 @@ describe('End-to-End Flows', () => {
         });
 
         const result = response.result.structuredContent;
-        expect(result.decision).toMatch(/escalate|block/);
+        expect(result.riskAssessment).toMatch(/escalate|block/);
         // Should have verification suggestions for checking replication/versioning
         if (result.verificationSuggestions) {
           expect(result.verificationSuggestions.length).toBeGreaterThan(0);
@@ -381,7 +381,7 @@ describe('End-to-End Flows', () => {
 
         const result = response.result.structuredContent;
         // IAM roles can be recreated but with effort
-        expect(result.decision).toMatch(/warn|escalate/);
+        expect(result.riskAssessment).toMatch(/warn|escalate/);
       } finally {
         server.kill();
       }
@@ -432,7 +432,7 @@ describe('End-to-End Flows', () => {
         });
 
         const result = response.result.structuredContent;
-        expect(result.decision).toMatch(/warn|escalate|block/);
+        expect(result.riskAssessment).toMatch(/warn|escalate|block/);
       } finally {
         server.kill();
       }
@@ -457,7 +457,7 @@ describe('End-to-End Flows', () => {
         });
 
         const result = response.result.structuredContent;
-        expect(result.decision).toBe('allow');
+        expect(result.riskAssessment).toBe('allow');
       } finally {
         server.kill();
       }
@@ -490,9 +490,9 @@ describe('End-to-End Flows', () => {
 
         const result = response.result.structuredContent;
         if (expectedDecision instanceof RegExp) {
-          expect(result.decision).toMatch(expectedDecision);
+          expect(result.riskAssessment).toMatch(expectedDecision);
         } else {
-          expect(result.decision).toBe(expectedDecision);
+          expect(result.riskAssessment).toBe(expectedDecision);
         }
       } finally {
         server.kill();

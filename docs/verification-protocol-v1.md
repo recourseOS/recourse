@@ -383,8 +383,8 @@ Recourse sees a snapshot in Terraform state but cannot verify its topology:
 {
   "schemaVersion": "recourse.consequence.v1",
   "verification_protocol_version": "v1",
-  "decision": "escalate",
-  "decisionReason": "Backup exists but topology unknown - cannot confirm recoverability",
+  "riskAssessment": "escalate",
+  "assessmentReason": "Backup exists but topology unknown - cannot confirm recoverability",
   "mutations": [{
     "intent": {
       "source": "terraform",
@@ -552,8 +552,8 @@ Recourse incorporates the evidence and returns a confident verdict:
 {
   "schemaVersion": "recourse.consequence.v1",
   "verification_protocol_version": "v1",
-  "decision": "warn",
-  "decisionReason": "Volume deletion is recoverable - cross-region backup verified in AWS Backup",
+  "riskAssessment": "warn",
+  "assessmentReason": "Volume deletion is recoverable - cross-region backup verified in AWS Backup",
   "mutations": [{
     "intent": {
       "source": "terraform",

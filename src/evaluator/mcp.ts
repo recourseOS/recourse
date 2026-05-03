@@ -6,6 +6,13 @@ import type {
   ConsequenceReport,
   MutationAction,
   MutationIntent,
+  RequiredEvidence,
+  EvidenceItem,
+} from '../core/index.js';
+import {
+  buildRequiredEvidence,
+  getEvidenceRequirements,
+  DEFAULT_UNKNOWN_REQUIREMENTS,
 } from '../core/index.js';
 import {
   RecoverabilityLabels,
@@ -95,6 +102,9 @@ export function evaluateMcpToolCallConsequences(
     dependencyImpact: [],
   };
 
+  // Build required evidence for the consequence report
+  const requiredEvidence = buildRequiredEvidenceForIntent(intent, mutation.evidence);
+
   return {
     mutations: [mutation],
     summary: {
@@ -104,8 +114,9 @@ export function evaluateMcpToolCallConsequences(
       hasUnrecoverable: recoverability.tier === RecoverabilityTier.UNRECOVERABLE,
       dependencyImpactCount: 0,
     },
-    decision: policyEvaluation.decision,
-    decisionReason: policyEvaluation.reason,
+    riskAssessment: policyEvaluation.decision,
+    assessmentReason: policyEvaluation.reason,
+    requiredEvidence,
   };
 }
 
@@ -117,8 +128,11 @@ function getRdsAnalysis(
     return null;
   }
 
-  const isAwsRds = intent.target.service === 'aws-rds'
-    || intent.target.service === 'aws'
+  const service = intent.target.service?.toLowerCase() ?? '';
+  const isAwsRds = service === 'aws-rds'
+    || service === 'aws'
+    || service.includes('rds')
+    || service.includes('db')
     || intent.target.provider === 'aws';
   if (!isAwsRds) return null;
 
@@ -185,8 +199,10 @@ function getS3Analysis(
     return null;
   }
 
-  const isAwsS3 = intent.target.service === 'aws-s3'
-    || intent.target.service === 'aws'
+  const service = intent.target.service?.toLowerCase() ?? '';
+  const isAwsS3 = service === 'aws-s3'
+    || service === 'aws'
+    || service.includes('s3')
     || intent.target.provider === 'aws';
   if (!isAwsS3) return null;
 
@@ -233,4 +249,123 @@ function classifyMcpIntent(intent: MutationIntent): RecoverabilityResult {
       },
     ],
   });
+}
+
+/**
+ * Map MCP service/target to Terraform resource type for evidence requirements.
+ */
+function inferResourceType(intent: MutationIntent): string | null {
+  const service = intent.target.service?.toLowerCase() ?? '';
+  const type = intent.target.type?.toLowerCase() ?? '';
+
+  // AWS S3
+  if (service.includes('s3') || type.includes('bucket')) {
+    return 'aws_s3_bucket';
+  }
+  // AWS RDS
+  if (service.includes('rds') || type.includes('db_instance') || type.includes('database')) {
+    return 'aws_db_instance';
+  }
+  // AWS DynamoDB
+  if (service.includes('dynamodb') || type.includes('dynamodb')) {
+    return 'aws_dynamodb_table';
+  }
+  // AWS IAM Role
+  if ((service.includes('iam') && type.includes('role')) || type === 'role') {
+    return 'aws_iam_role';
+  }
+  // AWS IAM User
+  if (service.includes('iam') && type.includes('user')) {
+    return 'aws_iam_user';
+  }
+  // AWS KMS
+  if (service.includes('kms') || type.includes('key')) {
+    return 'aws_kms_key';
+  }
+  // AWS VPC (must check before generic EC2)
+  if (service.includes('vpc') || type.includes('vpc')) {
+    return 'aws_vpc';
+  }
+  // AWS Elastic IP (must check before generic EC2)
+  // Matches: aws_ec2_release_address, eip tools, etc.
+  if (service.includes('eip') || type.includes('elastic_ip') || service.includes('release_address') || type.includes('address')) {
+    return 'aws_eip';
+  }
+  // AWS EBS Volume (must check before generic EC2)
+  if (type.includes('volume') || service.includes('volume')) {
+    return 'aws_ebs_volume';
+  }
+  // AWS Subnet (must check before generic EC2)
+  if (service.includes('subnet') || type.includes('subnet')) {
+    return 'aws_subnet';
+  }
+  // AWS NAT Gateway (must check before generic EC2)
+  if (service.includes('nat_gateway') || service.includes('nat-gateway') || type.includes('nat_gateway')) {
+    return 'aws_nat_gateway';
+  }
+  // AWS EC2 Instance
+  if (service.includes('ec2') || service.includes('terminate') || type.includes('instance')) {
+    return 'aws_instance';
+  }
+  // AWS Lambda
+  if (service.includes('lambda') || type.includes('function')) {
+    return 'aws_lambda_function';
+  }
+  // AWS Secrets Manager
+  if (service.includes('secret') || service.includes('secretsmanager')) {
+    return 'aws_secretsmanager_secret';
+  }
+  // AWS Route53
+  if (service.includes('route53') || service.includes('dns') || type.includes('zone') || type.includes('hosted')) {
+    return 'aws_route53_zone';
+  }
+  // AWS ECS Service
+  if (service.includes('ecs') || type.includes('ecs_service') || type.includes('service')) {
+    return 'aws_ecs_service';
+  }
+  // AWS EKS Cluster
+  if (service.includes('eks') || type.includes('eks_cluster') || type.includes('cluster')) {
+    return 'aws_eks_cluster';
+  }
+
+  return null;
+}
+
+/**
+ * Build RequiredEvidence for a mutation intent.
+ */
+function buildRequiredEvidenceForIntent(
+  intent: MutationIntent,
+  evidence: EvidenceItem[]
+): RequiredEvidence {
+  const resourceType = inferResourceType(intent);
+  const action = intent.action === 'delete' ? 'delete'
+    : intent.action === 'create' ? 'create'
+    : 'update';
+
+  if (!resourceType) {
+    // Unknown resource type - use default requirements
+    return buildRequiredEvidence(
+      intent.target.type ?? 'unknown',
+      action,
+      evidence,
+      DEFAULT_UNKNOWN_REQUIREMENTS
+    );
+  }
+
+  const requirements = getEvidenceRequirements(resourceType, action);
+  if (!requirements) {
+    // Known resource type but no requirements defined for this action
+    return {
+      resourceType,
+      action,
+      requirementsDefined: false,
+      requirements: [],
+      summary: { total: 0, satisfied: 0, missingRequired: 0, missingBlocking: 0 },
+      sufficient: true,
+      sufficiency: 'sufficient',
+    };
+  }
+
+  return buildRequiredEvidence(resourceType, action, evidence, requirements);
 }

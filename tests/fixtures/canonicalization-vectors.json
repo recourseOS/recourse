@@ -1,0 +1,389 @@
+{
+  "description": "RFC 8785 JSON Canonicalization Scheme test vectors for RecourseOS attestation protocol",
+  "version": "1.0.0",
+  "specification": "https://www.rfc-editor.org/rfc/rfc8785",
+  "vectors": [
+    {
+      "id": "empty-object",
+      "description": "Empty object",
+      "input": {},
+      "expected": "{}"
+    },
+    {
+      "id": "empty-array",
+      "description": "Empty array",
+      "input": [],
+      "expected": "[]"
+    },
+    {
+      "id": "simple-string",
+      "description": "Simple string value",
+      "input": "hello",
+      "expected": "\"hello\""
+    },
+    {
+      "id": "simple-number",
+      "description": "Simple integer",
+      "input": 42,
+      "expected": "42"
+    },
+    {
+      "id": "boolean-true",
+      "description": "Boolean true",
+      "input": true,
+      "expected": "true"
+    },
+    {
+      "id": "boolean-false",
+      "description": "Boolean false",
+      "input": false,
+      "expected": "false"
+    },
+    {
+      "id": "null-value",
+      "description": "Null value",
+      "input": null,
+      "expected": "null"
+    },
+    {
+      "id": "key-ordering-simple",
+      "description": "Object keys ordered lexicographically",
+      "input": {"z": 1, "a": 2, "m": 3},
+      "expected": "{\"a\":2,\"m\":3,\"z\":1}"
+    },
+    {
+      "id": "key-ordering-numbers",
+      "description": "Numeric-looking keys ordered as strings",
+      "input": {"10": "a", "2": "b", "1": "c"},
+      "expected": "{\"1\":\"c\",\"10\":\"a\",\"2\":\"b\"}"
+    },
+    {
+      "id": "key-ordering-case-sensitive",
+      "description": "Keys ordered case-sensitively (uppercase before lowercase in ASCII)",
+      "input": {"b": 1, "B": 2, "a": 3, "A": 4},
+      "expected": "{\"A\":4,\"B\":2,\"a\":3,\"b\":1}"
+    },
+    {
+      "id": "key-ordering-unicode",
+      "description": "Unicode keys ordered by UTF-16 code units",
+      "input": {"é": 1, "e": 2, "É": 3},
+      "expected": "{\"e\":2,\"É\":3,\"é\":1}",
+      "note": "e (0x65) < E-acute (0xC9) < e-acute (0xE9) in UTF-16"
+    },
+    {
+      "id": "nested-objects",
+      "description": "Nested objects with keys reordered at each level",
+      "input": {"b": {"z": 1, "a": 2}, "a": {"y": 3, "x": 4}},
+      "expected": "{\"a\":{\"x\":4,\"y\":3},\"b\":{\"a\":2,\"z\":1}}"
+    },
+    {
+      "id": "array-preserves-order",
+      "description": "Array element order is preserved",
+      "input": [3, 1, 2],
+      "expected": "[3,1,2]"
+    },
+    {
+      "id": "mixed-array",
+      "description": "Array with mixed types",
+      "input": [1, "two", true, null, {"a": 1}],
+      "expected": "[1,\"two\",true,null,{\"a\":1}]"
+    },
+    {
+      "id": "number-integer-positive",
+      "description": "Positive integer",
+      "input": 123,
+      "expected": "123"
+    },
+    {
+      "id": "number-integer-negative",
+      "description": "Negative integer",
+      "input": -456,
+      "expected": "-456"
+    },
+    {
+      "id": "number-zero",
+      "description": "Zero",
+      "input": 0,
+      "expected": "0"
+    },
+    {
+      "id": "number-negative-zero",
+      "description": "Negative zero serializes as 0",
+      "input": 0,
+      "use_negative_zero": true,
+      "expected": "0",
+      "note": "IEEE 754 -0 must serialize as 0. Test must manually pass -0 to canonicalize."
+    },
+    {
+      "id": "number-decimal",
+      "description": "Decimal number without trailing zeros",
+      "input": 1.5,
+      "expected": "1.5"
+    },
+    {
+      "id": "number-no-trailing-zeros",
+      "description": "No trailing zeros after decimal point",
+      "input": 1.0,
+      "expected": "1",
+      "note": "1.0 becomes 1, not 1.0"
+    },
+    {
+      "id": "number-small-decimal",
+      "description": "Small decimal without leading zero removal",
+      "input": 0.5,
+      "expected": "0.5"
+    },
+    {
+      "id": "number-exponent-large",
+      "description": "Large number in exponential notation",
+      "input": 1e21,
+      "expected": "1e+21",
+      "note": "Numbers >= 10^21 use exponential form"
+    },
+    {
+      "id": "number-exponent-small",
+      "description": "Small number in exponential notation",
+      "input": 1e-7,
+      "expected": "1e-7",
+      "note": "Numbers with magnitude < 10^-6 use exponential form"
+    },
+    {
+      "id": "number-precision",
+      "description": "Numbers maintain precision within IEEE 754 limits",
+      "input": 9007199254740991,
+      "expected": "9007199254740991",
+      "note": "MAX_SAFE_INTEGER"
+    },
+    {
+      "id": "string-escape-backslash",
+      "description": "Backslash must be escaped",
+      "input": "a\\b",
+      "expected": "\"a\\\\b\""
+    },
+    {
+      "id": "string-escape-quote",
+      "description": "Double quote must be escaped",
+      "input": "a\"b",
+      "expected": "\"a\\\"b\""
+    },
+    {
+      "id": "string-escape-newline",
+      "description": "Newline control character must be escaped",
+      "input": "a\nb",
+      "expected": "\"a\\nb\""
+    },
+    {
+      "id": "string-escape-tab",
+      "description": "Tab control character must be escaped",
+      "input": "a\tb",
+      "expected": "\"a\\tb\""
+    },
+    {
+      "id": "string-escape-carriage-return",
+      "description": "Carriage return must be escaped",
+      "input": "a\rb",
+      "expected": "\"a\\rb\""
+    },
+    {
+      "id": "string-escape-form-feed",
+      "description": "Form feed must be escaped",
+      "input": "a\fb",
+      "expected": "\"a\\fb\""
+    },
+    {
+      "id": "string-escape-backspace",
+      "description": "Backspace must be escaped",
+      "input": "a\bb",
+      "expected": "\"a\\bb\""
+    },
+    {
+      "id": "string-unicode-passthrough",
+      "description": "Non-ASCII Unicode passes through unescaped",
+      "input": "café",
+      "expected": "\"café\"",
+      "note": "Unicode characters outside control range should not be escaped"
+    },
+    {
+      "id": "string-control-char-escape",
+      "description": "Control characters (0x00-0x1F) must be \\uXXXX escaped",
+      "input": "a\u0000b",
+      "expected": "\"a\\u0000b\"",
+      "note": "NUL character must be escaped as \\u0000"
+    },
+    {
+      "id": "attestation-payload-structure",
+      "description": "RecourseOS attestation payload structure",
+      "input": {
+        "input": {"tool": "terraform", "action": "destroy", "target": "aws_rds_cluster.main"},
+        "output": {"verdict": "BLOCKED", "tier": "UNRECOVERABLE", "reason": "deletion_protection=false, no snapshots"},
+        "evaluator": "recourse:blast-radius:1.0",
+        "timestamp": "2026-05-01T12:00:00Z",
+        "key_id": "recourse-prod-2026-001"
+      },
+      "expected": "{\"evaluator\":\"recourse:blast-radius:1.0\",\"input\":{\"action\":\"destroy\",\"target\":\"aws_rds_cluster.main\",\"tool\":\"terraform\"},\"key_id\":\"recourse-prod-2026-001\",\"output\":{\"reason\":\"deletion_protection=false, no snapshots\",\"tier\":\"UNRECOVERABLE\",\"verdict\":\"BLOCKED\"},\"timestamp\":\"2026-05-01T12:00:00Z\"}"
+    },
+    {
+      "id": "deep-nesting",
+      "description": "Deeply nested structure with consistent ordering",
+      "input": {
+        "level1": {
+          "z": {
+            "b": {"value": 1},
+            "a": {"value": 2}
+          },
+          "a": {
+            "y": {"value": 3},
+            "x": {"value": 4}
+          }
+        }
+      },
+      "expected": "{\"level1\":{\"a\":{\"x\":{\"value\":4},\"y\":{\"value\":3}},\"z\":{\"a\":{\"value\":2},\"b\":{\"value\":1}}}}"
+    },
+    {
+      "id": "empty-string-key",
+      "description": "Empty string as object key",
+      "input": {"": "empty", "a": "first"},
+      "expected": "{\"\":\"empty\",\"a\":\"first\"}",
+      "note": "Empty string sorts before all other strings"
+    },
+    {
+      "id": "whitespace-in-strings",
+      "description": "Whitespace in string values is preserved",
+      "input": {"message": "hello world"},
+      "expected": "{\"message\":\"hello world\"}"
+    },
+    {
+      "id": "special-json-chars-in-values",
+      "description": "Special JSON characters in string values",
+      "input": {"json": "{\"key\": \"value\"}"},
+      "expected": "{\"json\":\"{\\\"key\\\": \\\"value\\\"}\"}"
+    },
+    {
+      "id": "array-of-objects",
+      "description": "Array of objects, each object canonicalized",
+      "input": [{"z": 1, "a": 2}, {"b": 3, "a": 4}],
+      "expected": "[{\"a\":2,\"z\":1},{\"a\":4,\"b\":3}]"
+    },
+    {
+      "id": "complex-attestation",
+      "description": "Complex attestation with evidence array",
+      "input": {
+        "timestamp": "2026-05-01T12:00:00Z",
+        "evaluator": "recourse:blast-radius:1.0",
+        "key_id": "prod-key-001",
+        "input": {
+          "tool": "aws-cli",
+          "command": "rds delete-db-cluster",
+          "args": {"db-cluster-identifier": "prod-db", "skip-final-snapshot": true}
+        },
+        "output": {
+          "verdict": "ESCALATE",
+          "tier": "RECOVERABLE_FROM_BACKUP",
+          "evidence": [
+            {"source": "aws:rds:describe-db-clusters", "found": true},
+            {"source": "aws:rds:describe-db-snapshots", "found": false}
+          ]
+        }
+      },
+      "expected": "{\"evaluator\":\"recourse:blast-radius:1.0\",\"input\":{\"args\":{\"db-cluster-identifier\":\"prod-db\",\"skip-final-snapshot\":true},\"command\":\"rds delete-db-cluster\",\"tool\":\"aws-cli\"},\"key_id\":\"prod-key-001\",\"output\":{\"evidence\":[{\"found\":true,\"source\":\"aws:rds:describe-db-clusters\"},{\"found\":false,\"source\":\"aws:rds:describe-db-snapshots\"}],\"tier\":\"RECOVERABLE_FROM_BACKUP\",\"verdict\":\"ESCALATE\"},\"timestamp\":\"2026-05-01T12:00:00Z\"}"
+    }
+  ],
+  "negative_vectors": [
+    {
+      "id": "nan-not-allowed",
+      "description": "NaN is not valid JSON",
+      "input_description": "NaN value",
+      "should_error": true,
+      "note": "RFC 8785 Section 3.2.2.3 - must use null or omit"
+    },
+    {
+      "id": "infinity-not-allowed",
+      "description": "Infinity is not valid JSON",
+      "input_description": "Infinity value",
+      "should_error": true,
+      "note": "RFC 8785 Section 3.2.2.3 - must use null or omit"
+    },
+    {
+      "id": "negative-infinity-not-allowed",
+      "description": "-Infinity is not valid JSON",
+      "input_description": "-Infinity value",
+      "should_error": true,
+      "note": "RFC 8785 Section 3.2.2.3 - must use null or omit"
+    },
+    {
+      "id": "undefined-not-allowed",
+      "description": "undefined is not valid JSON",
+      "input_description": "undefined value",
+      "should_error": true,
+      "note": "JavaScript undefined has no JSON representation"
+    },
+    {
+      "id": "circular-reference",
+      "description": "Circular references cannot be serialized",
+      "input_description": "Object with circular reference",
+      "should_error": true,
+      "note": "Implementation must detect and reject circular references"
+    },
+    {
+      "id": "bigint-not-allowed",
+      "description": "BigInt is not valid JSON",
+      "input_description": "BigInt value (e.g., 9007199254740992n)",
+      "should_error": true,
+      "note": "BigInt has no JSON representation"
+    },
+    {
+      "id": "function-not-allowed",
+      "description": "Functions are not valid JSON",
+      "input_description": "Function value",
+      "should_error": true,
+      "note": "Functions have no JSON representation"
+    },
+    {
+      "id": "symbol-not-allowed",
+      "description": "Symbols are not valid JSON",
+      "input_description": "Symbol value",
+      "should_error": true,
+      "note": "Symbols have no JSON representation"
+    }
+  ],
+  "number_edge_cases": [
+    {
+      "id": "max-safe-integer",
+      "input": 9007199254740991,
+      "expected": "9007199254740991"
+    },
+    {
+      "id": "min-safe-integer",
+      "input": -9007199254740991,
+      "expected": "-9007199254740991"
+    },
+    {
+      "id": "float-precision-limit",
+      "input": 0.1,
+      "expected": "0.1",
+      "note": "Must serialize as 0.1, not 0.10000000000000001"
+    },
+    {
+      "id": "scientific-notation-boundary-positive",
+      "input": 999999999999999900000,
+      "expected": "999999999999999900000",
+      "note": "Just under 10^21 threshold"
+    },
+    {
+      "id": "scientific-notation-boundary-negative",
+      "input": 0.000001,
+      "expected": "0.000001",
+      "note": "Just above 10^-6 threshold"
+    },
+    {
+      "id": "very-small-number",
+      "input": 1e-10,
+      "expected": "1e-10"
+    },
+    {
+      "id": "very-large-number",
+      "input": 1e100,
+      "expected": "1e+100"
+    }
+  ]
+}

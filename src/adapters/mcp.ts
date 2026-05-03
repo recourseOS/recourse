@@ -16,7 +16,7 @@ interface McpPattern {
 
 const MCP_PATTERNS: McpPattern[] = [
   {
-    pattern: /(?:^|[._:/-])(delete|deletion|destroy|remove|drop|truncate|revoke|detach|disable)(?:$|[._:/-])/i,
+    pattern: /(?:^|[._:/-])(delete|deletion|destroy|remove|drop|truncate|revoke|detach|disable|terminate|release)(?:$|[._:/-])/i,
     action: 'delete',
     type: 'tool_resource',
   },

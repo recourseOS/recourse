@@ -30,10 +30,7 @@
   </a>
   <div class="links">
     <a href="/">home</a>
-    <a href="/resource-coverage.html">coverage</a>
-    <a href="/golden-fixtures.html">fixtures</a>
-    <a href="/agent-interface.html">agents</a>
-    <a href="/mcp-setup.html">mcp</a>
+    <a href="/docs.html">docs</a>
     <a href="/console.html">console</a>
     <a href="/about.html">about</a>
     <a href="https://github.com/recourseOS/recourse" class="nav-cta">github</a>
@@ -43,9 +40,11 @@
   <div class="eyebrow">design draft &middot; may 2026</div>
   <h1>Attestation Protocol</h1>
   <p class="lede">Cryptographic proof that consequence evaluation happened. Non-repudiation for agent actions.</p>
-  <p style="background: rgba(99, 230, 184, 0.15); border: 1px solid rgba(99, 230, 184, 0.3); padding: 12px 16px; border-radius: 6px; font-size: 14px; margin-top: 16px;">
-    <strong>Status:</strong> Design exploration, not committed work. Implementation timeline pending capacity review.
-  </p>
+  <div style="background: rgba(99, 230, 184, 0.15); border: 1px solid rgba(99, 230, 184, 0.3); padding: 16px 20px; border-radius: 6px; font-size: 14px; margin-top: 16px;">
+    <strong>Status: Partial Draft</strong><br>
+    <strong>Specified:</strong> §4 Canonicalization, §5 Key Management, §6 Transport, §7 Agent-Side Opt-In<br>
+    <strong>Pending:</strong> §8 Verification Procedure, §9 Failure Modes, §10 Wire Format
+  </div>
 </header>
 </div>
 <main class="container doc-shell">
@@ -54,6 +53,10 @@
     <a href="#problem">Problem</a>
     <a href="#solution">Solution</a>
     <a href="#schema">Schema</a>
+    <a href="#canonicalization">§4 Canonicalization</a>
+    <a href="#key-management">§5 Key Management</a>
+    <a href="#transport">§6 Transport</a>
+    <a href="#agent-opt-in">§7 Agent-Side Opt-In</a>
     <a href="#verification">Verification Model</a>
     <a href="#trust">Trust Anchor</a>
     <a href="#non-goals">Non-Goals</a>
@@ -105,7 +108,7 @@
 
   // The evaluation result
   evaluation: {
-    decision: 'allow' | 'warn' | 'escalate' | 'block';
+    riskAssessment: 'allow' | 'warn' | 'escalate' | 'block';
     worstTier: 1 | 2 | 3 | 4 | 5;
     reportHash: string;              // SHA-256 of full ConsequenceReport
     mutationCount: number;
@@ -135,6 +138,436 @@
         <tr><td><code>keyAttestation</code></td><td>Future-proofing for HSM/TPM-backed keys. Not required for v1.</td></tr>
       </tbody>
     </table>
+
+    <hr style="margin: 48px 0; border: none; border-top: 2px solid rgba(99, 230, 184, 0.3);">
+
+    <h2 id="canonicalization">§4 Canonicalization</h2>
+    <p style="font-size: 14px; opacity: 0.8; margin-bottom: 24px;"><em>This section uses <a href="https://www.rfc-editor.org/rfc/rfc2119">RFC 2119</a> keywords (MUST, MUST NOT, SHOULD, MAY).</em></p>
+
+    <h3>4.1 Signed Payload Construction</h3>
+    <p>The signed payload MUST consist of all attestation fields except the <code>signature</code> field. The <code>key_id</code> field MUST be included in the signed payload; it is not metadata.</p>
+    <p>To construct the signed payload from an attestation object:</p>
+    <ol>
+      <li>Remove the <code>signature</code> field from the attestation object. All other fields MUST remain.</li>
+      <li>Serialize the resulting object according to RFC 8785 (JSON Canonicalization Scheme).</li>
+      <li>The output is the canonical byte sequence to be signed.</li>
+    </ol>
+
+    <h3>4.2 RFC 8785 Compliance</h3>
+    <p>Implementations MUST serialize the signed payload according to <a href="https://www.rfc-editor.org/rfc/rfc8785">RFC 8785</a>. This specification does not define a subset or extension of RFC 8785; full compliance is required.</p>
+    <p>Key requirements from RFC 8785 that implementations MUST observe:</p>
+    <ul>
+      <li><strong>Object key ordering:</strong> Keys MUST be sorted lexicographically by UTF-16 code unit value.</li>
+      <li><strong>Number representation:</strong> Numbers MUST NOT have leading zeros, trailing decimal zeros, or a positive exponent sign. Numbers MUST use the shortest representation that preserves the value.</li>
+      <li><strong>String escaping:</strong> Only characters that MUST be escaped per RFC 8259 (control characters, quotation mark, reverse solidus) are escaped. Unicode characters above U+001F MUST NOT be escaped.</li>
+      <li><strong>Whitespace:</strong> No whitespace between tokens except within strings.</li>
+      <li><strong>Unicode normalization:</strong> Strings MUST be in NFC (Canonical Decomposition, followed by Canonical Composition) before serialization.</li>
+    </ul>
+    <p>Implementations MUST pass the RFC 8785 test vectors published at <code>test/canonicalization-vectors.json</code>. These vectors include RFC 8785 reference examples and derived edge cases for number representation, Unicode normalization, and key ordering.</p>
+
+    <h3>4.3 Signing Procedure</h3>
+    <p>To sign an attestation:</p>
+    <ol>
+      <li>Construct the signed payload per Section 4.1.</li>
+      <li>Compute the Ed25519 signature over the canonical byte sequence using the signing key identified by <code>key_id</code>.</li>
+      <li>Encode the signature as base64url (RFC 4648 Section 5, no padding).</li>
+      <li>Set the <code>signature</code> field to the encoded value.</li>
+    </ol>
+    <p>The <code>key_id</code> field MUST be set before signing. The signing key MUST be in the <code>active</code> state (see Section 5.2).</p>
+
+    <h3>4.4 Verification Procedure</h3>
+    <p>To verify an attestation signature:</p>
+    <ol>
+      <li>Extract the <code>signature</code> field and decode from base64url.</li>
+      <li>Construct the signed payload per Section 4.1 (removing <code>signature</code>, canonicalizing the remainder).</li>
+      <li>Retrieve the public key corresponding to <code>key_id</code> from the key registry (see Section 5.3).</li>
+      <li>If no key exists for <code>key_id</code>, or the key is in the <code>pending</code> or <code>compromised</code> state, verification MUST fail.</li>
+      <li>Verify the Ed25519 signature over the canonical byte sequence using the retrieved public key.</li>
+      <li>If verification succeeds and the key is in the <code>active</code>, <code>deprecated</code>, or <code>retired</code> state, the attestation is valid.</li>
+    </ol>
+
+    <hr style="margin: 48px 0; border: none; border-top: 2px solid rgba(99, 230, 184, 0.3);">
+
+    <h2 id="key-management">§5 Key Management</h2>
+
+    <h3>5.1 Key Identifier</h3>
+    <p>Each signing key MUST have a unique identifier (<code>key_id</code>). The <code>key_id</code> MUST be a non-empty string consisting of printable ASCII characters (U+0021 through U+007E).</p>
+    <p>Recommended format: <code>{instance_id}-{sequence_number}</code> where <code>sequence_number</code> is a monotonically increasing integer starting at 1. Example: <code>recourse-prod-1</code>, <code>recourse-prod-2</code>.</p>
+    <p>Implementations MUST NOT reuse a <code>key_id</code> for different key material, even after the key transitions to <code>compromised</code>.</p>
+
+    <h3>5.2 Key Lifecycle States</h3>
+    <p>Each key exists in exactly one of five states:</p>
+    <table>
+      <thead><tr><th>State</th><th>Signing</th><th>Verification</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>pending</code></td><td>MUST NOT</td><td>MUST fail</td><td>Key generated but not yet valid. Used to pre-publish keys before rotation.</td></tr>
+        <tr><td><code>active</code></td><td>MAY</td><td>MUST succeed</td><td>Key available for signing new attestations.</td></tr>
+        <tr><td><code>deprecated</code></td><td>MUST NOT</td><td>MUST succeed</td><td>Key no longer signs but existing attestations remain verifiable. Normal state after scheduled rotation. SHOULD remain in this state for at least 90 days.</td></tr>
+        <tr><td><code>retired</code></td><td>MUST NOT</td><td>MUST succeed</td><td>Key permanently out of rotation. Attestations remain verifiable indefinitely. Terminal state for keys that were never compromised.</td></tr>
+        <tr><td><code>compromised</code></td><td>MUST NOT</td><td>MUST fail</td><td>Key cannot be trusted. Attestations signed by this key MUST be rejected regardless of when they were signed.</td></tr>
+      </tbody>
+    </table>
+    <p>An instance MUST NOT have more than one key in the <code>active</code> state at any time.</p>
+    <p><strong>State transitions:</strong></p>
+<pre><code>pending → active → deprecated → retired
+    ↓         ↓          ↓          ↓
+    └─────────┴──────────┴──────────┴───→ compromised</code></pre>
+    <p>Legal transitions:</p>
+    <ul>
+      <li><code>pending</code> → <code>active</code> (activation)</li>
+      <li><code>pending</code> → <code>deprecated</code> (key generated but never used, superseded)</li>
+      <li><code>pending</code> → <code>compromised</code> (key material leaked before activation)</li>
+      <li><code>active</code> → <code>deprecated</code> (scheduled rotation)</li>
+      <li><code>active</code> → <code>compromised</code> (key material leaked while active)</li>
+      <li><code>deprecated</code> → <code>retired</code> (retention period complete)</li>
+      <li><code>deprecated</code> → <code>compromised</code> (key material leaked after rotation)</li>
+      <li><code>retired</code> → <code>compromised</code> (historical compromise discovered)</li>
+    </ul>
+    <p>No state may transition backwards. No state may transition to <code>pending</code> or <code>active</code> from any other state.</p>
+    <p>State transitions are operator-initiated. A transition MUST be reflected in the key registry with an incremented <code>registry_version</code> before the transition takes effect for signing or verification. A key MUST NOT sign attestations in a state until that state is published in the registry; a verifier MUST NOT apply a state change until it has fetched a registry reflecting that change.</p>
+
+    <h3>5.3 Key Registry</h3>
+    <p>Each RecourseOS instance MUST publish a key registry containing all non-<code>compromised</code> keys. The registry MAY also include <code>compromised</code> keys for audit purposes.</p>
+    <p>The registry MUST be available at: <code>{instance_base_url}/.well-known/recourse-keys.json</code></p>
+    <p>The registry URL is the canonical reference for key material. Instances deployed behind load balancers, CDNs, or multiple domains MUST ensure all paths resolve to the same registry content. The <code>instance_base_url</code> used in attestations MUST be consistent; verifiers are not required to follow redirects or resolve aliases.</p>
+    <p>Registry schema:</p>
+<pre><code>{
+  "instance_id": "recourse-prod",
+  "keys": [
+    {
+      "key_id": "recourse-prod-1",
+      "algorithm": "Ed25519",
+      "public_key": "&lt;base64url-encoded public key&gt;",
+      "state": "deprecated",
+      "valid_from": "2026-01-15T00:00:00Z",
+      "valid_until": "2026-04-15T00:00:00Z",
+      "deprecated_at": "2026-04-01T00:00:00Z"
+    },
+    {
+      "key_id": "recourse-prod-2",
+      "algorithm": "Ed25519",
+      "public_key": "&lt;base64url-encoded public key&gt;",
+      "state": "active",
+      "valid_from": "2026-04-01T00:00:00Z",
+      "valid_until": null
+    }
+  ],
+  "registry_version": 2,
+  "updated_at": "2026-04-01T12:00:00Z"
+}</code></pre>
+    <p>Field requirements:</p>
+    <ul>
+      <li><code>valid_from</code>: Timestamp when key entered <code>active</code> state. REQUIRED for <code>active</code>, <code>deprecated</code>, and <code>retired</code> keys.</li>
+      <li><code>valid_until</code>: Timestamp when key will transition to <code>deprecated</code>. MAY be null for the current <code>active</code> key.</li>
+      <li><code>deprecated_at</code>: Timestamp when key entered <code>deprecated</code> state. REQUIRED for <code>deprecated</code> and <code>retired</code> keys.</li>
+      <li><code>registry_version</code>: Monotonically increasing integer. MUST increment on any change.</li>
+    </ul>
+
+    <h3>5.4 Key Rotation Procedure</h3>
+    <p>To rotate from key A to key B:</p>
+    <ol>
+      <li>Generate key B. Set state to <code>pending</code>. Publish in key registry.</li>
+      <li>Set <code>valid_until</code> on key A to a future timestamp (rotation time).</li>
+      <li>At rotation time: Set key B to <code>active</code> with <code>valid_from</code> equal to rotation time. Set key A to <code>deprecated</code> with <code>deprecated_at</code> equal to rotation time.</li>
+      <li>New attestations MUST be signed with key B. Attestations signed with key A remain verifiable.</li>
+      <li>After a retention period (operator-defined, SHOULD be at least 90 days), key A MAY transition to <code>retired</code>.</li>
+    </ol>
+    <p>The overlap window (steps 3-4) ensures verifiers fetching the key registry mid-rotation can verify attestations signed by either key.</p>
+
+    <h3>5.5 Verifier Key Caching</h3>
+    <p>Verifiers MAY cache the key registry. The default cache TTL is 24 hours; operators MAY configure shorter TTLs for high-security deployments or longer TTLs for stable deployments.</p>
+    <p>Cached registries MUST be refreshed when:</p>
+    <ul>
+      <li>A <code>key_id</code> is encountered that is not in the cache, OR</li>
+      <li>The cache TTL has expired, OR</li>
+      <li>Verification fails with a cached key (to check for state changes).</li>
+    </ul>
+    <p><strong>Rollback protection:</strong></p>
+    <p>When refreshing, verifiers MUST compare <code>registry_version</code> of the fetched registry against the cached version:</p>
+    <ul>
+      <li>If fetched version &gt; cached version: Accept the fetched registry, update cache.</li>
+      <li>If fetched version = cached version: Accept (no change).</li>
+      <li>If fetched version &lt; cached version: Reject the fetched registry. This indicates a rollback attack or stale server response. Verification MUST fail.</li>
+    </ul>
+    <p><strong>Cache desync recovery:</strong></p>
+    <p>If a verifier's cache becomes corrupted or desynchronized (e.g., restored from backup, clock skew), rollback protection may prevent normal refresh. To recover:</p>
+    <p>Verifiers MAY implement a "force refresh" operation that discards the cached <code>registry_version</code> and accepts the fetched registry unconditionally. This operation:</p>
+    <ul>
+      <li>MUST require explicit operator action (not automatic).</li>
+      <li>MUST NOT be triggered by failed verifications alone.</li>
+      <li>MUST log the event as a security-relevant operation.</li>
+    </ul>
+    <p>The log entry MUST include: timestamp of the force refresh, operator identity if authentication is available, the discarded cached <code>registry_version</code> (or "none" if cache was empty), the accepted <code>registry_version</code>, and any operator-provided justification. Implementations without authentication MAY omit operator identity but MUST log the other fields.</p>
+    <p>After a force refresh, normal rollback protection resumes from the newly cached <code>registry_version</code>.</p>
+    <p>Implementations that do not support force refresh MUST document this limitation. Operators of such implementations recover from cache desync by clearing all cached state, which is equivalent to a new verifier bootstrapping.</p>
+
+    <hr style="margin: 48px 0; border: none; border-top: 2px solid rgba(99, 230, 184, 0.3);">
+
+    <h2 id="transport">§6 Transport</h2>
+
+    <h3>6.1 Attestation Delivery</h3>
+    <p>Attestations MUST be delivered via two channels:</p>
+    <ol>
+      <li><strong>Embedded:</strong> Included in the MCP tool response that returns the evaluation result.</li>
+      <li><strong>URL:</strong> Retrievable at a stable URL for later verification.</li>
+    </ol>
+    <p>Both channels deliver the identical attestation. The <code>attestation_uri</code> field in the attestation provides the URL for the durable copy.</p>
+
+    <h3>6.2 Embedded Delivery</h3>
+    <p>When RecourseOS returns an evaluation result via MCP, the response MUST include an <code>attestation</code> field containing the complete attestation object.</p>
+<pre><code>{
+  "verdict": "recoverable-from-backup",
+  "tier": 3,
+  "reasoning": "...",
+  "attestation": {
+    "key_id": "recourse-prod-2",
+    "attestation_uri": "https://recourse.example/.well-known/attestations/abc123.json",
+    "input": { ... },
+    "output": { ... },
+    "evaluator": { ... },
+    "timestamp": "2026-05-01T14:30:00Z",
+    "signature": "..."
+  }
+}</code></pre>
+    <p>The attestation object is the same object that would be retrieved from <code>attestation_uri</code>.</p>
+
+    <h3>6.3 URL Delivery</h3>
+    <p>Each attestation MUST be retrievable at the URL specified in its <code>attestation_uri</code> field. The URL MUST remain stable for the attestation's retention period (see Section 6.5).</p>
+    <p>URL format: <code>{instance_base_url}/.well-known/attestations/{attestation_id}.json</code></p>
+    <p><strong>Attestation ID derivation:</strong></p>
+    <p>The <code>attestation_id</code> MUST be derived from the attestation content fields, excluding fields that depend on the ID itself. Specifically:</p>
+    <ol>
+      <li>Construct an object containing exactly these fields from the attestation: <code>input</code>, <code>output</code>, <code>evaluator</code>, <code>timestamp</code>, <code>key_id</code>.</li>
+      <li>Canonicalize this object per RFC 8785.</li>
+      <li>Compute the SHA-256 hash of the canonical byte sequence.</li>
+      <li>Take the first 16 bytes of the hash and encode as lowercase hexadecimal (32 characters).</li>
+    </ol>
+    <p>The <code>attestation_id</code> is this 32-character hex string.</p>
+    <p>The <code>attestation_uri</code> and <code>signature</code> fields are NOT inputs to the <code>attestation_id</code> derivation. This avoids circularity: the ID can be computed before the URI is constructed, and the URI can be constructed before signing.</p>
+    <p><strong>Signing order:</strong></p>
+    <p>When creating an attestation:</p>
+    <ol>
+      <li>Populate <code>input</code>, <code>output</code>, <code>evaluator</code>, <code>timestamp</code>, <code>key_id</code>.</li>
+      <li>Derive <code>attestation_id</code> per the procedure above.</li>
+      <li>Construct <code>attestation_uri</code> using the derived ID.</li>
+      <li>Add <code>attestation_uri</code> to the attestation object.</li>
+      <li>Sign the attestation per Section 4.3 (signature covers all fields including <code>attestation_uri</code>).</li>
+    </ol>
+    <p>The <code>attestation_uri</code> IS part of the signed payload; an attacker cannot redirect verifiers to a different URL without invalidating the signature. Only the ID derivation excludes it to break the circularity.</p>
+    <p>The response MUST be the attestation object with <code>Content-Type: application/json</code>.</p>
+
+    <h3>6.4 Consistency Requirement</h3>
+    <p>The embedded attestation and the URL-retrieved attestation MUST be byte-for-byte identical when canonicalized per RFC 8785.</p>
+    <p>A verifier that receives an embedded attestation MAY fetch the URL copy and compare. The cross-check is performed by parsing both attestation copies as JSON, canonicalizing each independently per RFC 8785, and comparing the resulting byte sequences. Any difference in the canonical forms—including field ordering, whitespace, or encoding—indicates tampering or implementation error and MUST cause verification to fail.</p>
+    <p>Verifiers are NOT REQUIRED to perform this cross-check, but high-assurance deployments SHOULD.</p>
+
+    <h3>6.5 Retention</h3>
+    <p>Attestations MUST remain retrievable at their <code>attestation_uri</code> for at least the retention period of the signing key (from <code>valid_from</code> to when the key enters <code>retired</code> or <code>compromised</code> state).</p>
+    <p>After the signing key is <code>retired</code> or <code>compromised</code>, the attestation URL MAY return 410 Gone. The attestation remains cryptographically verifiable if a verifier has the key's public key, but the authoritative URL is no longer obligated to serve it.</p>
+
+    <h3>6.6 Failure Modes</h3>
+    <p>If the URL endpoint is unavailable, verifiers MUST NOT treat this as attestation invalidity. The embedded copy remains verifiable using the key registry.</p>
+    <p>If the key registry is unavailable, verification MUST fail. The attestation cannot be verified without access to the public key.</p>
+
+    <hr style="margin: 48px 0; border: none; border-top: 2px solid rgba(99, 230, 184, 0.3);">
+
+    <h2 id="agent-opt-in">§7 Agent-Side Opt-In Semantics</h2>
+    <p style="font-size: 14px; opacity: 0.8; margin-bottom: 24px;"><em>This section uses <a href="https://www.rfc-editor.org/rfc/rfc2119">RFC 2119</a> keywords. Sections 7.1–7.8 are normative. Section 7.9 is non-normative guidance.</em></p>
+
+    <h3>7.1 Response Structure</h3>
+    <p>When attestation is enabled, RecourseOS responses include an <code>attestation</code> field at the root level of the consequence report:</p>
+<pre><code>{
+  "schemaVersion": "recourse.consequence.v1",
+  "riskAssessment": "escalate",
+  "assessmentReason": "Recoverability needs human review",
+  "summary": { ... },
+  "mutations": [ ... ],
+  "attestation": {
+    "input": { "source": "shell", "input": "rm -rf /data" },
+    "output": { ... },
+    "evaluator": "recourse:blast-radius:1.0.0",
+    "timestamp": "2026-05-01T14:30:00Z",
+    "key_id": "recourse-prod-1",
+    "attestation_uri": "https://recourse.example/.well-known/attestations/abc123.json",
+    "signature": "..."
+  }
+}</code></pre>
+    <p>The <code>attestation</code> field is a sibling of <code>decision</code>, <code>summary</code>, and <code>mutations</code>. It is metadata about the evaluation, not part of the evaluation result.</p>
+    <p>When attestation is disabled (default), the <code>attestation</code> field is absent from the response. Agents MUST NOT assume its presence. Agents MUST check for field existence before accessing attestation data.</p>
+
+    <h3>7.2 Attestation Content</h3>
+    <p>The <code>attestation.output</code> field contains a copy of the consequence report at the time of signing. This copy excludes the <code>attestation</code> field itself to avoid circular embedding.</p>
+    <p><strong>Size consideration:</strong> The attestation roughly doubles response size because <code>output</code> embeds the full consequence report. For evaluations with many mutations (e.g., large Terraform plans), this overhead may be significant. Agents operating under tight context limits MAY:</p>
+    <ul>
+      <li>Verify the attestation immediately, then discard <code>attestation.output</code> and retain only the signature and URI for audit purposes.</li>
+      <li>Store the full attestation externally and reference it by <code>attestation_uri</code>.</li>
+    </ul>
+    <p>Agents MUST NOT modify <code>attestation.output</code> if they intend to verify the signature later; any modification invalidates the signature.</p>
+
+    <h3>7.3 Attestation Modes</h3>
+    <p>Agents operate in one of four attestation modes. Each mode has explicit requirements:</p>
+    <table>
+      <thead><tr><th>Mode</th><th>Requirements</th><th>Use Case</th></tr></thead>
+      <tbody>
+        <tr><td><strong>ignore</strong></td><td>Agent MUST NOT verify. Agent MAY log attestation presence. Agent proceeds based on <code>decision</code> field alone.</td><td>Development, low-stakes operations, agents without verification capability.</td></tr>
+        <tr><td><strong>log</strong></td><td>Agent MUST record the attestation (or its hash and URI) before proceeding. Agent MUST NOT block on verification. Agent MAY verify asynchronously after proceeding. Agent proceeds based on <code>decision</code> field.</td><td>Compliance environments requiring audit trails without blocking on verification.</td></tr>
+        <tr><td><strong>verify</strong></td><td>Agent MUST verify before proceeding. Agent MUST refuse to proceed on verification failure. If attestation is absent, agent MAY proceed with a warning logged.</td><td>High-assurance deployments where verification failure is meaningful.</td></tr>
+        <tr><td><strong>require</strong></td><td>Agent MUST verify before proceeding. Agent MUST refuse to proceed on verification failure. If attestation is absent, agent MUST refuse to proceed.</td><td>Zero-trust deployments; agents that must prove they checked.</td></tr>
+      </tbody>
+    </table>
+    <p>The protocol does not mandate which mode agents use. The opt-in model allows gradual adoption: agents can start in <code>log</code> mode, then enable <code>verify</code> or <code>require</code> as confidence grows.</p>
+
+    <h3>7.4 Verification Procedure</h3>
+    <p>This section describes a RECOMMENDED verification sequence. Implementations MAY reorder steps if the functional result is equivalent, but all validation checks MUST be performed.</p>
+    <p>An agent in <code>verify</code> or <code>require</code> mode SHOULD perform these steps before acting on the evaluation result:</p>
+    <ol>
+      <li><strong>Check attestation presence:</strong> If <code>attestation</code> field is absent, behavior depends on mode. In <code>verify</code> mode, log warning and proceed. In <code>require</code> mode, MUST reject.</li>
+      <li><strong>Check trusted instance:</strong> If <code>trusted_instances</code> is non-empty, the scheme and host of <code>attestation_uri</code> MUST match an entry. If no match, MUST reject.</li>
+      <li><strong>Fetch key registry:</strong> HTTP GET to <code>{instance_base_url}/.well-known/recourse-keys.json</code>. The <code>instance_base_url</code> is the scheme and host portion of <code>attestation_uri</code>. Cache rules per Section 5.5 apply.</li>
+      <li><strong>Locate public key:</strong> Find the entry in <code>keys</code> where <code>key_id</code> matches <code>attestation.key_id</code>. If not found, MUST reject.</li>
+      <li><strong>Check key state:</strong> If the key's <code>state</code> is <code>pending</code> or <code>compromised</code>, MUST reject.</li>
+      <li><strong>Construct signed payload:</strong> Remove the <code>signature</code> field from the attestation. Canonicalize the remainder per RFC 8785.</li>
+      <li><strong>Verify signature:</strong> Decode <code>signature</code> from base64url. Verify Ed25519 signature over the canonical payload using the public key. If verification fails, MUST reject.</li>
+      <li><strong>Accept:</strong> If all checks pass and key state is <code>active</code>, <code>deprecated</code>, or <code>retired</code>, the attestation is valid. Agent MAY proceed according to the <code>decision</code> field.</li>
+    </ol>
+    <p>The entire verification procedure requires two HTTP requests (evaluation + key registry) plus local cryptographic operations. Verification latency is typically under 100ms on local networks.</p>
+
+    <h3>7.5 Cross-Check (Optional)</h3>
+    <p>For high-assurance verification, agents MAY perform the cross-check described in Section 6.4:</p>
+    <ol>
+      <li>Fetch the attestation from <code>attestation_uri</code>.</li>
+      <li>Canonicalize both the embedded attestation and the fetched attestation per RFC 8785.</li>
+      <li>Compare the canonical byte sequences.</li>
+      <li>If they differ, MUST reject the attestation.</li>
+    </ol>
+    <p>This cross-check detects tampering between the MCP response and the durable attestation store. It adds one HTTP request to the verification flow.</p>
+    <p>Cross-check is NOT REQUIRED for verification. The signature alone provides integrity; the cross-check provides defense-in-depth against implementation bugs or man-in-the-middle attacks that modify the embedded copy.</p>
+
+    <h3>7.6 Verification Failure Handling</h3>
+    <p>When verification fails, agents in <code>verify</code> or <code>require</code> mode:</p>
+    <ul>
+      <li>MUST NOT proceed with the action that triggered evaluation.</li>
+      <li>MUST log the failure with reason: <code>signature_invalid</code>, <code>key_not_found</code>, <code>key_compromised</code>, <code>key_pending</code>, <code>instance_not_trusted</code>, <code>cross_check_mismatch</code>, or <code>network_error</code>.</li>
+      <li>SHOULD escalate to a human operator if the agent has escalation capability (see below).</li>
+    </ul>
+    <p><strong>Escalation patterns:</strong> Escalation means halting autonomous execution and requesting human review. Agents MAY implement escalation as:</p>
+    <ul>
+      <li><strong>Blocking prompt:</strong> Pause execution and display the failure to the user, waiting for explicit approval to continue or abort.</li>
+      <li><strong>Notification:</strong> Send an alert (message, email, webhook) to a designated operator and either pause or abort.</li>
+      <li><strong>Ticket creation:</strong> Create an incident ticket and abort execution, requiring human resolution before retry.</li>
+    </ul>
+    <p>The choice of escalation pattern is implementation-defined. The requirement is that autonomous execution MUST NOT continue; a human MUST be involved in the decision to proceed.</p>
+    <p><strong>Verification failure vs. verdict:</strong> Verification failure is independent of the evaluation verdict. Even if <code>decision</code> is <code>block</code>, verification failure adds information: the verdict itself may be fabricated. An agent that would have blocked anyway SHOULD still log the verification failure as a security event.</p>
+    <p><strong>Retry behavior:</strong> Agents MAY retry verification for transient failures (<code>network_error</code>). Agents MUST NOT retry on cryptographic or trust failures (<code>signature_invalid</code>, <code>key_compromised</code>, <code>key_pending</code>, <code>instance_not_trusted</code>, <code>cross_check_mismatch</code>).</p>
+
+    <h3>7.7 Absence of Attestation</h3>
+    <p>If the <code>attestation</code> field is absent from a response, the agent is receiving an unauthenticated evaluation. This occurs when:</p>
+    <ul>
+      <li>The RecourseOS instance has attestation disabled (default).</li>
+      <li>The evaluation failed before attestation could be generated.</li>
+      <li>The response is from an older RecourseOS version without attestation support.</li>
+    </ul>
+    <p><strong>Mode-specific behavior:</strong></p>
+    <ul>
+      <li><code>ignore</code>: Proceed normally. Absence is expected.</li>
+      <li><code>log</code>: Log that no attestation was received. Proceed normally.</li>
+      <li><code>verify</code>: Log a warning (<code>attestation_absent</code>). MAY proceed. The operator accepts that some evaluations will be unauthenticated.</li>
+      <li><code>require</code>: MUST reject. MUST NOT proceed without attestation. The agent fails closed.</li>
+    </ul>
+    <p>The absence of attestation is represented by field omission, not by a null or empty value. Agents check for attestation with <code>if ('attestation' in response)</code> or equivalent.</p>
+    <p><strong>Security consideration:</strong> In <code>require</code> mode, absence of attestation is a security signal, not a benign default. It may indicate the RecourseOS instance was downgraded, replaced by an impersonator, or evaluation was bypassed. The conservative response is to refuse to proceed.</p>
+
+    <h3>7.8 Agent Configuration</h3>
+    <p>Agent operators SHOULD be able to configure attestation behavior:</p>
+    <table>
+      <thead><tr><th>Setting</th><th>Values</th><th>Default</th></tr></thead>
+      <tbody>
+        <tr><td><code>attestation_mode</code></td><td><code>ignore</code>, <code>log</code>, <code>verify</code>, <code>require</code></td><td><code>ignore</code></td></tr>
+        <tr><td><code>trusted_instances</code></td><td>List of <code>instance_base_url</code> values</td><td><code>[]</code> (accept any)</td></tr>
+        <tr><td><code>key_cache_ttl</code></td><td>Duration in seconds</td><td><code>86400</code> (24 hours)</td></tr>
+        <tr><td><code>cross_check</code></td><td><code>true</code>, <code>false</code></td><td><code>false</code></td></tr>
+      </tbody>
+    </table>
+    <p><strong><code>trusted_instances</code> semantics:</strong></p>
+    <p>This is an <strong>allow-list</strong>, not a trust-without-verification list. When non-empty:</p>
+    <ul>
+      <li>Attestations from listed instances are verified normally per Section 7.4.</li>
+      <li>Attestations from unlisted instances MUST be rejected with reason <code>instance_not_trusted</code>.</li>
+      <li>An empty list means any instance is accepted for verification (but still verified).</li>
+    </ul>
+    <p>Matching is performed on the scheme and host portion of <code>attestation_uri</code>. Example: if <code>trusted_instances</code> contains <code>https://recourse.example</code>, an attestation with <code>attestation_uri</code> of <code>https://recourse.example/.well-known/attestations/abc.json</code> is accepted.</p>
+    <p><strong><code>key_cache_ttl</code> and rollback protection:</strong></p>
+    <p>Agent-side key caches MUST follow the rollback protection rules from Section 5.5. When a cached registry's <code>registry_version</code> is higher than a fetched registry's version, the fetched registry MUST be rejected. The <code>key_cache_ttl</code> controls how long before a cache refresh is attempted, not whether rollback protection applies.</p>
+
+    <h3>7.9 Reasoning About Attestations (Non-Normative)</h3>
+    <p style="font-size: 14px; opacity: 0.8;"><em>This section provides guidance for LLM-based agents. It is non-normative; implementations are not required to support these patterns.</em></p>
+    <p>Agents with reasoning capability can interpret attestation fields directly:</p>
+    <ul>
+      <li><code>evaluator</code> identifies the evaluation logic version.</li>
+      <li><code>timestamp</code> indicates when the evaluation occurred.</li>
+      <li><code>key_id</code> identifies the signing key.</li>
+      <li><code>attestation_uri</code> provides a durable reference.</li>
+      <li><code>signature</code> is opaque to reasoning but can be verified programmatically.</li>
+    </ul>
+    <p>An agent asked to "verify the attestation you just received" can:</p>
+    <ol>
+      <li>Extract the <code>attestation_uri</code> and <code>key_id</code> from context.</li>
+      <li>Invoke a verification tool (if available) or describe the verification steps.</li>
+      <li>Report whether the signature is valid.</li>
+    </ol>
+    <p>The field names are chosen for clarity when read by both humans and language models. An agent that understands "this is the input that was evaluated, this is the output that was produced, and this signature proves the binding" has correctly interpreted the attestation.</p>
+
+    <h3>7.10 End-to-End Example</h3>
+    <p>This example walks through a complete verification flow for an agent in <code>require</code> mode.</p>
+    <p><strong>Step 1: Agent receives evaluation response</strong></p>
+<pre><code>POST /api/evaluate → 200 OK
+{
+  "schemaVersion": "recourse.consequence.v1",
+  "riskAssessment": "block",
+  "assessmentReason": "Unrecoverable data loss",
+  "mutations": [...],
+  "attestation": {
+    "input": {"source": "shell", "input": "rm -rf /data/production"},
+    "output": {"schemaVersion": "...", "riskAssessment": "block", ...},
+    "evaluator": "recourse:blast-radius:1.0.0",
+    "timestamp": "2026-05-01T14:30:00.000Z",
+    "key_id": "recourse-prod-1",
+    "attestation_uri": "https://recourse.example/.well-known/attestations/a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6.json",
+    "signature": "4-n_0Z2l4sRQjAvu8_tqe22sbFKuvrxHnYZjiAMuXtpj0cq_YoDjEHC5V4fn1O71zDL5mhAjsE6Fu-tPu2hjCw"
+  }
+}</code></pre>
+    <p><strong>Step 2: Agent checks trusted instances</strong></p>
+    <p>Config: <code>trusted_instances: ["https://recourse.example"]</code></p>
+    <p>Check: <code>attestation_uri</code> host is <code>recourse.example</code> → matches → proceed.</p>
+    <p><strong>Step 3: Agent fetches key registry</strong></p>
+<pre><code>GET https://recourse.example/.well-known/recourse-keys.json → 200 OK
+{
+  "instance_id": "recourse-prod",
+  "keys": [{
+    "key_id": "recourse-prod-1",
+    "algorithm": "Ed25519",
+    "public_key": "X8RJHBSyeubU49i9QMl1cfGfy3VjpTfyOLGKPjXagQ8",
+    "state": "active",
+    "valid_from": "2026-04-01T00:00:00Z"
+  }],
+  "registry_version": 3,
+  "updated_at": "2026-04-15T12:00:00Z"
+}</code></pre>
+    <p><strong>Step 4: Agent locates key and checks state</strong></p>
+    <p>Find: <code>key_id</code> "recourse-prod-1" → found.</p>
+    <p>Check: <code>state</code> is "active" → valid for verification.</p>
+    <p><strong>Step 5: Agent constructs signed payload</strong></p>
+    <p>Remove <code>signature</code> field. Canonicalize remainder per RFC 8785:</p>
+<pre><code>{"attestation_uri":"https://recourse.example/.well-known/attestations/a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6.json","evaluator":"recourse:blast-radius:1.0.0","input":{"input":"rm -rf /data/production","source":"shell"},"key_id":"recourse-prod-1","output":{...},"timestamp":"2026-05-01T14:30:00.000Z"}</code></pre>
+    <p><strong>Step 6: Agent verifies Ed25519 signature</strong></p>
+    <p>Decode <code>public_key</code> from base64url → 32 bytes.</p>
+    <p>Decode <code>signature</code> from base64url → 64 bytes.</p>
+    <p>Verify signature over canonical payload → valid.</p>
+    <p><strong>Step 7: Agent acts on verdict</strong></p>
+    <p>Attestation valid. <code>riskAssessment</code> is "block". Agent MUST NOT execute the command.</p>
+    <p>Agent logs: <code>{"event": "evaluation_blocked", "attestation_uri": "...", "riskAssessment": "block", "verification": "passed"}</code></p>
+
+    <hr style="margin: 48px 0; border: none; border-top: 1px solid rgba(255,255,255,0.1);">
 
     <h2 id="verification">Verification Model</h2>
     <p>Four verification models exist. v1 targets <strong>opt-in inline by the agent</strong>.</p>

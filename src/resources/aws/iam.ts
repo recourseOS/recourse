@@ -10,6 +10,7 @@ import {
   type ClassificationTrace,
 } from '../types.js';
 import { ClassificationContext } from '../../analyzer/trace.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const iamHandler: ResourceHandler = {
   resourceTypes: [
@@ -23,6 +24,74 @@ export const iamHandler: ResourceHandler = {
     'aws_iam_user_policy_attachment',
     'aws_iam_instance_profile',
   ],
+
+  // Per-type evidence requirements (role vs user have different needs)
+  evidenceRequirements: {
+    'aws_iam_role': {
+      delete: [
+        {
+          key: 'iam.attached_policies',
+          level: 'required',
+          description: 'Managed policies attached to the role',
+          blocksSafeVerdict: true,
+          defaultAssumption: [],
+          maxFreshnessSeconds: 3600,
+        },
+        {
+          key: 'iam.inline_policies',
+          level: 'required',
+          description: 'Inline policies embedded in the role',
+          blocksSafeVerdict: false,
+          defaultAssumption: [],
+          maxFreshnessSeconds: 3600,
+        },
+        {
+          key: 'iam.instance_profiles',
+          level: 'required',
+          description: 'Instance profiles using this role',
+          blocksSafeVerdict: true,
+          defaultAssumption: [],
+          maxFreshnessSeconds: 3600,
+        },
+        {
+          key: 'iam.trust_relationships',
+          level: 'recommended',
+          description: 'Principals that can assume this role',
+          blocksSafeVerdict: false,
+          defaultAssumption: [],
+          maxFreshnessSeconds: 3600,
+        },
+      ] satisfies EvidenceRequirement[],
+    },
+    'aws_iam_user': {
+      delete: [
+        {
+          key: 'iam.access_keys',
+          level: 'required',
+          description: 'Access keys associated with the user',
+          blocksSafeVerdict: true,
+          defaultAssumption: [],
+          maxFreshnessSeconds: 3600,
+        },
+        {
+          key: 'iam.mfa_devices',
+          level: 'recommended',
+          description: 'MFA devices registered to the user',
+          blocksSafeVerdict: false,
+          defaultAssumption: [],
+          maxFreshnessSeconds: 3600,
+        },
+        {
+          key: 'iam.groups',
+          level: 'recommended',
+          description: 'Groups the user belongs to',
+          blocksSafeVerdict: false,
+          defaultAssumption: [],
+          maxFreshnessSeconds: 3600,
+        },
+      ] satisfies EvidenceRequirement[],
+    },
+  },
 
   getRecoverability(
     change: ResourceChange,

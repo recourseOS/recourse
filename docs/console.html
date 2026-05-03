@@ -372,10 +372,7 @@
   </a>
   <div class="links">
     <a href="/">home</a>
-    <a href="/resource-coverage.html">coverage</a>
-    <a href="/golden-fixtures.html">fixtures</a>
-    <a href="/agent-interface.html">agents</a>
-    <a href="/mcp-setup.html">mcp</a>
+    <a href="/docs.html">docs</a>
     <a href="/console.html">console</a>
     <a href="/about.html">about</a>
     <a href="https://github.com/recourseOS/recourse" class="nav-cta">github</a>
@@ -442,7 +439,7 @@
           <div class="result-content" id="result-content">
             <div class="decision-banner" id="decision-banner">
               <div>
-                <div class="decision-label">Decision</div>
+                <div class="decision-label">Risk Assessment</div>
                 <div class="decision-value" id="decision-value">block</div>
               </div>
               <span class="tier-pill" id="tier-pill">unrecoverable</span>
@@ -792,12 +789,12 @@ async function evaluateWithServer(source, input) {
   // Convert server response to console format
   const mutation = data.mutations?.[0] || {};
   return {
-    decision: data.decision || 'escalate',
+    decision: data.riskAssessment || 'escalate',
     tier: data.summary?.worstRecoverability?.label || mutation.recoverability?.label || 'needs-review',
     target: mutation.resourceAddress || mutation.target || 'unknown',
     action: mutation.action || 'unknown',
     provider: mutation.provider || 'unknown',
-    reason: data.decisionReason || mutation.recoverability?.reasoning || 'See evidence',
+    reason: data.assessmentReason || mutation.recoverability?.reasoning || 'See evidence',
     evidence: mutation.recoverability?.evidence || [],
     missing: mutation.recoverability?.missingEvidence || []
   };
@@ -829,7 +826,7 @@ function generateAgentPrompt(report) {
   };
 
   let prompt = `I checked this with RecourseOS before executing.\n\n`;
-  prompt += `**Decision: ${report.decision.toUpperCase()}** — I should ${decisionText[report.decision]}.\n\n`;
+  prompt += `**Risk Assessment: ${report.decision.toUpperCase()}** — I should ${decisionText[report.decision]}.\n\n`;
   prompt += `**Target:** ${report.target}\n`;
   prompt += `**Action:** ${report.action}\n`;
   prompt += `**Recoverability:** ${report.tier}\n\n`;
@@ -1235,7 +1232,7 @@ function renderResult(report) {
 
   jsonContent.textContent = JSON.stringify({
     schemaVersion: 'recourse.consequence.v1',
-    decision: report.decision,
+    riskAssessment: report.decision,
     summary: {
       worstRecoverability: { label: report.tier }
     },

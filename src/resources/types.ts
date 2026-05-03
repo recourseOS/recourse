@@ -102,10 +102,43 @@ export interface BlastRadiusSummary {
 
 // Import trace types
 import type { ClassificationContext, ClassificationTrace } from '../analyzer/trace.js';
+import type { EvidenceRequirement } from '../core/state-schema.js';
+
+/**
+ * Evidence requirements per action type.
+ */
+export interface ActionEvidenceRequirements {
+  create?: EvidenceRequirement[];
+  update?: EvidenceRequirement[];
+  delete?: EvidenceRequirement[];
+}
+
+/**
+ * Evidence requirements can be:
+ * - Simple: same requirements for all resource types the handler covers
+ * - Per-type: different requirements for each resource type (keyed by resource type)
+ */
+export type HandlerEvidenceRequirements =
+  | ActionEvidenceRequirements
+  | Record<string, ActionEvidenceRequirements>;
 
 // Resource handler interface - each resource type implements this
 export interface ResourceHandler {
   resourceTypes: string[];  // e.g., ["aws_s3_bucket"]
+
+  /**
+   * Evidence requirements for this handler.
+   *
+   * Simple form (same for all resource types):
+   *   evidenceRequirements: { delete: [...] }
+   *
+   * Per-type form (different per resource type):
+   *   evidenceRequirements: {
+   *     'aws_iam_role': { delete: [...] },
+   *     'aws_iam_user': { delete: [...] },
+   *   }
+   */
+  evidenceRequirements?: HandlerEvidenceRequirements;
 
   getRecoverability(
     change: ResourceChange,

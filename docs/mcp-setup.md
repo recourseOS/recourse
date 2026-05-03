@@ -93,14 +93,14 @@ The exact shell decision can vary as evidence support expands, but it should alw
 
 Agents should treat RecourseOS as a pre-action consequence check:
 
-- Do not execute when `decision` is `block`.
-- Ask for human review when `decision` is `escalate`.
-- Surface recovery requirements when `decision` is `warn`.
+- Do not execute when `riskAssessment` is `block`.
+- Ask for human review when `riskAssessment` is `escalate`.
+- Surface recovery requirements when `riskAssessment` is `warn`.
 - Prefer structured fields over parsing explanation text.
 - Preserve `missingEvidence` in user-facing review requests.
 
 ## Example Agent Prompt
 
 ```text
-Before applying infrastructure changes, call RecourseOS. If the decision is block, stop. If the decision is escalate, ask me for review and include the missing evidence. If the decision is warn, summarize the recovery requirement before continuing.
+Before applying infrastructure changes, call RecourseOS. If the riskAssessment is block, stop. If the riskAssessment is escalate, ask me for review and include the missing evidence. If the riskAssessment is warn, summarize the recovery requirement before continuing.
 ```

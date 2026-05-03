@@ -11,10 +11,56 @@ import {
 } from '../types.js';
 import { ClassificationContext } from '../../analyzer/trace.js';
 import type { VerificationSuggestion } from '../../core/mutation.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 import { s3CrossRegionReplication, s3VersioningStatus } from '../../verification/index.js';
 
 export const s3Handler: ResourceHandler = {
   resourceTypes: ['aws_s3_bucket', 'aws_s3_bucket_versioning', 'aws_s3_object'],
+
+  // Self-describing evidence requirements
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 's3.versioning',
+        level: 'required',
+        description: 'S3 bucket versioning status (Enabled/Suspended/Off)',
+        blocksSafeVerdict: false,
+        defaultAssumption: 'Unknown',
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 's3.empty',
+        level: 'required',
+        description: 'Whether the bucket contains objects',
+        blocksSafeVerdict: true,
+        defaultAssumption: false, // Assume not empty (conservative)
+        maxFreshnessSeconds: 300, // 5 minutes - objects can change fast
+      },
+      {
+        key: 's3.object_lock',
+        level: 'recommended',
+        description: 'S3 object lock retention controls',
+        blocksSafeVerdict: false,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 's3.replication',
+        level: 'recommended',
+        description: 'S3 cross-region or same-region replication',
+        blocksSafeVerdict: false,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 's3.lifecycle',
+        level: 'optional',
+        description: 'S3 lifecycle rules (transition/expiration)',
+        blocksSafeVerdict: false,
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(
     change: ResourceChange,

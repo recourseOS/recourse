@@ -28,7 +28,7 @@
 
 ---
 
-Recourse is an MCP server that evaluates Terraform plans, shell commands, and tool calls before execution. It returns a structured verdict — `allow`, `warn`, `escalate`, or `block` — with recoverability tier and evidence. Agents call Recourse before they act; humans see what the agent checked.
+Recourse is an MCP server that evaluates Terraform plans, shell commands, and tool calls before execution. It returns structured facts — recoverability tier, evidence assessment, and risk level — so callers can make context-aware decisions. Agents call Recourse before they act; humans see what the agent checked.
 
 ## Add to Your Agent
 
@@ -55,11 +55,11 @@ The server exposes four tools:
 | `recourse_supported_resources` | List resources with deterministic rules |
 
 Each tool returns:
-- **decision**: `allow`, `warn`, `escalate`, or `block`
-- **recoverability**: tier and reasoning
-- **evidence**: what was found, what's missing
+- **riskAssessment**: engine's summary read — `allow`, `warn`, `escalate`, or `block`
+- **recoverability**: tier and reasoning for each mutation
+- **evidence**: what was found, what's missing, what's needed for confident classification
 
-If decision is `block` or `escalate`, agents should not proceed without human approval.
+The engine emits facts. Callers interpret them in context — a `block` assessment in staging might be acceptable; in production it might require approval.
 
 ## What Agents Get
 
@@ -75,10 +75,10 @@ Recourse tells the agent what that means:
 aws_db_instance.main
 recoverability: unrecoverable
 reason: skip_final_snapshot=true, backup_retention_period=0, deletion_protection=false
-decision: block
+riskAssessment: block
 ```
 
-The agent can now say: *"I checked with Recourse — this deletes the database with no backup. Blocking until you approve."*
+The agent can interpret these facts: *"Recourse assessed this as block-level risk — deletes the database with no backup. Should I proceed?"*
 
 That's different from *"I deleted your production database."*
 
@@ -86,9 +86,9 @@ That's different from *"I deleted your production database."*
 
 ```
 Before applying infrastructure changes, call RecourseOS.
-If the decision is block, stop.
-If the decision is escalate, ask me for review and include the missing evidence.
-If the decision is warn, summarize the recovery requirement before continuing.
+If the riskAssessment is block, stop.
+If the riskAssessment is escalate, ask me for review and include the missing evidence.
+If the riskAssessment is warn, summarize the recovery requirement before continuing.
 ```
 
 ## CLI Install
@@ -281,7 +281,7 @@ Recourse analyzes the plan, state, command, and evidence you provide. It cannot:
 - Predict races between planning and applying.
 - Replace human review for opaque destructive resources.
 
-The safety posture is conservative: when evidence is incomplete, Recourse warns, blocks, or requires review rather than understating risk.
+The safety posture is conservative: when evidence is incomplete, Recourse returns higher-risk assessments (`escalate` or `block`) rather than understating risk.
 
 ## License
 

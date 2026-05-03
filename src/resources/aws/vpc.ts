@@ -10,6 +10,7 @@ import {
   type ClassificationTrace,
 } from '../types.js';
 import { ClassificationContext } from '../../analyzer/trace.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const vpcHandler: ResourceHandler = {
   resourceTypes: [
@@ -24,6 +25,140 @@ export const vpcHandler: ResourceHandler = {
     'aws_network_acl',
     'aws_network_acl_rule',
   ],
+
+  // Per-type evidence requirements
+  evidenceRequirements: {
+    'aws_vpc': {
+      delete: [
+        {
+          key: 'vpc.dependent_count',
+          level: 'required',
+          description: 'Number of resources depending on this VPC',
+          blocksSafeVerdict: true,
+          defaultAssumption: undefined,
+          maxFreshnessSeconds: 300,
+        },
+        {
+          key: 'vpc.cidr_block',
+          level: 'required',
+          description: 'VPC CIDR block',
+          blocksSafeVerdict: false,
+          defaultAssumption: undefined,
+          maxFreshnessSeconds: 3600,
+        },
+        {
+          key: 'vpc.has_internet_gateway',
+          level: 'recommended',
+          description: 'Whether VPC has an attached internet gateway',
+          blocksSafeVerdict: false,
+          defaultAssumption: false,
+          maxFreshnessSeconds: 3600,
+        },
+        {
+          key: 'vpc.peering_connections',
+          level: 'recommended',
+          description: 'VPC peering connections',
+          blocksSafeVerdict: false,
+          defaultAssumption: [],
+          maxFreshnessSeconds: 3600,
+        },
+      ] satisfies EvidenceRequirement[],
+    },
+    'aws_subnet': {
+      delete: [
+        {
+          key: 'subnet.eni_count',
+          level: 'required',
+          description: 'Number of network interfaces using this subnet',
+          blocksSafeVerdict: true,
+          defaultAssumption: undefined,
+          maxFreshnessSeconds: 300,
+        },
+        {
+          key: 'subnet.cidr_block',
+          level: 'required',
+          description: 'The CIDR block that will be released',
+          blocksSafeVerdict: false,
+          maxFreshnessSeconds: 3600,
+        },
+        {
+          key: 'subnet.availability_zone',
+          level: 'recommended',
+          description: 'The availability zone this subnet is in',
+          blocksSafeVerdict: false,
+          maxFreshnessSeconds: 3600,
+        },
+        {
+          key: 'subnet.vpc_id',
+          level: 'optional',
+          description: 'The VPC this subnet belongs to',
+          blocksSafeVerdict: false,
+          maxFreshnessSeconds: 3600,
+        },
+      ] satisfies EvidenceRequirement[],
+    },
+    'aws_nat_gateway': {
+      delete: [
+        {
+          key: 'nat.route_table_count',
+          level: 'required',
+          description: 'Number of route tables with routes pointing to this NAT gateway',
+          blocksSafeVerdict: true,
+          defaultAssumption: undefined,
+          maxFreshnessSeconds: 300,
+        },
+        {
+          key: 'nat.state',
+          level: 'required',
+          description: 'Current state (available, pending, deleting, deleted, failed)',
+          blocksSafeVerdict: false,
+          defaultAssumption: 'available',
+          maxFreshnessSeconds: 60,
+        },
+        {
+          key: 'nat.public_ip',
+          level: 'recommended',
+          description: 'The public IP address associated with this NAT gateway',
+          blocksSafeVerdict: false,
+          maxFreshnessSeconds: 3600,
+        },
+        {
+          key: 'nat.subnet_id',
+          level: 'optional',
+          description: 'The subnet this NAT gateway is deployed in',
+          blocksSafeVerdict: false,
+          maxFreshnessSeconds: 3600,
+        },
+      ] satisfies EvidenceRequirement[],
+    },
+    'aws_eip': {
+      delete: [
+        {
+          key: 'eip.public_ip',
+          level: 'required',
+          description: 'The public IP address that will be released',
+          blocksSafeVerdict: true,
+          defaultAssumption: undefined,
+          maxFreshnessSeconds: 3600,
+        },
+        {
+          key: 'eip.association_id',
+          level: 'required',
+          description: 'Whether the EIP is currently associated with a resource',
+          blocksSafeVerdict: true,
+          defaultAssumption: 'unknown',
+          maxFreshnessSeconds: 300,
+        },
+        {
+          key: 'eip.domain',
+          level: 'optional',
+          description: 'Whether this is a VPC or EC2-Classic EIP',
+          blocksSafeVerdict: false,
+          maxFreshnessSeconds: 3600,
+        },
+      ] satisfies EvidenceRequirement[],
+    },
+  },
 
   getRecoverability(
     change: ResourceChange,

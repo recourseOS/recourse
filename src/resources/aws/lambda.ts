@@ -10,6 +10,7 @@ import {
   type ClassificationTrace,
 } from '../types.js';
 import { ClassificationContext } from '../../analyzer/trace.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const lambdaHandler: ResourceHandler = {
   resourceTypes: [
@@ -19,6 +20,35 @@ export const lambdaHandler: ResourceHandler = {
     'aws_lambda_permission',
     'aws_lambda_layer_version',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'lambda.versions',
+        level: 'required',
+        description: 'Published versions of this function',
+        blocksSafeVerdict: true,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'lambda.aliases',
+        level: 'recommended',
+        description: 'Aliases pointing to this function',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'lambda.event_sources',
+        level: 'recommended',
+        description: 'Event source mappings triggering this function',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(
     change: ResourceChange,

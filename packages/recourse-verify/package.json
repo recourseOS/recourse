@@ -1,0 +1,50 @@
+{
+  "name": "recourse-verify",
+  "version": "0.1.0",
+  "description": "Standalone verification library for RecourseOS attestations",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "recourse",
+    "attestation",
+    "verification",
+    "cryptography",
+    "ed25519",
+    "mcp"
+  ],
+  "author": "RecourseOS",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/recourseOS/recourse",
+    "directory": "packages/recourse-verify"
+  },
+  "homepage": "https://github.com/recourseOS/recourse/tree/main/packages/recourse-verify#readme",
+  "bugs": {
+    "url": "https://github.com/recourseOS/recourse/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
+  }
+}

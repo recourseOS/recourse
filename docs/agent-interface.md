@@ -16,9 +16,9 @@ The server uses standard MCP JSON-RPC messages over stdio with `Content-Length` 
 
 Agents should call Recourse before destructive or privileged actions, especially infrastructure, cloud, shell, MCP, or deployment operations.
 
-Decision meanings:
+Risk assessment meanings:
 
-| Decision | Agent behavior |
+| riskAssessment | Agent behavior |
 | --- | --- |
 | `allow` | Continue. The mutation is expected to be reversible or non-destructive. |
 | `warn` | Continue only after surfacing recovery requirements to the user. |
@@ -87,8 +87,8 @@ All evaluator tools return a `ConsequenceReport`.
 ```json
 {
   "schemaVersion": "recourse.consequence.v1",
-  "decision": "block",
-  "decisionReason": "Recoverability is unrecoverable",
+  "riskAssessment": "block",
+  "assessmentReason": "Recoverability is unrecoverable",
   "summary": {
     "totalMutations": 1,
     "needsReview": false,
@@ -110,8 +110,8 @@ MCP tool responses include `schemaVersion: "recourse.consequence.v1"` at the top
 
 Agents consuming Recourse should follow these rules:
 
-- Never execute a mutation when `decision` is `block`.
-- Never silently continue when `decision` is `escalate`.
+- Never execute a mutation when `riskAssessment` is `block`.
+- Never silently continue when `riskAssessment` is `escalate`.
 - For `warn`, include the recovery requirement in the user-facing response.
 - Prefer structured fields over parsing `reasoning` strings.
 - Treat `recoverability.source: "rules"` as authoritative for known resources.
@@ -129,7 +129,7 @@ I checked this with RecourseOS. It blocks the deletion because the RDS instance 
 MCP tools should fail closed:
 
 - Invalid input: return an MCP error with validation details.
-- Unsupported source: return `decision: "escalate"` when the action can be parsed but not classified.
+- Unsupported source: return `riskAssessment: "escalate"` when the action can be parsed but not classified.
 - Internal error: return an MCP error; do not return `allow`.
 - Missing evidence: return `needs-review` or `escalate`, not `allow`.
 

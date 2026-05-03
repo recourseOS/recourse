@@ -11,6 +11,7 @@ import {
 } from '../types.js';
 import { ClassificationContext } from '../../analyzer/trace.js';
 import type { VerificationSuggestion } from '../../core/mutation.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 import { ebsExternalSnapshots, ebsAwsBackupRecoveryPoints } from '../../verification/index.js';
 
 export const ebsHandler: ResourceHandler = {
@@ -20,6 +21,35 @@ export const ebsHandler: ResourceHandler = {
     'aws_ebs_snapshot_copy',
     'aws_volume_attachment',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'ebs.snapshots',
+        level: 'required',
+        description: 'Existing snapshots of this volume',
+        blocksSafeVerdict: true,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'ebs.attachments',
+        level: 'required',
+        description: 'Instances this volume is attached to',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 300,
+      },
+      {
+        key: 'ebs.size_gb',
+        level: 'recommended',
+        description: 'Volume size in GB',
+        blocksSafeVerdict: false,
+        defaultAssumption: undefined,
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(
     change: ResourceChange,
