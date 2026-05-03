@@ -10,6 +10,69 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="site.css" />
+<style>
+details {
+  margin: 16px 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper-card);
+}
+details summary {
+  padding: 16px 20px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+details summary::-webkit-details-marker { display: none; }
+details summary::before {
+  content: "▸";
+  font-size: 12px;
+  color: var(--ink-soft);
+  transition: transform 0.2s;
+}
+details[open] summary::before {
+  transform: rotate(90deg);
+}
+details[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+details > div {
+  padding: 20px;
+}
+details h3 {
+  margin-top: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+details h3:not(:first-child) {
+  margin-top: 24px;
+}
+details pre {
+  margin: 12px 0;
+}
+details p {
+  margin: 8px 0;
+  font-size: 14px;
+}
+details ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+details li {
+  font-size: 14px;
+  margin: 4px 0;
+}
+details code {
+  font-size: 13px;
+}
+</style>
 </head>
 <body>
 <div class="top-band">
@@ -39,79 +102,292 @@
 <header class="container doc-header">
   <div class="eyebrow">agent integration</div>
   <h1>MCP Setup</h1>
-  <p class="lede">Add RecourseOS to your agent tool list. One config block, then your agent can call recourse.evaluate before any destructive action.</p>
+  <p class="lede">Add RecourseOS to your agent's MCP config. One config block, and your agent knows what's recoverable before it touches infrastructure.</p>
 </header>
 </div>
 <main class="container doc-shell">
-  <aside class="toc"><div class="toc-title">On this page</div><a href="#start-the-server">Start the Server</a><a href="#mcp-client-config">MCP Client Config</a><a href="#verify-the-wiring">Verify the Wiring</a><a href="#available-tools">Available Tools</a><a href="#resources-prompts">Resources &amp; Prompts</a><a href="#attestation">Attestation</a><a href="#agent-behavior">Agent Behavior</a><a href="#example-agent-prompt">Example Agent Prompt</a></aside>
+  <aside class="toc">
+    <div class="toc-title">On this page</div>
+    <a href="#quick-start">Quick Start</a>
+    <a href="#agent-setup">Agent Setup Guides</a>
+    <a href="#shell-wrapper">Shell Wrapper</a>
+    <a href="#available-tools">Available Tools</a>
+    <a href="#attestation">Attestation</a>
+  </aside>
   <article>
-    <h1 id="mcp-setup">MCP Setup</h1>
-<p>RecourseOS runs as an MCP server so AI agents can check consequences before they act. One config block, and your agent knows what's recoverable before it touches infrastructure.</p>
-<h2 id="start-the-server">Start the Server</h2>
-<p>For an installed CLI:</p>
-<pre><code>recourse mcp serve</code></pre>
-<p>For local development:</p>
-<pre><code>npm run build
-node dist/index.js mcp serve</code></pre>
-<h2 id="mcp-client-config">MCP Client Config</h2>
-<p>Most MCP clients that support stdio servers accept this shape:</p>
-<pre><code>{
-  &quot;mcpServers&quot;: {
-    &quot;recourseos&quot;: {
-      &quot;command&quot;: &quot;recourse&quot;,
-      &quot;args&quot;: [&quot;mcp&quot;, &quot;serve&quot;]
+    <h2 id="quick-start">Quick Start</h2>
+    <p>Add RecourseOS to your agent's MCP config:</p>
+    <pre><code>{
+  "mcpServers": {
+    "recourseos": {
+      "command": "npx",
+      "args": ["-y", "recourse-cli@latest", "mcp", "serve"]
     }
   }
 }</code></pre>
-<p>If the CLI is not installed globally, use <code>npx</code>:</p>
-<pre><code>{
-  &quot;mcpServers&quot;: {
-    &quot;recourseos&quot;: {
-      &quot;command&quot;: &quot;npx&quot;,
-      &quot;args&quot;: [&quot;-y&quot;, &quot;recourse-cli@latest&quot;, &quot;mcp&quot;, &quot;serve&quot;]
+    <p>Then tell the agent to check before destructive commands:</p>
+    <pre><code>Use RecourseOS to check before running: rm -rf /tmp/test</code></pre>
+
+    <h2 id="agent-setup">Agent Setup Guides</h2>
+
+    <details>
+      <summary>Claude Code (CLI)</summary>
+      <div>
+        <h3>Config</h3>
+        <pre><code>claude mcp add recourseos --transport stdio -- npx -y recourse-cli@latest mcp serve</code></pre>
+        <p>Or add to your project's <code>.mcp.json</code>:</p>
+        <pre><code>{
+  "mcpServers": {
+    "recourseos": {
+      "command": "npx",
+      "args": ["-y", "recourse-cli@latest", "mcp", "serve"]
     }
   }
 }</code></pre>
-<p>Local development config:</p>
-<pre><code>{
-  &quot;mcpServers&quot;: {
-    &quot;recourseos&quot;: {
-      &quot;command&quot;: &quot;node&quot;,
-      &quot;args&quot;: [&quot;dist/index.js&quot;, &quot;mcp&quot;, &quot;serve&quot;]
+        <h3>Verify</h3>
+        <pre><code>claude mcp list</code></pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>Claude Desktop</summary>
+      <div>
+        <h3>Config file location</h3>
+        <ul>
+          <li><strong>macOS</strong>: <code>~/Library/Application Support/Claude/claude_desktop_config.json</code></li>
+          <li><strong>Windows</strong>: <code>%APPDATA%\Claude\claude_desktop_config.json</code></li>
+        </ul>
+        <h3>Add RecourseOS</h3>
+        <pre><code>{
+  "mcpServers": {
+    "recourseos": {
+      "command": "npx",
+      "args": ["-y", "recourse-cli@latest", "mcp", "serve"]
     }
   }
 }</code></pre>
-<p>Example files are available in <code>examples/mcp/</code>.</p>
-<h2 id="verify-the-wiring">Verify the Wiring</h2>
-<p>Run the local smoke test:</p>
-<pre><code>npm run mcp:smoke</code></pre>
-<p>The smoke test starts <code>recourse mcp serve</code>, lists tools, calls <code>recourse_supported_resources</code>, evaluates a destructive shell command, and evaluates a Terraform fixture.</p>
-<p>Expected output includes:</p>
-<pre><code>MCP smoke test passed
-tools=5
-resources=175
-shellRiskAssessment=escalate
-terraformRiskAssessment=block</code></pre>
-<h2 id="available-tools">Available Tools</h2>
-<table><thead><tr><th>Tool</th><th>Purpose</th></tr></thead><tbody><tr><td><code>recourse_evaluate_terraform</code></td><td>Evaluate Terraform plan JSON before apply</td></tr><tr><td><code>recourse_evaluate_shell</code></td><td>Evaluate a shell command before execution</td></tr><tr><td><code>recourse_evaluate_mcp_call</code></td><td>Evaluate another MCP tool call before invoking it</td></tr><tr><td><code>recourse_evaluate_with_evidence</code></td><td>Re-evaluate with verification evidence</td></tr><tr><td><code>recourse_supported_resources</code></td><td>List deterministic resource handler coverage</td></tr></tbody></table>
-<h2 id="resources-prompts">Resources &amp; Prompts</h2>
-<p>The server also exposes:</p>
-<table><thead><tr><th>Type</th><th>Name</th><th>Purpose</th></tr></thead><tbody><tr><td>Resource</td><td><code>recourse://instructions</code></td><td>Safety protocol for agents</td></tr><tr><td>Prompt</td><td><code>recourse_agent_instructions</code></td><td>Same content as a prompt template</td></tr></tbody></table>
-<p>Agents can read <code>recourse://instructions</code> to learn when to call RecourseOS and how to interpret results.</p>
-<h2 id="attestation">Attestation</h2>
-<p>Every evaluation response includes a cryptographic attestation — an Ed25519 signature over the input and output. This is always enabled; there's no opt-out.</p>
-<p>Attestations can be verified via:</p>
-<ul><li><code>GET /.well-known/recourse-keys.json</code> — public key registry</li><li><code>GET /.well-known/attestations/{id}.json</code> — individual attestations</li></ul>
-<h2 id="agent-behavior">Agent Behavior</h2>
-<p>Agents should treat RecourseOS as a pre-action consequence check:</p>
-<ul><li><strong>allow</strong>: Safe to proceed</li><li><strong>warn</strong>: Proceed with caution, inform user</li><li><strong>escalate</strong>: Stop and ask user for explicit approval</li><li><strong>block</strong>: Do not proceed without human review</li></ul>
-<p>If <code>escalate</code> or <code>block</code> includes <code>verificationSuggestions</code>: 1. Run the suggested verification commands 2. Call <code>recourse_evaluate_with_evidence</code> with the results 3. The assessment may upgrade if evidence confirms recovery paths</p>
-<h2 id="example-agent-prompt">Example Agent Prompt</h2>
-<pre><code>Before executing destructive operations, call RecourseOS.
+        <h3>Restart required</h3>
+        <p>Claude Desktop reads the config at startup. After editing, fully quit and reopen the app.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Cline (VS Code)</summary>
+      <div>
+        <h3>Config file location</h3>
+        <ul>
+          <li><strong>macOS/Linux</strong>: <code>~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json</code></li>
+          <li><strong>Windows</strong>: <code>%APPDATA%\Code\User\globalStorage\saoudrizwan.claude-dev\settings\cline_mcp_settings.json</code></li>
+        </ul>
+        <h3>Add RecourseOS</h3>
+        <pre><code>{
+  "mcpServers": {
+    "recourseos": {
+      "command": "npx",
+      "args": ["-y", "recourse-cli@latest", "mcp", "serve"]
+    }
+  }
+}</code></pre>
+        <h3>No persistent instructions</h3>
+        <p>Cline doesn't have persistent custom instructions. Tell Cline explicitly each time:</p>
+        <pre><code>Use RecourseOS to check before running: rm -rf /tmp/test</code></pre>
+        <p>Or start your session with:</p>
+        <pre><code>For this session, check recourse_evaluate_shell before any destructive commands.</code></pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>Cursor</summary>
+      <div>
+        <h3>Config file location</h3>
+        <ul>
+          <li><strong>Global</strong>: <code>~/.cursor/mcp.json</code></li>
+          <li><strong>Project-scoped</strong>: <code>.cursor/mcp.json</code> (in project root)</li>
+        </ul>
+        <h3>Add RecourseOS</h3>
+        <pre><code>{
+  "mcpServers": {
+    "recourseos": {
+      "command": "npx",
+      "args": ["-y", "recourse-cli@latest", "mcp", "serve"]
+    }
+  }
+}</code></pre>
+        <h3>No restart needed</h3>
+        <p>Unlike Claude Desktop, Cursor picks up config changes automatically.</p>
+        <h3>Agent instructions</h3>
+        <p>Add to your project's <code>.cursorrules</code>:</p>
+        <pre><code>Before executing shell commands that delete or modify files, call recourse_evaluate_shell. Follow the riskAssessment field.</code></pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>Windsurf</summary>
+      <div>
+        <h3>Config file location</h3>
+        <p><code>~/.codeium/windsurf/mcp_config.json</code></p>
+        <h3>Add RecourseOS</h3>
+        <pre><code>{
+  "mcpServers": {
+    "recourseos": {
+      "command": "npx",
+      "args": ["-y", "recourse-cli@latest", "mcp", "serve"]
+    }
+  }
+}</code></pre>
+        <h3>Access settings</h3>
+        <p>Open settings via "Windsurf - Settings" button (bottom right), or press <code>Cmd+Shift+P</code> (Mac) / <code>Ctrl+Shift+P</code> (Windows/Linux) and search "Open Windsurf Settings." Navigate to Advanced Settings > Cascade.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Continue (VS Code / JetBrains)</summary>
+      <div>
+        <h3>Config file location</h3>
+        <p><code>~/.continue/config.json</code> or <code>~/.continue/config.yaml</code></p>
+        <h3>Add RecourseOS</h3>
+        <p><strong>Important</strong>: Continue uses an <strong>array</strong> format (not an object like other clients):</p>
+        <pre><code>{
+  "mcpServers": [
+    {
+      "name": "recourseos",
+      "command": "npx",
+      "args": ["-y", "recourse-cli@latest", "mcp", "serve"]
+    }
+  ]
+}</code></pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>Zed</summary>
+      <div>
+        <h3>Config file location</h3>
+        <p><code>~/.config/zed/settings.json</code></p>
+        <h3>Add RecourseOS</h3>
+        <p>Zed uses a different key (<code>context_servers</code>) and structure:</p>
+        <pre><code>{
+  "context_servers": {
+    "recourseos": {
+      "command": {
+        "path": "npx",
+        "args": ["-y", "recourse-cli@latest", "mcp", "serve"]
+      }
+    }
+  }
+}</code></pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>JetBrains AI Assistant</summary>
+      <div>
+        <h3>Config location</h3>
+        <p>Settings > Tools > AI Assistant > Model Context Protocol (MCP)</p>
+        <h3>Add RecourseOS</h3>
+        <p>In the MCP settings dialog, add a new server with:</p>
+        <pre><code>{
+  "mcpServers": {
+    "recourseos": {
+      "command": "npx",
+      "args": ["-y", "recourse-cli@latest", "mcp", "serve"]
+    }
+  }
+}</code></pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>Other MCP Clients</summary>
+      <div>
+        <h3>Standard config format</h3>
+        <p>Most MCP clients accept this shape:</p>
+        <pre><code>{
+  "mcpServers": {
+    "recourseos": {
+      "command": "npx",
+      "args": ["-y", "recourse-cli@latest", "mcp", "serve"]
+    }
+  }
+}</code></pre>
+        <h3>If globally installed</h3>
+        <pre><code>{
+  "mcpServers": {
+    "recourseos": {
+      "command": "recourse",
+      "args": ["mcp", "serve"]
+    }
+  }
+}</code></pre>
+        <h3>Agent instructions</h3>
+        <p>Add to the agent's system prompt:</p>
+        <pre><code>Before executing destructive operations, call RecourseOS.
 If riskAssessment is block, stop.
 If riskAssessment is escalate, ask me for review.
 If riskAssessment is warn, summarize the recovery requirement before continuing.</code></pre>
-<p>Or read the built-in instructions from <code>recourse://instructions</code>.</p>
+      </div>
+    </details>
+
+    <h2 id="shell-wrapper">Shell Wrapper (No Agent Config Needed)</h2>
+    <p>Wrap dangerous shell commands so they automatically check RecourseOS before executing. Works in your terminal, but <strong>not</strong> inside agents like Cline that spawn their own shell.</p>
+    <p>Add to your shell profile (<code>~/.bashrc</code>, <code>~/.zshrc</code>):</p>
+    <pre><code>eval "$(recourse wrap)"</code></pre>
+    <p>Or with npx:</p>
+    <pre><code>eval "$(npx -y recourse-cli@latest wrap)"</code></pre>
+    <p>Now commands like <code>rm</code>, <code>aws</code>, <code>kubectl</code>, and <code>terraform</code> check RecourseOS first:</p>
+    <pre><code>rm -rf /tmp/important
+# recourse: escalate - Recoverability needs human review
+#   └─ /tmp/important: needs-review
+# Proceed? [y/N]</code></pre>
+    <p>Customize which commands are wrapped:</p>
+    <pre><code>eval "$(recourse wrap --commands rm,aws,kubectl)"</code></pre>
+    <p>To bypass RecourseOS for a specific command:</p>
+    <pre><code>command rm -rf /tmp/skip-check</code></pre>
+
+    <h2 id="available-tools">Available Tools</h2>
+    <table>
+      <thead><tr><th>Tool</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>recourse_evaluate_terraform</code></td><td>Evaluate Terraform plan JSON before apply</td></tr>
+        <tr><td><code>recourse_evaluate_shell</code></td><td>Evaluate a shell command before execution</td></tr>
+        <tr><td><code>recourse_evaluate_mcp_call</code></td><td>Evaluate another MCP tool call before invoking it</td></tr>
+        <tr><td><code>recourse_evaluate_with_evidence</code></td><td>Re-evaluate with verification evidence</td></tr>
+        <tr><td><code>recourse_supported_resources</code></td><td>List deterministic resource handler coverage</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="resources-prompts">Resources & Prompts</h2>
+    <table>
+      <thead><tr><th>Type</th><th>Name</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>Resource</td><td><code>recourse://instructions</code></td><td>Safety protocol for agents</td></tr>
+        <tr><td>Prompt</td><td><code>recourse_agent_instructions</code></td><td>Same content as a prompt template</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="attestation">Attestation</h2>
+    <p>Every evaluation response includes a cryptographic attestation (Ed25519 signature). Always enabled.</p>
+    <p>Verify attestations:</p>
+    <ul>
+      <li><code>recourse verify attestation.json</code> — CLI verification</li>
+      <li><code>GET /.well-known/recourse-keys.json</code> — public key registry</li>
+      <li><code>GET /.well-known/attestations/{id}.json</code> — individual attestations</li>
+    </ul>
+
+    <h2 id="agent-behavior">Agent Behavior</h2>
+    <p>Agents should treat RecourseOS as a pre-action consequence check:</p>
+    <ul>
+      <li><strong>allow</strong>: Safe to proceed</li>
+      <li><strong>warn</strong>: Proceed with caution, inform user</li>
+      <li><strong>escalate</strong>: Stop and ask user for explicit approval</li>
+      <li><strong>block</strong>: Do not proceed without human review</li>
+    </ul>
+    <p>If <code>escalate</code> or <code>block</code> includes <code>verificationSuggestions</code>:</p>
+    <ol>
+      <li>Run the suggested verification commands</li>
+      <li>Call <code>recourse_evaluate_with_evidence</code> with the results</li>
+      <li>The assessment may upgrade if evidence confirms recovery paths</li>
+    </ol>
   </article>
 </main>
 
