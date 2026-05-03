@@ -240,7 +240,31 @@ RecourseOS returns a \`riskAssessment\`:
 - **escalate**: Stop and ask user for explicit approval
 - **block**: Do not proceed without human review
 
-## Verification Protocol
+## Attestation Protocol
+
+Every RecourseOS response includes a cryptographically signed \`attestation\` field. This proves:
+- What input was evaluated
+- What verdict was returned
+- When it was evaluated
+- Which RecourseOS instance signed it
+
+**When asking for human approval (escalate/block), include the attestation:**
+
+\`\`\`
+I evaluated this command with RecourseOS:
+  Command: aws rds delete-db-instance --db-instance-identifier prod-db
+  Risk Assessment: block
+  Reason: No snapshot, deletion protection disabled
+  Attestation: abc123def456...
+
+The attestation can be verified with: recourse verify <attestation>
+
+Should I proceed?
+\`\`\`
+
+The attestation ID is in \`attestation.attestation_uri\` (last path segment) or derive from the full attestation JSON.
+
+## Evidence Protocol
 
 If riskAssessment is escalate/block but the response includes \`verificationSuggestions\`:
 1. Run the suggested verification commands
@@ -250,7 +274,8 @@ If riskAssessment is escalate/block but the response includes \`verificationSugg
 ## Key Principle
 
 RecourseOS is an oracle — it emits facts about recoverability, not decisions.
-You (the agent) decide how to act on those facts. But when in doubt, ask the human.`;
+You (the agent) decide how to act on those facts. But when in doubt, ask the human.
+The attestation lets humans verify you actually checked before acting.`;
 
 function getPrompt(params: unknown): { description: string; messages: Array<{ role: string; content: { type: string; text: string } }> } {
   const p = params as { name?: string } | undefined;
@@ -411,7 +436,7 @@ export async function handleMcpRequest(request: JsonRpcRequest): Promise<Record<
           },
           serverInfo: {
             name: 'recourseos',
-            version: '0.1.22',
+            version: '0.1.23',
           },
         });
       }
