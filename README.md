@@ -45,14 +45,21 @@ One config block. Works with Claude Desktop, Claude Code, Cursor, and any MCP-co
 }
 ```
 
-The server exposes four tools:
+The server exposes five tools:
 
 | Tool | Purpose |
 |------|---------|
 | `recourse_evaluate_terraform` | Check Terraform plans before `terraform apply` |
 | `recourse_evaluate_shell` | Check shell commands before execution |
 | `recourse_evaluate_mcp_call` | Check other MCP tool calls before invocation |
+| `recourse_evaluate_with_evidence` | Re-evaluate with verification evidence |
 | `recourse_supported_resources` | List resources with deterministic rules |
+
+Plus a resource agents can read:
+
+| Resource | Purpose |
+|----------|---------|
+| `recourse://instructions` | Safety protocol — when to call, how to interpret results |
 
 Each tool returns:
 - **riskAssessment**: engine's summary read — `allow`, `warn`, `escalate`, or `block`
@@ -82,13 +89,24 @@ The agent can interpret these facts: *"Recourse assessed this as block-level ris
 
 That's different from *"I deleted your production database."*
 
-## Example Agent Prompt
+## Agent Instructions
+
+Agents can read the built-in safety protocol from `recourse://instructions`. Or use this prompt:
 
 ```
-Before applying infrastructure changes, call RecourseOS.
-If the riskAssessment is block, stop.
-If the riskAssessment is escalate, ask me for review and include the missing evidence.
-If the riskAssessment is warn, summarize the recovery requirement before continuing.
+Before executing destructive operations, call RecourseOS:
+- Shell commands → recourse_evaluate_shell
+- Terraform plans → recourse_evaluate_terraform
+- Other MCP tools → recourse_evaluate_mcp_call
+
+Interpret the riskAssessment:
+- allow: proceed
+- warn: proceed with caution, inform user
+- escalate: stop and ask user for approval
+- block: do not proceed without human review
+
+If escalate/block includes verificationSuggestions, run those commands
+and call recourse_evaluate_with_evidence to potentially upgrade the assessment.
 ```
 
 ## CLI Install

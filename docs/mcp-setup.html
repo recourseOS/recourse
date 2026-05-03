@@ -43,7 +43,7 @@
 </header>
 </div>
 <main class="container doc-shell">
-  <aside class="toc"><div class="toc-title">On this page</div><a href="#start-the-server">Start the Server</a><a href="#mcp-client-config">MCP Client Config</a><a href="#verify-the-wiring">Verify the Wiring</a><a href="#available-tools">Available Tools</a><a href="#agent-behavior">Agent Behavior</a><a href="#example-agent-prompt">Example Agent Prompt</a></aside>
+  <aside class="toc"><div class="toc-title">On this page</div><a href="#start-the-server">Start the Server</a><a href="#mcp-client-config">MCP Client Config</a><a href="#verify-the-wiring">Verify the Wiring</a><a href="#available-tools">Available Tools</a><a href="#resources-prompts">Resources &amp; Prompts</a><a href="#attestation">Attestation</a><a href="#agent-behavior">Agent Behavior</a><a href="#example-agent-prompt">Example Agent Prompt</a></aside>
   <article>
     <h1 id="mcp-setup">MCP Setup</h1>
 <p>RecourseOS runs as an MCP server so AI agents can check consequences before they act. One config block, and your agent knows what's recoverable before it touches infrastructure.</p>
@@ -88,16 +88,30 @@ node dist/index.js mcp serve</code></pre>
 <p>The smoke test starts <code>recourse mcp serve</code>, lists tools, calls <code>recourse_supported_resources</code>, evaluates a destructive shell command, and evaluates a Terraform fixture.</p>
 <p>Expected output includes:</p>
 <pre><code>MCP smoke test passed
-shellDecision=escalate
-terraformDecision=block</code></pre>
-<p>The exact shell riskAssessment can vary as evidence support expands, but it should always be one of <code>allow</code>, <code>warn</code>, <code>block</code>, or <code>escalate</code>.</p>
+tools=5
+resources=175
+shellRiskAssessment=escalate
+terraformRiskAssessment=block</code></pre>
 <h2 id="available-tools">Available Tools</h2>
-<table><thead><tr><th>Tool</th><th>Purpose</th></tr></thead><tbody><tr><td><code>recourse_evaluate_terraform</code></td><td>Evaluate Terraform plan JSON before apply.</td></tr><tr><td><code>recourse_evaluate_shell</code></td><td>Evaluate a shell command before execution.</td></tr><tr><td><code>recourse_evaluate_mcp_call</code></td><td>Evaluate another MCP tool call before invoking it.</td></tr><tr><td><code>recourse_supported_resources</code></td><td>List deterministic resource handler coverage.</td></tr></tbody></table>
+<table><thead><tr><th>Tool</th><th>Purpose</th></tr></thead><tbody><tr><td><code>recourse_evaluate_terraform</code></td><td>Evaluate Terraform plan JSON before apply</td></tr><tr><td><code>recourse_evaluate_shell</code></td><td>Evaluate a shell command before execution</td></tr><tr><td><code>recourse_evaluate_mcp_call</code></td><td>Evaluate another MCP tool call before invoking it</td></tr><tr><td><code>recourse_evaluate_with_evidence</code></td><td>Re-evaluate with verification evidence</td></tr><tr><td><code>recourse_supported_resources</code></td><td>List deterministic resource handler coverage</td></tr></tbody></table>
+<h2 id="resources-prompts">Resources &amp; Prompts</h2>
+<p>The server also exposes:</p>
+<table><thead><tr><th>Type</th><th>Name</th><th>Purpose</th></tr></thead><tbody><tr><td>Resource</td><td><code>recourse://instructions</code></td><td>Safety protocol for agents</td></tr><tr><td>Prompt</td><td><code>recourse_agent_instructions</code></td><td>Same content as a prompt template</td></tr></tbody></table>
+<p>Agents can read <code>recourse://instructions</code> to learn when to call RecourseOS and how to interpret results.</p>
+<h2 id="attestation">Attestation</h2>
+<p>Every evaluation response includes a cryptographic attestation — an Ed25519 signature over the input and output. This is always enabled; there's no opt-out.</p>
+<p>Attestations can be verified via:</p>
+<ul><li><code>GET /.well-known/recourse-keys.json</code> — public key registry</li><li><code>GET /.well-known/attestations/{id}.json</code> — individual attestations</li></ul>
 <h2 id="agent-behavior">Agent Behavior</h2>
 <p>Agents should treat RecourseOS as a pre-action consequence check:</p>
-<ul><li>Do not execute when <code>riskAssessment</code> is <code>block</code>.</li><li>Ask for human review when <code>riskAssessment</code> is <code>escalate</code>.</li><li>Surface recovery requirements when <code>riskAssessment</code> is <code>warn</code>.</li><li>Prefer structured fields over parsing explanation text.</li><li>Preserve <code>missingEvidence</code> in user-facing review requests.</li></ul>
+<ul><li><strong>allow</strong>: Safe to proceed</li><li><strong>warn</strong>: Proceed with caution, inform user</li><li><strong>escalate</strong>: Stop and ask user for explicit approval</li><li><strong>block</strong>: Do not proceed without human review</li></ul>
+<p>If <code>escalate</code> or <code>block</code> includes <code>verificationSuggestions</code>: 1. Run the suggested verification commands 2. Call <code>recourse_evaluate_with_evidence</code> with the results 3. The assessment may upgrade if evidence confirms recovery paths</p>
 <h2 id="example-agent-prompt">Example Agent Prompt</h2>
-<pre><code>Before applying infrastructure changes, call RecourseOS. If the riskAssessment is block, stop. If the riskAssessment is escalate, ask me for review and include the missing evidence. If the riskAssessment is warn, summarize the recovery requirement before continuing.</code></pre>
+<pre><code>Before executing destructive operations, call RecourseOS.
+If riskAssessment is block, stop.
+If riskAssessment is escalate, ask me for review.
+If riskAssessment is warn, summarize the recovery requirement before continuing.</code></pre>
+<p>Or read the built-in instructions from <code>recourse://instructions</code>.</p>
   </article>
 </main>
 
