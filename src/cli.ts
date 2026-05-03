@@ -40,6 +40,7 @@ import type { ConsequenceDecision } from './core/index.js';
 import { runMcpServer } from './mcp/server.js';
 import { runHttpServer } from './http/server.js';
 import { runInteractiveTui } from './tui/interactive.js';
+import { verifyAttestation, type Attestation, type VerifyResult } from './verify/index.js';
 
 const program = new Command();
 
@@ -68,7 +69,7 @@ interface CloudEvaluationOptions extends EvaluationOptions {
 program
   .name('recourse')
   .description('Know what you can\'t undo before you terraform apply')
-  .version('0.1.21');
+  .version('0.1.22');
 
 program
   .command('plan')
@@ -708,6 +709,101 @@ program
         console.log(formatExplain(trace));
       }
 
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// ============================================================================
+// Verify Command
+// ============================================================================
+
+program
+  .command('verify')
+  .description('Verify an attestation signature')
+  .argument('[attestation]', 'Attestation JSON (inline, file path, or - for stdin)')
+  .option('-t, --trust <urls>', 'Comma-separated trusted instance URLs')
+  .option('--cross-check', 'Fetch attestation from URI and compare')
+  .option('-f, --format <format>', 'Output format: human or json', 'human')
+  .action(async (attestationArg: string | undefined, options: {
+    trust?: string;
+    crossCheck?: boolean;
+    format: string;
+  }) => {
+    try {
+      // Read attestation from argument, file, or stdin
+      let attestationJson: string;
+
+      if (!attestationArg || attestationArg === '-') {
+        // Read from stdin
+        const chunks: Buffer[] = [];
+        for await (const chunk of process.stdin) {
+          chunks.push(chunk);
+        }
+        attestationJson = Buffer.concat(chunks).toString('utf8');
+      } else if (existsSync(attestationArg)) {
+        // Read from file
+        attestationJson = readFileSync(attestationArg, 'utf8');
+      } else {
+        // Treat as inline JSON
+        attestationJson = attestationArg;
+      }
+
+      // Parse attestation
+      let attestation: Attestation;
+      try {
+        attestation = JSON.parse(attestationJson);
+      } catch {
+        console.error('Error: Invalid JSON');
+        process.exit(1);
+      }
+
+      // Validate basic structure
+      if (!attestation.signature || !attestation.key_id || !attestation.attestation_uri) {
+        console.error('Error: Not a valid attestation (missing signature, key_id, or attestation_uri)');
+        process.exit(1);
+      }
+
+      // Parse trusted instances
+      const trustedInstances = options.trust
+        ? options.trust.split(',').map(u => u.trim())
+        : [];
+
+      // Verify
+      const result: VerifyResult = await verifyAttestation(attestation, {
+        trustedInstances,
+        crossCheck: options.crossCheck,
+      });
+
+      // Output
+      if (options.format === 'json') {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        if (result.valid) {
+          console.log('✓ Attestation verified');
+          console.log('');
+          console.log(`  Key ID:    ${result.keyId}`);
+          console.log(`  Key State: ${result.keyState}`);
+          console.log(`  Timestamp: ${result.timestamp}`);
+          console.log(`  Evaluator: ${attestation.evaluator}`);
+          console.log('');
+          console.log('Input:');
+          console.log(JSON.stringify(attestation.input, null, 2));
+          console.log('');
+          console.log('Output (riskAssessment):');
+          const output = attestation.output as Record<string, unknown>;
+          console.log(`  ${output.riskAssessment ?? 'unknown'}`);
+        } else {
+          console.error('✗ Verification failed');
+          console.error('');
+          console.error(`  Reason: ${result.reason}`);
+          if (result.details) {
+            console.error(`  Details: ${result.details}`);
+          }
+          process.exit(1);
+        }
+      }
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
       process.exit(1);
