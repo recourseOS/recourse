@@ -93,7 +93,7 @@ export async function runHttpServer(options: HttpServerOptions = {}): Promise<vo
 
     // API: Health check
     if (req.method === 'GET' && url === '/api/health') {
-      sendJson(res, 200, { status: 'ok', version: '0.1.26' });
+      sendJson(res, 200, { status: 'ok', version: '0.1.27' });
       return;
     }
 
