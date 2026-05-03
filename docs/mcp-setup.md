@@ -123,7 +123,41 @@ If `escalate` or `block` includes `verificationSuggestions`:
 2. Call `recourse_evaluate_with_evidence` with the results
 3. The assessment may upgrade if evidence confirms recovery paths
 
-## Example Agent Prompt
+## Configuring Agent Instructions
+
+Adding the MCP server config isn't enough — agents need to be told to use RecourseOS. Add these instructions to your agent's system prompt or custom instructions.
+
+### Cline (VS Code)
+
+1. Open Command Palette → `Cline: Open Settings`
+2. Scroll to **Custom Instructions**
+3. Add:
+
+```text
+Before executing shell commands that modify or delete files, call recourse_evaluate_shell first. Follow the riskAssessment: allow=proceed, warn=proceed with caution, escalate=ask user for approval, block=refuse without human review.
+```
+
+### Claude Desktop
+
+Add to `claude_desktop_config.json` under `systemPrompt`:
+
+```json
+{
+  "systemPrompt": "Before executing destructive operations, call RecourseOS. If riskAssessment is block, stop. If riskAssessment is escalate, ask for review. If riskAssessment is warn, summarize the recovery requirement before continuing."
+}
+```
+
+### Cursor
+
+Add to your project's `.cursorrules`:
+
+```text
+Before executing shell commands that delete or modify files, call recourse_evaluate_shell. Follow the riskAssessment field.
+```
+
+### Other Agents
+
+Add to the agent's system prompt:
 
 ```text
 Before executing destructive operations, call RecourseOS.
@@ -132,4 +166,4 @@ If riskAssessment is escalate, ask me for review.
 If riskAssessment is warn, summarize the recovery requirement before continuing.
 ```
 
-Or read the built-in instructions from `recourse://instructions`.
+Or instruct the agent to read `recourse://instructions` for the full protocol.
