@@ -1,0 +1,5 @@
+IMPORTANT: Before executing ANY shell command that contains rm, delete, remove, destroy, or modifies files, you MUST call recourse_evaluate_shell first.
+
+Do not execute the command until you receive the riskAssessment response.
+
+If riskAssessment is "escalate" or "block", ask the user for explicit approval before proceeding.

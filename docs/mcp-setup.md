@@ -166,12 +166,16 @@ If you prefer agents to call RecourseOS directly (rather than using the shell wr
 
 ### Cline (VS Code)
 
-1. Open Command Palette → `Cline: Open Settings`
-2. Scroll to **Custom Instructions**
-3. Add:
+Cline doesn't have persistent custom instructions. Tell Cline explicitly when you want it to check:
 
 ```text
-Before executing shell commands that modify or delete files, call recourse_evaluate_shell first. Follow the riskAssessment: allow=proceed, warn=proceed with caution, escalate=ask user for approval, block=refuse without human review.
+Use RecourseOS to check before running: rm -rf /tmp/test
+```
+
+Or start your session with:
+
+```text
+For this session, check recourse_evaluate_shell before any destructive commands.
 ```
 
 ### Claude Desktop
