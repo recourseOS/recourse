@@ -216,15 +216,39 @@ export async function runMcpServer(
   }
 
   let buffer: Buffer<ArrayBufferLike> = Buffer.alloc(0);
+  let useNewlineDelimited: boolean | null = null; // Auto-detect transport mode
 
   input.on('data', chunk => {
     buffer = Buffer.concat([buffer, Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)]);
 
-    for (;;) {
-      const parsed = readFrame(buffer);
-      if (!parsed) break;
-      buffer = parsed.remaining;
-      void handleAndWrite(parsed.body, output);
+    // Auto-detect transport mode from first byte
+    if (useNewlineDelimited === null && buffer.length > 0) {
+      const firstChar = String.fromCharCode(buffer[0]);
+      useNewlineDelimited = firstChar === '{'; // JSON starts with {, Content-Length starts with C
+      if (verbose) {
+        process.stderr.write(`[transport] Auto-detected: ${useNewlineDelimited ? 'newline-delimited JSON' : 'Content-Length framing'}\n`);
+      }
+    }
+
+    if (useNewlineDelimited) {
+      // Newline-delimited JSON mode
+      for (;;) {
+        const newlineIdx = buffer.indexOf('\n');
+        if (newlineIdx === -1) break;
+        const line = buffer.subarray(0, newlineIdx).toString('utf8').trim();
+        buffer = buffer.subarray(newlineIdx + 1);
+        if (line.length > 0) {
+          void handleAndWriteNewline(line, output);
+        }
+      }
+    } else {
+      // Content-Length framing mode
+      for (;;) {
+        const parsed = readFrame(buffer);
+        if (!parsed) break;
+        buffer = parsed.remaining;
+        void handleAndWriteFramed(parsed.body, output);
+      }
     }
   });
 }
@@ -256,7 +280,7 @@ export async function handleMcpRequest(request: JsonRpcRequest): Promise<Record<
           },
           serverInfo: {
             name: 'recourseos',
-            version: '0.1.17',
+            version: '0.1.18',
           },
         });
       }
@@ -278,7 +302,7 @@ export async function handleMcpRequest(request: JsonRpcRequest): Promise<Record<
   }
 }
 
-async function handleAndWrite(body: Buffer, output: Writable): Promise<void> {
+async function handleAndWriteFramed(body: Buffer, output: Writable): Promise<void> {
   let response: Record<string, unknown> | null;
   const request = JSON.parse(body.toString('utf8')) as JsonRpcRequest;
   try {
@@ -290,6 +314,24 @@ async function handleAndWrite(body: Buffer, output: Writable): Promise<void> {
   if (response) {
     writeFrame(output, response);
   }
+}
+
+async function handleAndWriteNewline(line: string, output: Writable): Promise<void> {
+  let response: Record<string, unknown> | null;
+  const request = JSON.parse(line) as JsonRpcRequest;
+  try {
+    response = await handleMcpRequest(request);
+  } catch (caught) {
+    response = error(null, -32700, caught instanceof Error ? caught.message : String(caught));
+  }
+
+  if (response) {
+    writeNewline(output, response);
+  }
+}
+
+function writeNewline(output: Writable, response: Record<string, unknown>): void {
+  output.write(JSON.stringify(response) + '\n');
 }
 
 async function callTool(params: unknown): Promise<Record<string, unknown>> {
