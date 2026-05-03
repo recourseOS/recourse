@@ -274,6 +274,41 @@ function getPrompt(params: unknown): { description: string; messages: Array<{ ro
   throw new Error(`Unknown prompt: ${name}`);
 }
 
+interface ResourceDefinition {
+  uri: string;
+  name: string;
+  description: string;
+  mimeType: string;
+}
+
+const mcpResources: ResourceDefinition[] = [
+  {
+    uri: 'recourse://instructions',
+    name: 'RecourseOS Agent Instructions',
+    description: 'Safety protocol for AI agents - read this before executing destructive operations',
+    mimeType: 'text/markdown',
+  },
+];
+
+function readResource(params: unknown): { contents: Array<{ uri: string; mimeType: string; text: string }> } {
+  const p = params as { uri?: string } | undefined;
+  const uri = p?.uri;
+
+  if (uri === 'recourse://instructions') {
+    return {
+      contents: [
+        {
+          uri: 'recourse://instructions',
+          mimeType: 'text/markdown',
+          text: AGENT_INSTRUCTIONS,
+        },
+      ],
+    };
+  }
+
+  throw new Error(`Unknown resource: ${uri}`);
+}
+
 export interface McpServerOptions {
   verbose?: boolean;
   /** Base URL for attestation URIs (default: http://localhost:3001) */
@@ -370,10 +405,13 @@ export async function handleMcpRequest(request: JsonRpcRequest): Promise<Record<
             prompts: {
               listChanged: true,
             },
+            resources: {
+              listChanged: true,
+            },
           },
           serverInfo: {
             name: 'recourseos',
-            version: '0.1.20',
+            version: '0.1.21',
           },
         });
       }
@@ -385,6 +423,10 @@ export async function handleMcpRequest(request: JsonRpcRequest): Promise<Record<
         return result(request.id, { prompts: mcpPrompts });
       case 'prompts/get':
         return result(request.id, getPrompt(request.params));
+      case 'resources/list':
+        return result(request.id, { resources: mcpResources });
+      case 'resources/read':
+        return result(request.id, readResource(request.params));
       case 'ping':
         return result(request.id, {});
       default:
