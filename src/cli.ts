@@ -69,7 +69,7 @@ interface CloudEvaluationOptions extends EvaluationOptions {
 program
   .name('recourse')
   .description('Know what you can\'t undo before you terraform apply')
-  .version('0.1.27');
+  .version('0.1.28');
 
 program
   .command('plan')
