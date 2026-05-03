@@ -78,7 +78,7 @@ shellDecision=escalate
 terraformDecision=block
 ```
 
-The exact shell decision can vary as evidence support expands, but it should always be one of `allow`, `warn`, `block`, or `escalate`.
+The exact shell riskAssessment can vary as evidence support expands, but it should always be one of `allow`, `warn`, `block`, or `escalate`.
 
 ## Available Tools
 

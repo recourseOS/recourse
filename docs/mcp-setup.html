@@ -90,7 +90,7 @@ node dist/index.js mcp serve</code></pre>
 <pre><code>MCP smoke test passed
 shellDecision=escalate
 terraformDecision=block</code></pre>
-<p>The exact shell decision can vary as evidence support expands, but it should always be one of <code>allow</code>, <code>warn</code>, <code>block</code>, or <code>escalate</code>.</p>
+<p>The exact shell riskAssessment can vary as evidence support expands, but it should always be one of <code>allow</code>, <code>warn</code>, <code>block</code>, or <code>escalate</code>.</p>
 <h2 id="available-tools">Available Tools</h2>
 <table><thead><tr><th>Tool</th><th>Purpose</th></tr></thead><tbody><tr><td><code>recourse_evaluate_terraform</code></td><td>Evaluate Terraform plan JSON before apply.</td></tr><tr><td><code>recourse_evaluate_shell</code></td><td>Evaluate a shell command before execution.</td></tr><tr><td><code>recourse_evaluate_mcp_call</code></td><td>Evaluate another MCP tool call before invoking it.</td></tr><tr><td><code>recourse_supported_resources</code></td><td>List deterministic resource handler coverage.</td></tr></tbody></table>
 <h2 id="agent-behavior">Agent Behavior</h2>
