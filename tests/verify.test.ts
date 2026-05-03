@@ -97,6 +97,7 @@ describe('verifyAttestation', () => {
     keypair = generateTestKeypair();
     registry = {
       instance_id: 'test-instance',
+      version: 1 as const,
       keys: [
         {
           key_id: 'test-key-1',
@@ -106,7 +107,7 @@ describe('verifyAttestation', () => {
           valid_from: '2026-01-01T00:00:00Z',
         },
       ],
-      registry_version: 1,
+      sequence: 1,
       updated_at: new Date().toISOString(),
     };
     mockFetch = createMockFetch(registry);
@@ -359,12 +360,12 @@ describe('verifyAttestation', () => {
       const attestation = createTestAttestation(keypair.privateKey, 'test-key-1', instanceBaseUrl);
 
       // First call populates cache with version 1
-      registry.registry_version = 5;
+      registry.sequence = 5;
       mockFetch = createMockFetch(registry);
       await verifyAttestation(attestation, { fetch: mockFetch, keyCacheTtlMs: 0 });
 
       // Second call with lower version should fail
-      registry.registry_version = 3;
+      registry.sequence = 3;
       mockFetch = createMockFetch(registry);
       const result = await verifyAttestation(attestation, { fetch: mockFetch, keyCacheTtlMs: 0 });
 
@@ -377,7 +378,7 @@ describe('verifyAttestation', () => {
     it('accepts registry with same version', async () => {
       const attestation = createTestAttestation(keypair.privateKey, 'test-key-1', instanceBaseUrl);
 
-      registry.registry_version = 5;
+      registry.sequence = 5;
       mockFetch = createMockFetch(registry);
       await verifyAttestation(attestation, { fetch: mockFetch, keyCacheTtlMs: 0 });
 
@@ -390,12 +391,12 @@ describe('verifyAttestation', () => {
     it('accepts registry with higher version', async () => {
       const attestation = createTestAttestation(keypair.privateKey, 'test-key-1', instanceBaseUrl);
 
-      registry.registry_version = 5;
+      registry.sequence = 5;
       mockFetch = createMockFetch(registry);
       await verifyAttestation(attestation, { fetch: mockFetch, keyCacheTtlMs: 0 });
 
       // Higher version should be accepted
-      registry.registry_version = 7;
+      registry.sequence = 7;
       mockFetch = createMockFetch(registry);
       const result = await verifyAttestation(attestation, { fetch: mockFetch, keyCacheTtlMs: 0 });
 
@@ -509,7 +510,7 @@ describe('verifyAttestations', () => {
     clearRegistryCache();
     keypair = generateTestKeypair();
     registry = {
-      instance_id: 'test-instance',
+      version: 1 as const,
       keys: [
         {
           key_id: 'test-key-1',
@@ -519,7 +520,7 @@ describe('verifyAttestations', () => {
           valid_from: '2026-01-01T00:00:00Z',
         },
       ],
-      registry_version: 1,
+      sequence: 1,
       updated_at: new Date().toISOString(),
     };
     mockFetch = createMockFetch(registry);

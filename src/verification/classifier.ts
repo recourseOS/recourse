@@ -6,6 +6,7 @@
  */
 
 import type { VerificationCategory } from './categories.js';
+import { classifyWithBitNet } from './bitnet.js';
 
 export interface ClassificationResult {
   category: VerificationCategory;
@@ -529,7 +530,6 @@ export class BitNetResourceClassifier implements VerificationClassifier {
       return this.fallback.classify(resourceType);
     }
 
-    const { classifyWithBitNet } = require('./bitnet.js');
     const result = classifyWithBitNet(this.model, resourceType);
 
     return {

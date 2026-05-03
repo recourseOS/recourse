@@ -58,9 +58,11 @@ export interface KeyEntry {
  * Key registry structure
  */
 export interface KeyRegistry {
-  instance_id: string;
+  /** Version of the registry format */
+  version: 1;
+  /** Monotonically increasing sequence number for rollback protection */
+  sequence: number;
   keys: KeyEntry[];
-  registry_version: number;
   updated_at: string;
 }
 
@@ -181,11 +183,11 @@ async function fetchRegistry(
   }
 
   // Rollback protection per §5.5
-  if (cached && registry.registry_version < cached.registry.registry_version) {
+  if (cached && registry.sequence < cached.registry.sequence) {
     return {
       ok: false,
       reason: 'registry_rollback',
-      details: `Registry version ${registry.registry_version} < cached version ${cached.registry.registry_version}`,
+      details: `Registry sequence ${registry.sequence} < cached sequence ${cached.registry.sequence}`,
     };
   }
 
