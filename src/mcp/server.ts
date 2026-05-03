@@ -183,6 +183,97 @@ const tools: ToolDefinition[] = [
   },
 ];
 
+interface PromptDefinition {
+  name: string;
+  description: string;
+  arguments?: Array<{
+    name: string;
+    description: string;
+    required?: boolean;
+  }>;
+}
+
+const mcpPrompts: PromptDefinition[] = [
+  {
+    name: 'recourse_agent_instructions',
+    description:
+      'Instructions for AI agents on how to use RecourseOS as a safety layer. ' +
+      'Read this prompt at the start of any session involving infrastructure changes.',
+  },
+];
+
+const AGENT_INSTRUCTIONS = `# RecourseOS Safety Protocol
+
+You have access to RecourseOS, a consequence-evaluation layer for AI agents. Use it as a preflight check before executing destructive operations.
+
+## When to Call RecourseOS
+
+BEFORE executing any of these, call the appropriate recourse_evaluate_* tool:
+
+1. **Shell commands that modify state**:
+   - File deletions: rm, rmdir, shred
+   - Cloud CLI mutations: aws/gcloud/az ... delete/terminate/remove
+   - Database commands: DROP, TRUNCATE, DELETE without WHERE
+   - Container operations: docker rm, kubectl delete
+   - Git destructive ops: push --force, reset --hard
+
+   → Call: recourse_evaluate_shell
+
+2. **Terraform applies**:
+   - Any plan with deletions or replacements
+   - Changes to stateful resources (databases, storage, IAM)
+
+   → Call: recourse_evaluate_terraform
+
+3. **Other MCP tool calls**:
+   - Tools that mutate external state
+   - Database writes, API mutations, file modifications
+
+   → Call: recourse_evaluate_mcp_call
+
+## How to Interpret Results
+
+RecourseOS returns a \`riskAssessment\`:
+
+- **allow**: Safe to proceed
+- **warn**: Proceed with caution, inform user
+- **escalate**: Stop and ask user for explicit approval
+- **block**: Do not proceed without human review
+
+## Verification Protocol
+
+If riskAssessment is escalate/block but the response includes \`verificationSuggestions\`:
+1. Run the suggested verification commands
+2. Call recourse_evaluate_with_evidence with the results
+3. The assessment may upgrade if evidence confirms recovery paths
+
+## Key Principle
+
+RecourseOS is an oracle — it emits facts about recoverability, not decisions.
+You (the agent) decide how to act on those facts. But when in doubt, ask the human.`;
+
+function getPrompt(params: unknown): { description: string; messages: Array<{ role: string; content: { type: string; text: string } }> } {
+  const p = params as { name?: string } | undefined;
+  const name = p?.name;
+
+  if (name === 'recourse_agent_instructions') {
+    return {
+      description: 'Instructions for AI agents on using RecourseOS as a safety layer',
+      messages: [
+        {
+          role: 'user',
+          content: {
+            type: 'text',
+            text: AGENT_INSTRUCTIONS,
+          },
+        },
+      ],
+    };
+  }
+
+  throw new Error(`Unknown prompt: ${name}`);
+}
+
 export interface McpServerOptions {
   verbose?: boolean;
   /** Base URL for attestation URIs (default: http://localhost:3001) */
@@ -276,10 +367,13 @@ export async function handleMcpRequest(request: JsonRpcRequest): Promise<Record<
             tools: {
               listChanged: true,
             },
+            prompts: {
+              listChanged: true,
+            },
           },
           serverInfo: {
             name: 'recourseos',
-            version: '0.1.19',
+            version: '0.1.20',
           },
         });
       }
@@ -287,6 +381,10 @@ export async function handleMcpRequest(request: JsonRpcRequest): Promise<Record<
         return result(request.id, { tools });
       case 'tools/call':
         return result(request.id, await callTool(request.params));
+      case 'prompts/list':
+        return result(request.id, { prompts: mcpPrompts });
+      case 'prompts/get':
+        return result(request.id, getPrompt(request.params));
       case 'ping':
         return result(request.id, {});
       default:
