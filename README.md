@@ -256,6 +256,42 @@ recourse mcp serve
 
 See [docs/mcp-setup.md](docs/mcp-setup.md) for full setup and [docs/agent-interface.md](docs/agent-interface.md) for the schema reference.
 
+### Shell Wrapper
+
+Automatically check RecourseOS before dangerous shell commands execute. Add to your shell profile:
+
+```bash
+eval "$(recourse wrap)"
+```
+
+Now `rm`, `aws`, `kubectl`, and `terraform` commands check RecourseOS first:
+
+```bash
+rm -rf /tmp/important
+# recourse: escalate - Recoverability needs human review
+# Proceed? [y/N]
+```
+
+Or execute with explicit checking:
+
+```bash
+recourse exec "rm -rf /tmp/test"
+```
+
+### Attestation
+
+Every evaluation response includes a cryptographic attestation (Ed25519 signature). Verify with:
+
+```bash
+recourse verify attestation.json
+```
+
+Or pipe from stdin:
+
+```bash
+cat response.json | jq '.attestation' | recourse verify -
+```
+
 ### Read-Only AWS Evidence
 
 ```bash

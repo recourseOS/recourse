@@ -93,7 +93,7 @@ export async function runHttpServer(options: HttpServerOptions = {}): Promise<vo
 
     // API: Health check
     if (req.method === 'GET' && url === '/api/health') {
-      sendJson(res, 200, { status: 'ok', version: '0.1.13' });
+      sendJson(res, 200, { status: 'ok', version: '0.1.26' });
       return;
     }
 
@@ -134,7 +134,7 @@ export async function runHttpServer(options: HttpServerOptions = {}): Promise<vo
 
     // Static files: Serve from docs directory
     if (req.method === 'GET') {
-      let filePath = url === '/' ? '/console.html' : url;
+      let filePath = url === '/' ? '/index.html' : url;
 
       // Remove query string
       filePath = filePath.split('?')[0];

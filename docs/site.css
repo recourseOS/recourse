@@ -626,9 +626,17 @@ a.card:hover { border-color: var(--green); }
 
 .arch-sub-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin-top: 16px;
+}
+
+.arch-sub-grid.bottom-row {
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 66%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 10px;
 }
 
 .arch-sub {
@@ -1076,6 +1084,37 @@ textarea {
 select:focus, textarea:focus, button:focus-visible {
   outline: 2px solid var(--green);
   outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Demo Video Section
+   ───────────────────────────────────────────────────────────── */
+.demo-section {
+  background: var(--night-2);
+  padding: 48px 0;
+}
+
+.demo-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.demo-video {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255,255,255,0.05);
+}
+
+.demo-caption {
+  margin-top: 16px;
+  color: var(--ink-faint);
+  font-size: 14px;
+}
+
+.demo-caption code {
+  color: var(--green-soft);
+  font-size: 13px;
 }
 
 /* ─────────────────────────────────────────────────────────────

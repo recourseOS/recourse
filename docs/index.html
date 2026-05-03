@@ -86,6 +86,17 @@
     </div>
   </div>
 </div>
+
+<section class="demo-section">
+  <div class="container">
+    <div class="demo-wrapper">
+      <video autoplay loop muted playsinline class="demo-video">
+        <source src="demo.mp4" type="video/mp4">
+      </video>
+      <p class="demo-caption">Cline checks RecourseOS before executing <code>rm -rf</code> — stops and asks for approval.</p>
+    </div>
+  </div>
+</section>
 </div>
 
 <main>
@@ -199,7 +210,7 @@
           <div class="arch-node core">
             <span>RecourseOS Core</span>
             <strong>Consequence Evaluator</strong>
-            <div class="arch-sub-grid">
+            <div class="arch-sub-grid top-row">
               <div class="arch-sub">
                 <span>Rules</span>
                 <small>AWS · GCP · Azure</small>
@@ -212,9 +223,15 @@
                 <span>Evidence</span>
                 <small>Live cloud state</small>
               </div>
+            </div>
+            <div class="arch-sub-grid bottom-row">
               <div class="arch-sub">
                 <span>Policy</span>
                 <small>Decision thresholds</small>
+              </div>
+              <div class="arch-sub">
+                <span>Attestation</span>
+                <small>Ed25519 signatures</small>
               </div>
             </div>
           </div>
@@ -226,8 +243,8 @@
         </div>
         <div class="arch-row">
           <div class="arch-node output">
-            <span>Consequence Report</span>
-            <strong>decision · tier · evidence · missing</strong>
+            <span>Signed Consequence Report</span>
+            <strong>decision · tier · evidence · attestation</strong>
           </div>
         </div>
         <div class="arch-arrow-row multi">
