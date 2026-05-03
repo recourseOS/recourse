@@ -264,7 +264,7 @@ export async function handleMcpRequest(request: JsonRpcRequest): Promise<Record<
           },
           serverInfo: {
             name: 'recourseos',
-            version: '0.1.15',
+            version: '0.1.16',
           },
         });
       }
