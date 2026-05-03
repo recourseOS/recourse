@@ -17,6 +17,7 @@
   <a href="https://www.npmjs.com/package/recourse-cli"><img src="https://img.shields.io/npm/v/recourse-cli.svg" alt="npm version"></a>
   <a href="https://github.com/recourseOS/recourse/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
   <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-Registry-10b981.svg" alt="MCP Registry"></a>
+[![SafeSkill 83/100](https://img.shields.io/badge/SafeSkill-83%2F100_Passes%20with%20Notes-yellow)](https://safeskill.dev/scan/recourseos-recourse)
 </p>
 
 <p align="center">
