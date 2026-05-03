@@ -123,9 +123,46 @@ If `escalate` or `block` includes `verificationSuggestions`:
 2. Call `recourse_evaluate_with_evidence` with the results
 3. The assessment may upgrade if evidence confirms recovery paths
 
+## Shell Wrapper (No Agent Config Needed)
+
+The simplest approach: wrap dangerous shell commands so they automatically check RecourseOS before executing. No agent configuration required.
+
+Add to your shell profile (`~/.bashrc`, `~/.zshrc`):
+
+```bash
+eval "$(recourse wrap)"
+```
+
+Or with npx:
+
+```bash
+eval "$(npx -y recourse-cli@latest wrap)"
+```
+
+Now commands like `rm`, `aws`, `kubectl`, and `terraform` will automatically check RecourseOS first:
+
+```bash
+rm -rf /tmp/important
+# recourse: escalate - Recoverability needs human review
+#   └─ /tmp/important: needs-review
+# Proceed? [y/N]
+```
+
+Customize which commands are wrapped:
+
+```bash
+eval "$(recourse wrap --commands rm,aws,kubectl)"
+```
+
+To bypass RecourseOS for a specific command, use `command`:
+
+```bash
+command rm -rf /tmp/skip-check
+```
+
 ## Configuring Agent Instructions
 
-Adding the MCP server config isn't enough — agents need to be told to use RecourseOS. Add these instructions to your agent's system prompt or custom instructions.
+If you prefer agents to call RecourseOS directly (rather than using the shell wrapper), add these instructions to the agent's system prompt.
 
 ### Cline (VS Code)
 

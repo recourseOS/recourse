@@ -826,4 +826,137 @@ function shouldFailOnDecision(
   return decisionSeverity[decision] >= thresholdSeverity;
 }
 
+// ============================================================================
+// Exec Command - Shell wrapper that checks RecourseOS before executing
+// ============================================================================
+
+import { spawn } from 'child_process';
+import * as readline from 'readline';
+
+program
+  .command('exec')
+  .description('Execute a shell command after checking with RecourseOS')
+  .argument('<command>', 'Shell command to execute (quote the entire command)')
+  .option('-y, --yes', 'Auto-approve escalate assessments')
+  .option('--force', 'Execute even if blocked (dangerous)')
+  .action(async (command: string, options: { yes?: boolean; force?: boolean }) => {
+
+    // Evaluate the command
+    const result = evaluateShellCommandConsequences(command, {});
+    const assessment = result.riskAssessment;
+    const reason = result.assessmentReason || '';
+
+    // Color codes
+    const colors = {
+      reset: '\x1b[0m',
+      green: '\x1b[32m',
+      yellow: '\x1b[33m',
+      red: '\x1b[31m',
+      bold: '\x1b[1m',
+      dim: '\x1b[2m',
+    };
+
+    const assessmentColors: Record<string, string> = {
+      allow: colors.green,
+      warn: colors.yellow,
+      escalate: colors.yellow,
+      block: colors.red,
+    };
+
+    // Show assessment
+    console.error(`${colors.dim}recourse:${colors.reset} ${assessmentColors[assessment]}${assessment}${colors.reset} - ${reason}`);
+
+    if (result.mutations && result.mutations.length > 0) {
+      for (const mutation of result.mutations) {
+        const tier = mutation.recoverability?.label || 'unknown';
+        console.error(`${colors.dim}  └─${colors.reset} ${mutation.intent?.target?.id || 'unknown'}: ${tier}`);
+      }
+    }
+
+    // Decision logic
+    if (assessment === 'allow') {
+      // Safe to execute
+      executeCommand(command);
+    } else if (assessment === 'warn') {
+      // Execute with warning already shown
+      executeCommand(command);
+    } else if (assessment === 'escalate') {
+      if (options.yes) {
+        executeCommand(command);
+      } else {
+        const approved = await promptConfirm(`${colors.yellow}Proceed?${colors.reset} [y/N] `);
+        if (approved) {
+          executeCommand(command);
+        } else {
+          console.error(`${colors.dim}Aborted.${colors.reset}`);
+          process.exit(1);
+        }
+      }
+    } else if (assessment === 'block') {
+      if (options.force) {
+        console.error(`${colors.red}${colors.bold}WARNING: Forcing blocked command${colors.reset}`);
+        executeCommand(command);
+      } else {
+        console.error(`${colors.red}Blocked.${colors.reset} Use --force to override.`);
+        process.exit(1);
+      }
+    }
+  });
+
+function executeCommand(command: string): void {
+  const child = spawn(command, {
+    shell: true,
+    stdio: 'inherit',
+  });
+
+  child.on('exit', (code) => {
+    process.exit(code ?? 0);
+  });
+}
+
+function promptConfirm(prompt: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stderr,
+    });
+
+    rl.question(prompt, (answer) => {
+      rl.close();
+      resolve(answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes');
+    });
+  });
+}
+
+// ============================================================================
+// Wrap Command - Generate shell aliases for automatic RecourseOS checking
+// ============================================================================
+
+program
+  .command('wrap')
+  .description('Output shell aliases that route dangerous commands through RecourseOS')
+  .option('--commands <list>', 'Comma-separated list of commands to wrap', 'rm,rmdir,kubectl,aws,gcloud,az,terraform')
+  .action((options: { commands: string }) => {
+    const commands = options.commands.split(',').map(c => c.trim());
+
+    console.log('# RecourseOS shell wrapper');
+    console.log('# Add to your shell profile: eval "$(recourse wrap)"');
+    console.log('# Or for specific commands: eval "$(recourse wrap --commands rm,aws)"');
+    console.log('');
+
+    for (const cmd of commands) {
+      // Create a function that wraps the command
+      console.log(`${cmd}() {`);
+      console.log(`  if command -v recourse >/dev/null 2>&1; then`);
+      console.log(`    recourse exec "${cmd} $*"`);
+      console.log(`  else`);
+      console.log(`    command ${cmd} "$@"`);
+      console.log(`  fi`);
+      console.log(`}`);
+      console.log('');
+    }
+
+    console.log('# To bypass RecourseOS, use: command rm ...');
+  });
+
 export { program };
