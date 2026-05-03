@@ -9,8 +9,9 @@
  * This service is the main integration point for the attestation protocol.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync, readdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
+import { createHash } from 'crypto';
 import { homedir } from 'os';
 import { createPrivateKey, createPublicKey, KeyObject } from 'crypto';
 import {
@@ -83,17 +84,13 @@ export class AttestationService {
   private registry: KeyRegistry;
 
   /**
-   * In-memory attestation storage (for URL retrieval)
-   *
-   * IMPORTANT: Current limitation - attestations are stored in memory only.
-   * They are lost when the server restarts. For production deployments
-   * requiring audit trails or long-term verification, implement persistent
-   * storage (database, file system, or external service).
-   *
-   * The storage interface is internal and can be swapped to a persistent
-   * implementation without changing the public API.
+   * In-memory attestation cache (for fast access)
+   * Attestations are also persisted to disk for cross-process sharing.
    */
   private attestations: Map<string, Attestation> = new Map();
+
+  /** Directory for persisted attestations */
+  private attestationsDir: string;
 
   constructor(config: AttestationServiceConfig = {}) {
     this.configDir = config.configDir ?? join(homedir(), '.recourse');
@@ -101,6 +98,7 @@ export class AttestationService {
     this.instanceBaseUrl = config.instanceBaseUrl ?? 'http://localhost:3001';
     this.evaluatorVersion = config.evaluatorVersion ?? '1.0.0';
     this.registry = createRegistry();
+    this.attestationsDir = join(this.configDir, 'attestations');
   }
 
   /**
@@ -110,6 +108,11 @@ export class AttestationService {
     // Ensure config directory exists with secure permissions (0700)
     if (!existsSync(this.configDir)) {
       mkdirSync(this.configDir, { recursive: true, mode: 0o700 });
+    }
+
+    // Ensure attestations directory exists
+    if (!existsSync(this.attestationsDir)) {
+      mkdirSync(this.attestationsDir, { recursive: true, mode: 0o755 });
     }
 
     const keyPath = join(this.configDir, 'signing-key.json');
@@ -233,18 +236,64 @@ export class AttestationService {
       this.instanceBaseUrl
     );
 
-    // Store for URL retrieval
+    // Store for URL retrieval (both in memory and on disk)
     const id = deriveAttestationId(attestation);
     this.attestations.set(id, attestation);
+
+    // Persist to disk for cross-process sharing
+    this.persistAttestation(id, attestation);
 
     return attestation;
   }
 
   /**
+   * Persist an attestation to disk
+   */
+  private persistAttestation(id: string, attestation: Attestation): void {
+    try {
+      const filePath = join(this.attestationsDir, `${id}.json`);
+      writeFileSync(filePath, JSON.stringify(attestation, null, 2), {
+        encoding: 'utf8',
+        mode: 0o644,
+      });
+    } catch {
+      // Silently fail - disk persistence is best-effort
+      // Memory storage is still available for this process
+    }
+  }
+
+  /**
+   * Load an attestation from disk
+   */
+  private loadAttestation(id: string): Attestation | null {
+    try {
+      const filePath = join(this.attestationsDir, `${id}.json`);
+      if (!existsSync(filePath)) {
+        return null;
+      }
+      const data = readFileSync(filePath, 'utf8');
+      const attestation = JSON.parse(data) as Attestation;
+      // Cache in memory
+      this.attestations.set(id, attestation);
+      return attestation;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Get an attestation by ID (for /.well-known/attestations/{id}.json)
+   * Checks memory cache first, then tries to load from disk.
    */
   getAttestation(id: string): Attestation | null {
-    return this.attestations.get(id) ?? null;
+    // Check memory cache first
+    const cached = this.attestations.get(id);
+    if (cached) {
+      return cached;
+    }
+
+    // Try loading from disk (created by another process)
+    return this.loadAttestation(id);
   }
 
   /**
