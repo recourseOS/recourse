@@ -17,7 +17,6 @@ import { getAttestationService, type AttestationService } from '../attestation/s
 const SCHEMA_VERSION = 'recourse.consequence.v1';
 
 let verbose = false;
-let attestationEnabled = false;
 let attestationService: AttestationService | null = null;
 
 function log(message: string): void {
@@ -187,8 +186,6 @@ const tools: ToolDefinition[] = [
 
 export interface McpServerOptions {
   verbose?: boolean;
-  /** Enable attestation signing for evaluation responses */
-  attestation?: boolean;
   /** Base URL for attestation URIs (default: http://localhost:3001) */
   instanceBaseUrl?: string;
 }
@@ -199,26 +196,21 @@ export async function runMcpServer(
   options: McpServerOptions = {}
 ): Promise<void> {
   verbose = options.verbose ?? false;
-  attestationEnabled = options.attestation ?? false;
 
-  // Initialize attestation service if enabled
-  if (attestationEnabled) {
-    attestationService = getAttestationService({
-      instanceBaseUrl: options.instanceBaseUrl ?? 'http://localhost:3001',
-    });
-    await attestationService.initialize();
-    if (verbose) {
-      process.stderr.write(`[attestation] Initialized with key: ${attestationService.getCurrentKeyId()}\n`);
-    }
+  // Attestation is always enabled - no reason to disable trust layer
+  attestationService = getAttestationService({
+    instanceBaseUrl: options.instanceBaseUrl ?? 'http://localhost:3001',
+  });
+  await attestationService.initialize();
+  if (verbose) {
+    process.stderr.write(`[attestation] Initialized with key: ${attestationService.getCurrentKeyId()}\n`);
   }
 
   if (verbose) {
     process.stderr.write('\n┌────────────────────────────────────────┐\n');
     process.stderr.write('│  RecourseOS MCP Server                 │\n');
     process.stderr.write('│  Verbose mode enabled                  │\n');
-    if (attestationEnabled) {
-      process.stderr.write('│  Attestation signing enabled           │\n');
-    }
+    process.stderr.write('│  Attestation signing enabled           │\n');
     process.stderr.write('│  Waiting for agent connections...      │\n');
     process.stderr.write('└────────────────────────────────────────┘\n\n');
   }
@@ -264,7 +256,7 @@ export async function handleMcpRequest(request: JsonRpcRequest): Promise<Record<
           },
           serverInfo: {
             name: 'recourseos',
-            version: '0.1.16',
+            version: '0.1.17',
           },
         });
       }
@@ -548,10 +540,12 @@ function withSchemaVersion(
     ...toConsequenceJson(report),
   };
 
-  // Add attestation if enabled
-  if (attestationEnabled && attestationService && input !== undefined) {
+  // Add attestation
+  if (attestationService && input !== undefined) {
     try {
-      const attestation = attestationService.createAttestation(input, result);
+      // Deep copy result to avoid circular reference when attestation.output references result
+      const outputCopy = JSON.parse(JSON.stringify(result));
+      const attestation = attestationService.createAttestation(input, outputCopy);
       result.attestation = attestation;
     } catch (err) {
       // Log but don't fail the evaluation

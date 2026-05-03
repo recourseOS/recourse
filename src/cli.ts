@@ -68,7 +68,7 @@ interface CloudEvaluationOptions extends EvaluationOptions {
 program
   .name('recourse')
   .description('Know what you can\'t undo before you terraform apply')
-  .version('0.1.16');
+  .version('0.1.17');
 
 program
   .command('plan')
@@ -171,12 +171,10 @@ program
   .description('Start the RecourseOS playground for testing evaluations')
   .option('-p, --port <port>', 'Port to listen on', '3001')
   .option('--no-open', 'Do not open browser automatically')
-  .option('--attestation', 'Enable cryptographic attestation signing (in-memory only; attestations lost on restart)')
-  .action(async (options: { port: string; open: boolean; attestation?: boolean }) => {
+  .action(async (options: { port: string; open: boolean }) => {
     await runHttpServer({
       port: Number(options.port),
       openBrowser: options.open,
-      attestation: options.attestation,
     });
   });
 

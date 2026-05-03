@@ -43,23 +43,18 @@ interface EvaluateRequest {
 export interface HttpServerOptions {
   port?: number;
   openBrowser?: boolean;
-  attestation?: boolean;
 }
 
 export async function runHttpServer(options: HttpServerOptions = {}): Promise<void> {
   const port = options.port ?? 3001;
   const openBrowser = options.openBrowser ?? true;
-  const attestationEnabled = options.attestation ?? false;
 
-  // Initialize attestation service if enabled
-  let attestationService: AttestationService | null = null;
-  if (attestationEnabled) {
-    attestationService = getAttestationService({
-      instanceBaseUrl: `http://localhost:${port}`,
-    });
-    await attestationService.initialize();
-    console.log(`Attestation enabled with key: ${attestationService.getCurrentKeyId()}`);
-  }
+  // Attestation is always enabled - no reason to disable trust layer
+  const attestationService = getAttestationService({
+    instanceBaseUrl: `http://localhost:${port}`,
+  });
+  await attestationService.initialize();
+  console.log(`Attestation enabled with key: ${attestationService.getCurrentKeyId()}`);
 
   // Find the docs directory relative to this file
   const currentFile = fileURLToPath(import.meta.url);
@@ -78,10 +73,6 @@ export async function runHttpServer(options: HttpServerOptions = {}): Promise<vo
 
     // Well-known: Key Registry (§5.3)
     if (req.method === 'GET' && url === '/.well-known/recourse-keys.json') {
-      if (!attestationService) {
-        sendJson(res, 404, { error: 'Attestation not enabled' });
-        return;
-      }
       const registry = attestationService.getKeyRegistry();
       sendJson(res, 200, registry);
       return;
@@ -90,10 +81,6 @@ export async function runHttpServer(options: HttpServerOptions = {}): Promise<vo
     // Well-known: Attestation retrieval (§6.3)
     const attestationMatch = url.match(/^\/.well-known\/attestations\/([a-f0-9]{32})\.json$/);
     if (req.method === 'GET' && attestationMatch) {
-      if (!attestationService) {
-        sendJson(res, 404, { error: 'Attestation not enabled' });
-        return;
-      }
       const attestationId = attestationMatch[1];
       const attestation = attestationService.getAttestation(attestationId);
       if (!attestation) {
@@ -121,21 +108,19 @@ export async function runHttpServer(options: HttpServerOptions = {}): Promise<vo
           ...toConsequenceJson(result),
         };
 
-        // Add attestation if enabled
-        if (attestationService) {
-          try {
-            const attestInput = {
-              source: request.source,
-              input: request.input,
-            };
-            // Deep copy response to avoid circular reference when attestation.output references response
-            const outputCopy = JSON.parse(JSON.stringify(response));
-            const attestation = attestationService.createAttestation(attestInput, outputCopy);
-            response.attestation = attestation;
-          } catch (err) {
-            // Don't fail evaluation if attestation fails
-            console.error('Attestation error:', err);
-          }
+        // Add attestation to response
+        try {
+          const attestInput = {
+            source: request.source,
+            input: request.input,
+          };
+          // Deep copy response to avoid circular reference when attestation.output references response
+          const outputCopy = JSON.parse(JSON.stringify(response));
+          const attestation = attestationService.createAttestation(attestInput, outputCopy);
+          response.attestation = attestation;
+        } catch (err) {
+          // Don't fail evaluation if attestation fails
+          console.error('Attestation error:', err);
         }
 
         sendJson(res, 200, response);
@@ -191,11 +176,11 @@ export async function runHttpServer(options: HttpServerOptions = {}): Promise<vo
 
   server.listen(port, () => {
     const url = `http://localhost:${port}`;
-    const attestLines = attestationEnabled ? `
+    const attestLines = `
 │   Attestation Endpoints:                            │
 │     GET  /.well-known/recourse-keys.json            │
 │     GET  /.well-known/attestations/{id}.json        │
-│                                                     │` : '';
+│                                                     │`;
     console.log(`
 ┌─────────────────────────────────────────────────────┐
 │                                                     │
