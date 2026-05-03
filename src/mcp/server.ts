@@ -59,11 +59,11 @@ const tools: ToolDefinition[] = [
   {
     name: 'recourse_evaluate_terraform',
     description:
-      'Evaluates whether a proposed Terraform plan contains destructive changes that cannot be undone. ' +
-      'Call this BEFORE running `terraform apply` whenever the plan includes resource deletions, replacements, or any change that could destroy data, configuration, or infrastructure state. ' +
-      'Pass the plan as JSON (output of `terraform show -json plan.out`). ' +
-      'Returns a structured consequence report with decision (`allow`, `warn`, `escalate`, `block`), per-resource recoverability tier (`reversible`, `recoverable-with-effort`, `recoverable-from-backup`, `unrecoverable`), confidence level, and the specific evidence used to reach the verdict. ' +
-      'If decision is `block` or `escalate`, do not run `terraform apply` until a human has reviewed and approved the report.',
+      'Analyzes a Terraform plan for destructive or unrecoverable changes. ' +
+      'Call BEFORE `terraform apply` when the plan includes deletions, replacements, or state-mutating changes. ' +
+      'Pass the plan JSON from `terraform show -json plan.out`. ' +
+      'Returns a consequence report with riskAssessment (`allow`, `warn`, `escalate`, `block`), per-resource recoverability tier, and traced evidence for the verdict. ' +
+      'If riskAssessment is `block` or `escalate`, do not apply until a human reviews.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -81,11 +81,11 @@ const tools: ToolDefinition[] = [
   {
     name: 'recourse_evaluate_shell',
     description:
-      'Evaluates whether a shell command will perform destructive or unrecoverable actions on infrastructure, data, or system state. ' +
-      'Call this BEFORE executing any shell command that modifies resources — including but not limited to `rm`, `dd`, cloud CLI mutations (`aws ... delete`, `gcloud ... delete`, `az ... delete`), ' +
-      'database commands (`psql`, `mysql`, `mongo` with destructive verbs), `kubectl delete`, `docker` removals, or any command containing destructive verbs (`drop`, `truncate`, `purge`, `wipe`, `revoke`, `terminate`). ' +
-      'Returns a structured consequence report with decision, recoverability tier, recognized risk patterns, and required next step. ' +
-      'If decision is `block` or `escalate`, do not execute the command until a human approves.',
+      'Analyzes a shell command for destructive or unrecoverable side effects. ' +
+      'Call BEFORE executing commands that modify state: `rm`, `dd`, cloud CLI deletions (`aws/gcloud/az ... delete`), ' +
+      'database mutations (`DROP`, `TRUNCATE`), `kubectl delete`, `docker rm`, or any destructive verb. ' +
+      'Returns a consequence report with riskAssessment, recoverability tier, and recognized patterns. ' +
+      'If riskAssessment is `block` or `escalate`, do not execute until a human approves.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -102,12 +102,11 @@ const tools: ToolDefinition[] = [
   {
     name: 'recourse_evaluate_mcp_call',
     description:
-      'Evaluates whether a proposed MCP tool call will perform a destructive or unrecoverable action. ' +
-      'Call this BEFORE invoking any other MCP tool that may modify, delete, or mutate state — including tools that touch databases, cloud resources, files, repositories, or external services. ' +
-      'Pass the proposed tool name and arguments as JSON. ' +
-      'Returns a consequence report with decision, recoverability assessment, and the inferred mutation type. ' +
-      'Use this as a preflight check on tools you have not specifically verified to be safe. ' +
-      'If decision is `block` or `escalate`, do not invoke the proposed tool until a human approves.',
+      'Analyzes an MCP tool call for destructive or unrecoverable side effects. ' +
+      'Call BEFORE invoking tools that modify state: databases, cloud resources, files, repos, or external services. ' +
+      'Pass the tool name and arguments. ' +
+      'Returns a consequence report with riskAssessment, recoverability tier, and inferred mutation type. ' +
+      'If riskAssessment is `block` or `escalate`, do not invoke until a human approves.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -137,10 +136,10 @@ const tools: ToolDefinition[] = [
   {
     name: 'recourse_evaluate_with_evidence',
     description:
-      'Re-evaluates a previous consequence report with additional evidence gathered by the agent. ' +
-      'Use this after running verification commands suggested by a prior evaluation. ' +
-      'Submit the original input (plan, command, or tool call) plus evidence gathered from running the suggested verification commands. ' +
-      'Returns an updated verdict incorporating the new evidence, potentially upgrading from `block` or `escalate` to `warn` or `allow` if the verification confirms recovery paths exist.',
+      'Re-evaluates with additional evidence gathered by the agent. ' +
+      'Use after running verification commands from a prior evaluation. ' +
+      'Submit the original input plus evidence from verification commands. ' +
+      'Returns an updated riskAssessment — may upgrade from `block`/`escalate` to `warn`/`allow` if evidence confirms recovery paths.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -280,7 +279,7 @@ export async function handleMcpRequest(request: JsonRpcRequest): Promise<Record<
           },
           serverInfo: {
             name: 'recourseos',
-            version: '0.1.18',
+            version: '0.1.19',
           },
         });
       }
