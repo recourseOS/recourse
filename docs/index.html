@@ -52,10 +52,10 @@
 </nav>
 
 <header class="hero hero-simple container">
-  <div class="eyebrow">MCP server for infrastructure safety</div>
-  <h1>Agents check here <span class="accent">before they break things.</span></h1>
+  <div class="eyebrow">Infrastructure consequence engine</div>
+  <h1>The difference between <span class="accent">"I deleted your database"</span> and <span class="accent">"I checked first."</span></h1>
   <p class="lede">
-    AI agents are getting a bad rap for infrastructure damage. RecourseOS gives them a way to check consequences before acting — not after. One MCP config, and your agent knows what's recoverable.
+    RecourseOS is a preflight check for AI agents. Before an agent runs a destructive Terraform plan or shell command, it calls RecourseOS to see what's recoverable. Works as a native MCP server, CLI, or CI gate.
   </p>
   <div class="hero-actions">
     <a class="button primary" href="/mcp-setup.html">Add to your agent</a>
@@ -90,7 +90,7 @@
 <section class="demo-section">
   <div class="container">
     <div class="demo-wrapper">
-      <video autoplay loop muted playsinline class="demo-video">
+      <video autoplay loop muted playsinline class="demo-video" poster="demo-poster.jpg" aria-label="Demo of Cline agent checking RecourseOS before executing a destructive rm -rf command">
         <source src="demo.mp4" type="video/mp4">
       </video>
       <p class="demo-caption">Cline checks RecourseOS before executing <code>rm -rf</code> — stops and asks for approval.</p>
