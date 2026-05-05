@@ -1,6 +1,6 @@
 {
   "name": "recourse-cli",
-  "version": "0.1.29",
+  "version": "0.1.30",
   "mcpName": "io.github.recourseOS/recourse",
   "description": "MCP server for AI agents to evaluate consequences before destructive actions. Analyzes Terraform plans, shell commands, and MCP tool calls.",
   "main": "dist/index.js",
