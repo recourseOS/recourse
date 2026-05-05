@@ -293,6 +293,93 @@ describe('MCP Server Tests', () => {
         server.kill();
       }
     });
+
+    it('handles matches_failure interpretation without upgrading', async () => {
+      const server = spawnMcpServer();
+      try {
+        await initializeMcpServer(server);
+
+        const response = await sendMcpRequest(server, {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'recourse_evaluate_with_evidence',
+            arguments: {
+              source: 'shell',
+              original_input: {
+                command: 'aws s3 rm s3://prod-data --recursive',
+              },
+              evidence: [
+                {
+                  evidence_key: 's3_versioning_check',
+                  command_executed: { type: 'aws_cli', argv: ['s3api', 'get-bucket-versioning'] },
+                  exit_code: 0,
+                  raw_output: '{}',
+                  agent_interpretation: 'matches_failure',
+                  agent_notes: 'Versioning is not enabled',
+                },
+              ],
+            },
+          },
+        });
+
+        // matches_failure confirms bad state, should NOT upgrade
+        const result = response.result.structuredContent;
+        expect(result.riskAssessment).toMatch(/block|escalate/);
+      } finally {
+        server.kill();
+      }
+    });
+
+    it('handles multi-round verification scenario', async () => {
+      const server = spawnMcpServer();
+      try {
+        await initializeMcpServer(server);
+
+        // Round 1: Initial evaluation
+        const initialResponse = await sendMcpRequest(server, {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'recourse_evaluate_shell',
+            arguments: {
+              command: 'aws s3 rm s3://prod-backup --recursive',
+            },
+          },
+        });
+        expect(initialResponse.result.structuredContent.riskAssessment).toMatch(/block|escalate/);
+
+        // Round 2: Submit partial evidence (versioning only)
+        const round2Response = await sendMcpRequest(server, {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'recourse_evaluate_with_evidence',
+            arguments: {
+              source: 'shell',
+              original_input: { command: 'aws s3 rm s3://prod-backup --recursive' },
+              evidence: [
+                {
+                  evidence_key: 's3_versioning_enabled',
+                  command_executed: { type: 'aws_cli' },
+                  agent_interpretation: 'matches_expected',
+                  agent_notes: 'Versioning confirmed',
+                },
+              ],
+            },
+          },
+        });
+
+        // Should still have a valid response
+        expect(round2Response.result.structuredContent.riskAssessment).toBeDefined();
+        expect(round2Response.result.structuredContent.verificationProtocolVersion).toBe('v1');
+      } finally {
+        server.kill();
+      }
+    });
   });
 
   describe('Shell Command Edge Cases', () => {
@@ -431,6 +518,104 @@ describe('MCP Server Tests', () => {
             name: 'recourse_evaluate_shell',
             arguments: {
               command: 'psql -c "DROP TABLE users CASCADE"',
+            },
+          },
+        });
+
+        const result = response.result.structuredContent;
+        expect(result.mutations.length).toBeGreaterThan(0);
+      } finally {
+        server.kill();
+      }
+    });
+
+    it('handles command substitution with destructive inner command', async () => {
+      const server = spawnMcpServer();
+      try {
+        await initializeMcpServer(server);
+
+        const response = await sendMcpRequest(server, {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'recourse_evaluate_shell',
+            arguments: {
+              command: 'rm $(find /tmp -name "*.tmp")',
+            },
+          },
+        });
+
+        const result = response.result.structuredContent;
+        expect(result.mutations.length).toBeGreaterThan(0);
+        // Should detect the rm as destructive
+        expect(result.riskAssessment).toBeDefined();
+      } finally {
+        server.kill();
+      }
+    });
+
+    it('handles backtick command substitution', async () => {
+      const server = spawnMcpServer();
+      try {
+        await initializeMcpServer(server);
+
+        const response = await sendMcpRequest(server, {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'recourse_evaluate_shell',
+            arguments: {
+              command: 'rm `cat /tmp/files-to-delete.txt`',
+            },
+          },
+        });
+
+        const result = response.result.structuredContent;
+        expect(result.mutations.length).toBeGreaterThan(0);
+      } finally {
+        server.kill();
+      }
+    });
+
+    it('handles semicolon-chained destructive commands', async () => {
+      const server = spawnMcpServer();
+      try {
+        await initializeMcpServer(server);
+
+        const response = await sendMcpRequest(server, {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'recourse_evaluate_shell',
+            arguments: {
+              command: 'cd /tmp; rm -rf important; echo done',
+            },
+          },
+        });
+
+        const result = response.result.structuredContent;
+        expect(result.mutations.length).toBeGreaterThan(0);
+      } finally {
+        server.kill();
+      }
+    });
+
+    it('handles && chained destructive commands', async () => {
+      const server = spawnMcpServer();
+      try {
+        await initializeMcpServer(server);
+
+        const response = await sendMcpRequest(server, {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'recourse_evaluate_shell',
+            arguments: {
+              command: 'test -d /tmp/backup && rm -rf /var/data',
             },
           },
         });
@@ -638,6 +823,56 @@ describe('MCP Server Tests', () => {
         server.kill();
       }
     });
+
+    it('rejects malformed JSON string in plan parameter', async () => {
+      const server = spawnMcpServer();
+      try {
+        await initializeMcpServer(server);
+
+        const response = await sendMcpRequest(server, {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'recourse_evaluate_terraform',
+            arguments: {
+              plan: '{ invalid json without closing brace',
+            },
+          },
+        });
+
+        expect(response.error).toBeDefined();
+        expect(response.error.message).toMatch(/json|parse|invalid/i);
+      } finally {
+        server.kill();
+      }
+    });
+
+    it('ignores classifier flag on shell evaluation', async () => {
+      const server = spawnMcpServer();
+      try {
+        await initializeMcpServer(server);
+
+        // classifier flag should be silently ignored for shell commands
+        const response = await sendMcpRequest(server, {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'recourse_evaluate_shell',
+            arguments: {
+              command: 'rm -rf /tmp/test',
+              classifier: true, // Should be ignored
+            },
+          },
+        });
+
+        // Should succeed without error
+        expect(response.result.structuredContent.riskAssessment).toBeDefined();
+      } finally {
+        server.kill();
+      }
+    });
   });
 
   describe('Supported Resources', () => {
@@ -707,6 +942,100 @@ describe('MCP Server Tests', () => {
           },
         });
         expect(response3.result.structuredContent.riskAssessment).toBe('allow');
+      } finally {
+        server.kill();
+      }
+    });
+  });
+
+  describe('JSON-RPC Framing Edge Cases', () => {
+    it('handles request with extra whitespace in framing', async () => {
+      const server = spawnMcpServer();
+      try {
+        // Send request with extra spaces after Content-Length
+        const body = JSON.stringify({
+          jsonrpc: '2.0',
+          id: 0,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test', version: '1.0' },
+          },
+        });
+
+        // Standard framing with extra spaces - should still work
+        server.stdin.write(`Content-Length:   ${Buffer.byteLength(body, 'utf8')}  \r\n\r\n${body}`);
+
+        const response = await new Promise<any>((resolve, reject) => {
+          let buffer = Buffer.alloc(0);
+          const timeout = setTimeout(() => reject(new Error('Timeout')), 5000);
+
+          server.stdout.on('data', (chunk: Buffer) => {
+            buffer = Buffer.concat([buffer, chunk]);
+            const frame = readMcpFrame(buffer);
+            if (frame) {
+              clearTimeout(timeout);
+              resolve(JSON.parse(frame.body.toString('utf8')));
+            }
+          });
+        });
+
+        expect(response.result).toBeDefined();
+        expect(response.result.protocolVersion).toBe('2024-11-05');
+      } finally {
+        server.kill();
+      }
+    });
+
+    it('handles multiple requests in rapid succession', async () => {
+      const server = spawnMcpServer();
+      try {
+        await initializeMcpServer(server);
+
+        // Send multiple requests rapidly
+        const promises = [1, 2, 3].map((id) =>
+          sendMcpRequest(server, {
+            jsonrpc: '2.0',
+            id,
+            method: 'tools/call',
+            params: {
+              name: 'recourse_supported_resources',
+              arguments: {},
+            },
+          })
+        );
+
+        const responses = await Promise.all(promises);
+
+        // All should succeed
+        responses.forEach((response) => {
+          expect(response.result.structuredContent.total).toBeGreaterThan(0);
+        });
+      } finally {
+        server.kill();
+      }
+    });
+
+    it('handles request with large payload', async () => {
+      const server = spawnMcpServer();
+      try {
+        await initializeMcpServer(server);
+
+        // Create a large command string (but not too large)
+        const largeCommand = 'rm ' + Array(100).fill('/tmp/file').join(' ');
+
+        const response = await sendMcpRequest(server, {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'recourse_evaluate_shell',
+            arguments: { command: largeCommand },
+          },
+        });
+
+        expect(response.result.structuredContent.riskAssessment).toBeDefined();
       } finally {
         server.kill();
       }

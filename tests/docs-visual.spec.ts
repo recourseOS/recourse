@@ -13,6 +13,8 @@ const pages = [
   '/console.html',
   '/brand.html',
   '/mcp_arch_diagram.html',
+  '/cross-action-analysis.html',
+  '/docs.html',
 ];
 
 test.describe('public docs visual QA', () => {

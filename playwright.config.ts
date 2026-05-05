@@ -23,6 +23,13 @@ export default defineConfig({
       },
     },
     {
+      name: 'desktop-large',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+      },
+    },
+    {
       name: 'tablet',
       use: {
         ...devices['iPad (gen 7)'],
@@ -34,6 +41,14 @@ export default defineConfig({
       use: {
         ...devices['iPhone 13'],
         browserName: 'chromium',
+      },
+    },
+    {
+      name: 'mobile-small',
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 320, height: 568 },
+        isMobile: true,
       },
     },
   ],

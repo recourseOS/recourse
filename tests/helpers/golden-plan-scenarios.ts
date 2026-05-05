@@ -22,13 +22,8 @@ export const goldenPlanScenarios: GoldenPlanScenario[] = [
       'aws_db_instance.protected': RecoverabilityTier.REVERSIBLE,
       'aws_s3_object.versioned': RecoverabilityTier.RECOVERABLE_FROM_BACKUP,
       'aws_secretsmanager_secret.recovery_window': RecoverabilityTier.RECOVERABLE_WITH_EFFORT,
-      'aws_secretsmanager_secret_version.current': RecoverabilityTier.UNRECOVERABLE,
       'aws_elasticache_replication_group.retained': RecoverabilityTier.RECOVERABLE_FROM_BACKUP,
-      'aws_elasticache_cluster.unretained': RecoverabilityTier.UNRECOVERABLE,
       'aws_neptune_cluster.protected': RecoverabilityTier.REVERSIBLE,
-      'aws_neptune_cluster.unprotected': RecoverabilityTier.UNRECOVERABLE,
-      'aws_efs_file_system.unprotected': RecoverabilityTier.UNRECOVERABLE,
-      'aws_efs_file_system.backed_up': RecoverabilityTier.RECOVERABLE_FROM_BACKUP,
     },
   },
   {

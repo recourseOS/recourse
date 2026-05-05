@@ -125,6 +125,76 @@ describe('Recoverability Tiers', () => {
 
         expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
       });
+
+      it('returns RECOVERABLE_FROM_BACKUP when bucket has versioning enabled', () => {
+        const change = createChange(
+          'aws_s3_object.file',
+          'aws_s3_object',
+          ['delete'],
+          { bucket: 'my-bucket', key: 'file.txt' }
+        );
+        // State indicates versioning is enabled
+        const state = createState([
+          {
+            address: 'aws_s3_bucket_versioning.main',
+            type: 'aws_s3_bucket_versioning',
+            values: { bucket: 'my-bucket', versioning_configuration: [{ status: 'Enabled' }] },
+          },
+        ]);
+        const result = s3Handler.getRecoverability(change, state);
+
+        // With versioning, object deletion is recoverable
+        expect(result.tier).toBeLessThanOrEqual(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
+      });
+    });
+
+    describe('Edge Cases', () => {
+      it('handles bucket with force_destroy=true', () => {
+        const change = createChange(
+          'aws_s3_bucket.main',
+          'aws_s3_bucket',
+          ['delete'],
+          { bucket: 'my-bucket', force_destroy: true, object_count: 500 }
+        );
+        const result = s3Handler.getRecoverability(change, null);
+
+        // force_destroy allows deletion with objects - dangerous
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+      });
+
+      it('handles bucket with lifecycle expiration configured', () => {
+        const change = createChange(
+          'aws_s3_bucket.main',
+          'aws_s3_bucket',
+          ['delete'],
+          {
+            bucket: 'logs-bucket',
+            object_count: 1000,
+            lifecycle_rule: [{ expiration: { days: 30 } }],
+          }
+        );
+        const result = s3Handler.getRecoverability(change, null);
+
+        // Even with lifecycle, bucket deletion is unrecoverable if it has objects
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+      });
+
+      it('handles bucket with replication configured', () => {
+        const change = createChange(
+          'aws_s3_bucket.main',
+          'aws_s3_bucket',
+          ['delete'],
+          {
+            bucket: 'replicated-bucket',
+            object_count: 100,
+            replication_configuration: { role: 'arn:aws:iam::123:role/repl' },
+          }
+        );
+        const result = s3Handler.getRecoverability(change, null);
+
+        // Replication exists but bucket still has data
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+      });
     });
   });
 
@@ -254,6 +324,99 @@ describe('Recoverability Tiers', () => {
         );
         const result = rdsHandler.getRecoverability(change, null);
 
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+      });
+    });
+
+    describe('Edge Cases', () => {
+      it('handles conflicting signals: deletion_protection false + skip_final_snapshot true', () => {
+        const change = createChange(
+          'aws_db_instance.main',
+          'aws_db_instance',
+          ['delete'],
+          {
+            identifier: 'risky-db',
+            deletion_protection: false,
+            skip_final_snapshot: true,
+            backup_retention_period: 0,
+          }
+        );
+        const result = rdsHandler.getRecoverability(change, null);
+
+        // Most dangerous configuration
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+      });
+
+      it('handles multi-az instance deletion', () => {
+        const change = createChange(
+          'aws_db_instance.main',
+          'aws_db_instance',
+          ['delete'],
+          {
+            identifier: 'ha-db',
+            multi_az: true,
+            skip_final_snapshot: true,
+            backup_retention_period: 0,
+          }
+        );
+        const result = rdsHandler.getRecoverability(change, null);
+
+        // Multi-AZ doesn't help if we skip snapshot and have no backups
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+      });
+
+      it('handles read replica deletion', () => {
+        const change = createChange(
+          'aws_db_instance.replica',
+          'aws_db_instance',
+          ['delete'],
+          {
+            identifier: 'prod-db-replica',
+            replicate_source_db: 'prod-db',
+            skip_final_snapshot: true,
+          }
+        );
+        const result = rdsHandler.getRecoverability(change, null);
+
+        // Without special handling, read replicas are still evaluated like regular instances
+        // The handler doesn't currently distinguish replica deletion as recoverable
+        expect(result.tier).toBeDefined();
+      });
+
+      it('handles instance with storage_encrypted and no final snapshot', () => {
+        const change = createChange(
+          'aws_db_instance.main',
+          'aws_db_instance',
+          ['delete'],
+          {
+            identifier: 'encrypted-db',
+            storage_encrypted: true,
+            kms_key_id: 'arn:aws:kms:us-east-1:123:key/abc',
+            skip_final_snapshot: true,
+            backup_retention_period: 0,
+          }
+        );
+        const result = rdsHandler.getRecoverability(change, null);
+
+        // Encryption doesn't help recoverability if data is lost
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+      });
+
+      it('handles Aurora cluster with global_cluster membership', () => {
+        const change = createChange(
+          'aws_rds_cluster.aurora',
+          'aws_rds_cluster',
+          ['delete'],
+          {
+            cluster_identifier: 'aurora-cluster',
+            global_cluster_identifier: 'global-cluster',
+            skip_final_snapshot: true,
+            backup_retention_period: 0,
+          }
+        );
+        const result = rdsHandler.getRecoverability(change, null);
+
+        // Even in global cluster, local deletion is unrecoverable without snapshot
         expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
       });
     });
