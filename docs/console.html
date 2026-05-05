@@ -722,7 +722,6 @@
 <script>
 const sourceTabs = document.querySelectorAll('.source-tab');
 const inputArea = document.getElementById('input');
-const inputHint = document.getElementById('input-hint');
 const evaluateBtn = document.getElementById('evaluate');
 const resultEmpty = document.getElementById('result-empty');
 const resultContent = document.getElementById('result-content');
@@ -1057,7 +1056,6 @@ sourceTabs.forEach(tab => {
     sourceTabs.forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     activeSource = tab.dataset.source;
-    inputHint.textContent = hints[activeSource];
     inputArea.placeholder = hints[activeSource] + '...';
     inputArea.value = examples[activeSource];
     updateFixtureButtons(activeSource);
