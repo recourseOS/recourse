@@ -1183,15 +1183,27 @@ async function evaluateWithServer(source, input) {
 
   // Convert server response to console format
   const mutation = data.mutations?.[0] || {};
+  const intent = mutation.intent || {};
+  const target = intent.target || {};
+
+  // Extract evidence as readable strings
+  const evidenceStrings = (mutation.evidence || [])
+    .filter(e => e.present)
+    .map(e => e.description || `${e.key}: ${e.value}`);
+
+  // Extract missing evidence as readable strings
+  const missingStrings = (mutation.missingEvidence || [])
+    .map(e => e.description || e.key);
+
   return {
     decision: data.riskAssessment || 'escalate',
     tier: data.summary?.worstRecoverability?.label || mutation.recoverability?.label || 'needs-review',
-    target: mutation.resourceAddress || mutation.target || 'unknown',
-    action: mutation.action || 'unknown',
-    provider: mutation.provider || 'unknown',
+    target: target.id || intent.resourceAddress || 'unknown',
+    action: intent.action || 'unknown',
+    provider: target.service || target.type || 'unknown',
     reason: data.assessmentReason || mutation.recoverability?.reasoning || 'See evidence',
-    evidence: mutation.recoverability?.evidence || [],
-    missing: mutation.recoverability?.missingEvidence || [],
+    evidence: evidenceStrings,
+    missing: missingStrings,
     attestation: data.attestation || null
   };
 }
