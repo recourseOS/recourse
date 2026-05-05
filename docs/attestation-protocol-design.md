@@ -206,6 +206,244 @@ A cloud service that all attestations route through. This creates a critical-pat
 
 ---
 
+## Verification Procedure
+
+### Signing (RecourseOS)
+
+1. **Canonicalize the input**
+   - Parse the input (Terraform plan JSON, shell command, MCP call)
+   - Serialize to canonical JSON (sorted keys, no whitespace, UTF-8 NFC normalization)
+   - Compute SHA-256 hash → `input.hash`
+
+2. **Build the attestation object**
+   - Set `version` to `'recourse.attestation.v1'`
+   - Set `input.source`, `input.timestamp`
+   - Generate cryptographically secure 128-bit `nonce` (hex-encoded)
+   - Set `expires_at` to `timestamp + TTL` (default: 15 minutes)
+   - Populate `evaluation` fields from ConsequenceReport
+   - Compute SHA-256 of full ConsequenceReport → `evaluation.reportHash`
+   - Populate `evaluator` with instance metadata
+
+3. **Compute signature**
+   - Serialize the attestation object (excluding `signature` and `signatureAlgorithm`) to canonical JSON
+   - Sign with Ed25519 private key
+   - Base64-encode the signature → `signature`
+   - Set `signatureAlgorithm` to `'Ed25519'`
+
+4. **Return attestation**
+   - Include in ConsequenceReport response if requested
+   - Store locally if attestation persistence is enabled
+
+### Verification (Consumer)
+
+1. **Parse attestation**
+   - Decode the attestation JSON
+   - Extract the `evaluator.publicKey` field
+
+2. **Validate structure**
+   - Confirm `version` is `'recourse.attestation.v1'`
+   - Confirm all required fields are present
+   - Confirm `signatureAlgorithm` is `'Ed25519'`
+
+3. **Check freshness**
+   - Parse `input.timestamp` and `expires_at` as ISO 8601
+   - Verify current time is between `input.timestamp` and `expires_at`
+   - Apply clock skew tolerance (default: 30 seconds)
+
+4. **Validate signature**
+   - Extract the `signature` field and Base64-decode
+   - Reconstruct the canonical JSON of all fields *except* `signature` and `signatureAlgorithm`
+   - Verify signature using the public key
+   - If verification fails, reject attestation
+
+5. **Trust the public key**
+   - If the verifier has a trusted key list, confirm `evaluator.publicKey` is in the list
+   - If using key discovery, fetch from `GET /attestation/public-key` at the trusted instance
+   - Optionally verify `evaluator.instanceId` matches expected instance
+
+6. **Verify input binding**
+   - Canonicalize the original input (same procedure as signing step 1)
+   - Compute SHA-256 hash
+   - Confirm it matches `input.hash`
+   - If mismatch, reject—the attestation was issued for different input
+
+7. **Interpret result**
+   - If all checks pass, attestation is valid
+   - Read `evaluation.riskAssessment` for the verdict
+   - Optionally verify `evaluation.reportHash` against a stored ConsequenceReport
+
+### Chained Attestation Verification
+
+For attestation chains (e.g., human approval of an escalated action):
+
+1. Verify the approval attestation using the procedure above
+2. Extract `parent_attestation` hash
+3. Locate the parent attestation by hash
+4. Verify the parent attestation
+5. Confirm `chain_id` values match between linked attestations
+6. Confirm the approval attestation's `input.timestamp` is after the parent's
+
+---
+
+## Failure Modes
+
+### Signature Verification Failures
+
+| Error | Cause | Response |
+|-------|-------|----------|
+| `SIGNATURE_INVALID` | Signature doesn't verify against public key | Reject attestation. Possible tampering or wrong key. |
+| `SIGNATURE_MALFORMED` | Cannot decode Base64 signature | Reject attestation. Corrupted data. |
+| `KEY_UNKNOWN` | Public key not in trusted set | Reject or prompt operator for trust decision. |
+| `KEY_EXPIRED` | Key has been rotated and is past validity window | Reject. Require fresh attestation from current key. |
+
+### Freshness Failures
+
+| Error | Cause | Response |
+|-------|-------|----------|
+| `ATTESTATION_EXPIRED` | Current time is past `expires_at` | Reject. Request new evaluation. |
+| `ATTESTATION_FUTURE` | `input.timestamp` is in the future (beyond clock skew) | Reject. Possible clock manipulation. |
+| `NONCE_REUSED` | Same nonce appears in multiple attestations | Reject. Replay attack detected. |
+
+### Input Binding Failures
+
+| Error | Cause | Response |
+|-------|-------|----------|
+| `INPUT_HASH_MISMATCH` | Computed hash doesn't match `input.hash` | Reject. Attestation was for different input. |
+| `INPUT_NOT_CANONICALIZABLE` | Input cannot be serialized to canonical form | Reject. Invalid input format. |
+
+### Chain Failures
+
+| Error | Cause | Response |
+|-------|-------|----------|
+| `PARENT_NOT_FOUND` | Cannot locate attestation referenced by `parent_attestation` | Incomplete chain. May require manual verification. |
+| `CHAIN_ID_MISMATCH` | `chain_id` differs between linked attestations | Reject. Attestations are not part of same evaluation flow. |
+| `CHAIN_ORDER_INVALID` | Child attestation predates parent | Reject. Temporal paradox indicates tampering. |
+
+### Recovery Guidance
+
+**Transient failures (retry may help):**
+- Network errors fetching public key
+- Clock synchronization issues (minor)
+
+**Permanent failures (requires new evaluation):**
+- Expired attestations
+- Input hash mismatches
+- Signature failures
+
+**Configuration issues (requires operator action):**
+- Unknown public keys
+- Missing trusted key list
+- Key rotation needed
+
+---
+
+## Wire Format
+
+### Transport
+
+Attestations are transported as JSON objects within ConsequenceReport responses. No separate transport protocol is required.
+
+**Within ConsequenceReport:**
+```json
+{
+  "riskAssessment": "warn",
+  "worstTier": 3,
+  "mutations": [...],
+  "attestation": {
+    "version": "recourse.attestation.v1",
+    "input": {...},
+    "nonce": "a1b2c3d4e5f6...",
+    ...
+  }
+}
+```
+
+**Standalone (for storage or transmission):**
+```json
+{
+  "version": "recourse.attestation.v1",
+  "input": {
+    "hash": "sha256:abcd1234...",
+    "source": "terraform",
+    "timestamp": "2026-05-04T12:00:00Z"
+  },
+  ...
+}
+```
+
+### Canonical JSON Serialization
+
+For hashing and signing, JSON must be serialized canonically:
+
+1. **Key ordering:** Object keys sorted lexicographically (Unicode code point order)
+2. **Whitespace:** No whitespace between tokens
+3. **Numbers:** No leading zeros, no trailing zeros after decimal, no positive sign
+4. **Strings:** UTF-8 NFC normalization, minimal escaping (only `\n`, `\r`, `\t`, `\\`, `\"`)
+5. **No trailing commas**
+6. **Unicode:** Use actual characters, not `\uXXXX` escapes (except control characters)
+
+**Example canonical form:**
+```
+{"evaluation":{"hasUnrecoverable":false,"mutationCount":3,"reportHash":"sha256:...","riskAssessment":"warn","worstTier":3},"evaluator":{"instanceId":"local-dev-1","publicKey":"-----BEGIN PUBLIC KEY-----\n...","version":"0.1.34"},"expires_at":"2026-05-04T12:15:00Z","input":{"hash":"sha256:...","source":"terraform","timestamp":"2026-05-04T12:00:00Z"},"nonce":"a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4","signature":"...","signatureAlgorithm":"Ed25519","version":"recourse.attestation.v1"}
+```
+
+### Hash Encoding
+
+All hashes use the format `sha256:<hex>` where `<hex>` is the lowercase hexadecimal encoding of the SHA-256 digest.
+
+**Example:**
+```
+sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+```
+
+### Signature Encoding
+
+Ed25519 signatures are 64 bytes. Encode as standard Base64 (RFC 4648).
+
+**Example:**
+```
+"signature": "dGhpcyBpcyBhbiBleGFtcGxlIHNpZ25hdHVyZSBmb3IgZG9jdW1lbnRhdGlvbiBwdXJwb3Nlcw=="
+```
+
+### Public Key Encoding
+
+Public keys use PEM encoding (RFC 7468) with the `PUBLIC KEY` label.
+
+**Example:**
+```
+-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAG1X3Iu+kMNNKr7yt3x/kUVQ7OZGJn5gLMzVHkO8Xqfk=
+-----END PUBLIC KEY-----
+```
+
+### Size Limits
+
+| Field | Max Size |
+|-------|----------|
+| Full attestation JSON | 64 KB |
+| `input.hash` | 71 characters (`sha256:` + 64 hex digits) |
+| `nonce` | 32 characters (128 bits, hex-encoded) |
+| `signature` | 88 characters (64 bytes, Base64) |
+| `evaluator.publicKey` | 256 characters (PEM-encoded Ed25519) |
+| `evaluator.instanceId` | 128 characters |
+
+### Content-Type
+
+When served via HTTP endpoints:
+- `Content-Type: application/json; charset=utf-8`
+- For the public key endpoint: `Content-Type: application/x-pem-file`
+
+### Versioning
+
+The `version` field enables protocol evolution:
+
+- `recourse.attestation.v1` — Current version, as specified in this document
+- Future versions increment the version string
+- Verifiers should reject unknown versions rather than attempting best-effort parsing
+- RecourseOS may support multiple versions simultaneously during migration periods
+
+---
+
 ## v1 Implementation Scope
 
 ### Deliverables

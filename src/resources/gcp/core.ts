@@ -8,6 +8,7 @@ import {
   type StateResource,
   type TerraformState,
 } from '../types.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const gcpCoreHandler: ResourceHandler = {
   resourceTypes: [
@@ -21,6 +22,43 @@ export const gcpCoreHandler: ResourceHandler = {
     'google_container_cluster',
     'google_container_node_pool',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'disk.snapshots',
+        level: 'required',
+        description: 'Existing snapshots of this persistent disk',
+        blocksSafeVerdict: true,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'kms.key_versions',
+        level: 'required',
+        description: 'Active key versions and their state',
+        blocksSafeVerdict: true,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'kms.dependent_resources',
+        level: 'recommended',
+        description: 'Resources encrypted with this key',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'gke.workloads',
+        level: 'recommended',
+        description: 'Running workloads on this cluster or node pool',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 300,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(change: ResourceChange, _state: TerraformState | null): RecoverabilityResult {
     const isDelete = change.actions.includes('delete');

@@ -8,6 +8,7 @@ import {
   type StateResource,
   type TerraformState,
 } from '../types.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const gcpSecretsHandler: ResourceHandler = {
   resourceTypes: [
@@ -17,6 +18,34 @@ export const gcpSecretsHandler: ResourceHandler = {
     'google_secret_manager_secret_iam_member',
     'google_secret_manager_secret_iam_policy',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'secret.version_count',
+        level: 'required',
+        description: 'Number of secret versions that will be destroyed',
+        blocksSafeVerdict: true,
+        defaultAssumption: 0,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'secret.replication',
+        level: 'recommended',
+        description: 'Secret replication configuration',
+        blocksSafeVerdict: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'secret.external_backup',
+        level: 'recommended',
+        description: 'Whether secret value is backed up externally',
+        blocksSafeVerdict: false,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(change: ResourceChange, _state: TerraformState | null): RecoverabilityResult {
     const isDelete = change.actions.includes('delete');

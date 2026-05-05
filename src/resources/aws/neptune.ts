@@ -8,6 +8,7 @@ import {
   type StateResource,
   type TerraformState,
 } from '../types.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const neptuneHandler: ResourceHandler = {
   resourceTypes: [
@@ -19,6 +20,43 @@ export const neptuneHandler: ResourceHandler = {
     'aws_neptune_subnet_group',
     'aws_neptune_event_subscription',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'neptune.deletion_protection',
+        level: 'required',
+        description: 'Whether deletion protection is enabled on the cluster',
+        blocksSafeVerdict: true,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'neptune.backup_retention_period',
+        level: 'required',
+        description: 'Automated backup retention period in days',
+        blocksSafeVerdict: true,
+        defaultAssumption: 1,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'neptune.skip_final_snapshot',
+        level: 'required',
+        description: 'Whether final snapshot will be skipped on deletion',
+        blocksSafeVerdict: true,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'neptune.cluster_instances',
+        level: 'recommended',
+        description: 'Active instances in this Neptune cluster',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 300,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(change: ResourceChange, _state: TerraformState | null): RecoverabilityResult {
     const isDelete = change.actions.includes('delete');

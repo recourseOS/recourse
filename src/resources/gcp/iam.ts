@@ -8,6 +8,7 @@ import {
   type StateResource,
   type TerraformState,
 } from '../types.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const gcpIamHandler: ResourceHandler = {
   resourceTypes: [
@@ -19,6 +20,35 @@ export const gcpIamHandler: ResourceHandler = {
     'google_service_account_iam_member',
     'google_service_account_key',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'iam.service_account_keys',
+        level: 'required',
+        description: 'Active keys associated with this service account',
+        blocksSafeVerdict: true,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'iam.dependent_resources',
+        level: 'recommended',
+        description: 'Resources that reference this service account',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'iam.workload_identity_bindings',
+        level: 'recommended',
+        description: 'Workload identity bindings to this service account',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(change: ResourceChange, _state: TerraformState | null): RecoverabilityResult {
     const isDelete = change.actions.includes('delete');

@@ -8,6 +8,7 @@ import {
   type StateResource,
   type TerraformState,
 } from '../types.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const azureIamHandler: ResourceHandler = {
   resourceTypes: [
@@ -17,6 +18,35 @@ export const azureIamHandler: ResourceHandler = {
     'azuread_service_principal',
     'azuread_service_principal_password',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'azure_iam.credential_expiry',
+        level: 'required',
+        description: 'Service principal credential expiration status',
+        blocksSafeVerdict: true,
+        defaultAssumption: null,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'azure_iam.dependent_resources',
+        level: 'recommended',
+        description: 'Resources that reference this service principal or application',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'azure_iam.federated_credentials',
+        level: 'recommended',
+        description: 'Federated identity credentials associated with this application',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(change: ResourceChange, _state: TerraformState | null): RecoverabilityResult {
     const isDelete = change.actions.includes('delete');

@@ -8,6 +8,7 @@ import {
   type StateResource,
   type TerraformState,
 } from '../types.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const azureKeyVaultHandler: ResourceHandler = {
   resourceTypes: [
@@ -17,6 +18,43 @@ export const azureKeyVaultHandler: ResourceHandler = {
     'azurerm_key_vault_certificate',
     'azurerm_key_vault_access_policy',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'key_vault.soft_delete_enabled',
+        level: 'required',
+        description: 'Whether soft delete is enabled on the vault',
+        blocksSafeVerdict: true,
+        defaultAssumption: true,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'key_vault.purge_protection_enabled',
+        level: 'required',
+        description: 'Whether purge protection is enabled',
+        blocksSafeVerdict: true,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'key_vault.soft_delete_retention_days',
+        level: 'recommended',
+        description: 'Soft delete retention period in days (7-90)',
+        blocksSafeVerdict: false,
+        defaultAssumption: 90,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'key_vault.dependent_resources',
+        level: 'recommended',
+        description: 'Resources encrypted with keys from this vault',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(change: ResourceChange, _state: TerraformState | null): RecoverabilityResult {
     const isDelete = change.actions.includes('delete');

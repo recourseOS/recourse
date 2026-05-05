@@ -8,6 +8,7 @@ import {
   type StateResource,
   type TerraformState,
 } from '../types.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const azureCosmosDbHandler: ResourceHandler = {
   resourceTypes: [
@@ -24,6 +25,42 @@ export const azureCosmosDbHandler: ResourceHandler = {
     'azurerm_cosmosdb_sql_role_assignment',
     'azurerm_cosmosdb_sql_role_definition',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'cosmosdb.backup_type',
+        level: 'required',
+        description: 'Backup type (Continuous or Periodic)',
+        blocksSafeVerdict: true,
+        defaultAssumption: 'Periodic',
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'cosmosdb.backup_retention_hours',
+        level: 'required',
+        description: 'Backup retention period in hours',
+        blocksSafeVerdict: true,
+        defaultAssumption: 8,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'cosmosdb.continuous_backup_tier',
+        level: 'recommended',
+        description: 'Continuous backup tier (7 days or 30 days)',
+        blocksSafeVerdict: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'cosmosdb.geo_replication',
+        level: 'recommended',
+        description: 'Geo-replication regions for this account',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(change: ResourceChange, state: TerraformState | null): RecoverabilityResult {
     const isDelete = change.actions.includes('delete');

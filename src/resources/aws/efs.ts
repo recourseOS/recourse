@@ -8,6 +8,7 @@ import {
   type StateResource,
   type TerraformState,
 } from '../types.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const efsHandler: ResourceHandler = {
   resourceTypes: [
@@ -18,6 +19,35 @@ export const efsHandler: ResourceHandler = {
     'aws_efs_file_system_policy',
     'aws_efs_replication_configuration',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'efs.backup_policy_status',
+        level: 'required',
+        description: 'Whether AWS Backup policy is enabled for this file system',
+        blocksSafeVerdict: true,
+        defaultAssumption: 'DISABLED',
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'efs.replication_destinations',
+        level: 'recommended',
+        description: 'Replication destinations for this file system',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'efs.mount_targets',
+        level: 'recommended',
+        description: 'Active mount targets using this file system',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 300,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(change: ResourceChange, state: TerraformState | null): RecoverabilityResult {
     const isDelete = change.actions.includes('delete');

@@ -8,6 +8,7 @@ import {
   type StateResource,
   type TerraformState,
 } from '../types.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const gcpBigQueryHandler: ResourceHandler = {
   resourceTypes: [
@@ -21,6 +22,43 @@ export const gcpBigQueryHandler: ResourceHandler = {
     'google_bigquery_table_iam_member',
     'google_bigquery_table_iam_policy',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'bigquery.deletion_protection',
+        level: 'required',
+        description: 'Whether deletion protection is enabled on the table',
+        blocksSafeVerdict: true,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'bigquery.delete_contents_on_destroy',
+        level: 'required',
+        description: 'Whether dataset will delete all tables on destroy',
+        blocksSafeVerdict: true,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'bigquery.time_travel_hours',
+        level: 'required',
+        description: 'Time travel window in hours for data recovery',
+        blocksSafeVerdict: true,
+        defaultAssumption: 168, // 7 days default
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'bigquery.snapshots',
+        level: 'recommended',
+        description: 'Existing table snapshots for recovery',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(change: ResourceChange, _state: TerraformState | null): RecoverabilityResult {
     const isDelete = change.actions.includes('delete');

@@ -8,6 +8,7 @@ import {
   type StateResource,
   type TerraformState,
 } from '../types.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const azureSqlHandler: ResourceHandler = {
   resourceTypes: [
@@ -17,6 +18,42 @@ export const azureSqlHandler: ResourceHandler = {
     'azurerm_mysql_flexible_server',
     'azurerm_mariadb_server',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'azure_sql.backup_retention_days',
+        level: 'required',
+        description: 'Short-term backup retention period in days',
+        blocksSafeVerdict: true,
+        defaultAssumption: 7,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'azure_sql.long_term_retention',
+        level: 'recommended',
+        description: 'Long-term backup retention policy configuration',
+        blocksSafeVerdict: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'azure_sql.geo_backup_enabled',
+        level: 'recommended',
+        description: 'Whether geo-redundant backups are enabled',
+        blocksSafeVerdict: false,
+        defaultAssumption: true,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'azure_sql.replicas',
+        level: 'recommended',
+        description: 'Read replicas or geo-replicas for this database',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(change: ResourceChange, _state: TerraformState | null): RecoverabilityResult {
     const isDelete = change.actions.includes('delete');

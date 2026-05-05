@@ -8,6 +8,7 @@ import {
   type StateResource,
   type TerraformState,
 } from '../types.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const azureStorageHandler: ResourceHandler = {
   resourceTypes: [
@@ -18,6 +19,42 @@ export const azureStorageHandler: ResourceHandler = {
     'azurerm_storage_queue',
     'azurerm_storage_table',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'azure_storage.versioning_enabled',
+        level: 'required',
+        description: 'Whether blob versioning is enabled',
+        blocksSafeVerdict: true,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'azure_storage.soft_delete_enabled',
+        level: 'required',
+        description: 'Whether blob soft delete is enabled',
+        blocksSafeVerdict: true,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'azure_storage.container_soft_delete',
+        level: 'required',
+        description: 'Whether container soft delete is enabled',
+        blocksSafeVerdict: true,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'azure_storage.immutability_policy',
+        level: 'recommended',
+        description: 'Immutability policy preventing deletion',
+        blocksSafeVerdict: false,
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(change: ResourceChange, _state: TerraformState | null): RecoverabilityResult {
     const isDelete = change.actions.includes('delete');

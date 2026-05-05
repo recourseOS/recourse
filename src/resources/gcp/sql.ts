@@ -8,6 +8,7 @@ import {
   type StateResource,
   type TerraformState,
 } from '../types.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const gcpSqlHandler: ResourceHandler = {
   resourceTypes: [
@@ -15,6 +16,43 @@ export const gcpSqlHandler: ResourceHandler = {
     'google_sql_database',
     'google_sql_user',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'cloudsql.deletion_protection',
+        level: 'required',
+        description: 'Whether deletion protection is enabled on the instance',
+        blocksSafeVerdict: true,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'cloudsql.automated_backups',
+        level: 'required',
+        description: 'Whether automated backups are enabled',
+        blocksSafeVerdict: true,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'cloudsql.point_in_time_recovery',
+        level: 'required',
+        description: 'Whether point-in-time recovery (PITR) is enabled',
+        blocksSafeVerdict: true,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'cloudsql.replicas',
+        level: 'recommended',
+        description: 'Read replicas that depend on this instance',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(change: ResourceChange, _state: TerraformState | null): RecoverabilityResult {
     const isDelete = change.actions.includes('delete');

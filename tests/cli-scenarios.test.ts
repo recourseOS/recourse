@@ -331,6 +331,7 @@ function runCli(scenario: EvidenceScenario, failOn: 'warn' | 'escalate' | 'block
   return spawnSync(process.execPath, args, {
     cwd: process.cwd(),
     encoding: 'utf8',
+    maxBuffer: 10 * 1024 * 1024, // 10MB to handle large JSON output
   });
 }
 
@@ -352,6 +353,7 @@ function runGoldenPlanCli(scenario: GoldenPlanScenario) {
   return spawnSync(process.execPath, args, {
     cwd: process.cwd(),
     encoding: 'utf8',
+    maxBuffer: 10 * 1024 * 1024, // 10MB to handle large JSON output
   });
 }
 

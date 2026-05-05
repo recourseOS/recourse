@@ -8,6 +8,7 @@ import {
   type StateResource,
   type TerraformState,
 } from '../types.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const azureCoreHandler: ResourceHandler = {
   resourceTypes: [
@@ -19,6 +20,43 @@ export const azureCoreHandler: ResourceHandler = {
     'azurerm_kubernetes_cluster',
     'azurerm_kubernetes_cluster_node_pool',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'disk.snapshots',
+        level: 'required',
+        description: 'Existing snapshots of this managed disk',
+        blocksSafeVerdict: true,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'disk.incremental_snapshots',
+        level: 'recommended',
+        description: 'Incremental snapshots for point-in-time recovery',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'aks.workloads',
+        level: 'recommended',
+        description: 'Running workloads on this AKS cluster or node pool',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 300,
+      },
+      {
+        key: 'aks.persistent_volumes',
+        level: 'recommended',
+        description: 'Persistent volumes attached to this cluster',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(change: ResourceChange, _state: TerraformState | null): RecoverabilityResult {
     const isDelete = change.actions.includes('delete');

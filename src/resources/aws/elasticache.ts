@@ -8,6 +8,7 @@ import {
   type StateResource,
   type TerraformState,
 } from '../types.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const elasticacheHandler: ResourceHandler = {
   resourceTypes: [
@@ -22,6 +23,43 @@ export const elasticacheHandler: ResourceHandler = {
     'aws_elasticache_user_group',
     'aws_elasticache_user_group_association',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'elasticache.snapshot_retention_limit',
+        level: 'required',
+        description: 'Number of days automated snapshots are retained',
+        blocksSafeVerdict: true,
+        defaultAssumption: 0,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'elasticache.final_snapshot_identifier',
+        level: 'required',
+        description: 'Identifier for final snapshot on deletion',
+        blocksSafeVerdict: true,
+        defaultAssumption: null,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'elasticache.engine',
+        level: 'recommended',
+        description: 'Cache engine type (redis, valkey, memcached)',
+        blocksSafeVerdict: false,
+        defaultAssumption: 'redis',
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'elasticache.replication_group_members',
+        level: 'recommended',
+        description: 'Member nodes in this replication group',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 300,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(change: ResourceChange, _state: TerraformState | null): RecoverabilityResult {
     const isDelete = change.actions.includes('delete');

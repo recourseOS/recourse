@@ -8,6 +8,7 @@ import {
   type StateResource,
   type TerraformState,
 } from '../types.js';
+import type { EvidenceRequirement } from '../../core/state-schema.js';
 
 export const gcpStorageHandler: ResourceHandler = {
   resourceTypes: [
@@ -17,6 +18,42 @@ export const gcpStorageHandler: ResourceHandler = {
     'google_storage_bucket_iam_member',
     'google_storage_bucket_iam_policy',
   ],
+
+  evidenceRequirements: {
+    delete: [
+      {
+        key: 'gcs.versioning_enabled',
+        level: 'required',
+        description: 'Whether object versioning is enabled on the bucket',
+        blocksSafeVerdict: true,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'gcs.force_destroy',
+        level: 'required',
+        description: 'Whether force_destroy is set (deletes all objects)',
+        blocksSafeVerdict: true,
+        defaultAssumption: false,
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'gcs.lifecycle_rules',
+        level: 'recommended',
+        description: 'Lifecycle rules that may affect object retention',
+        blocksSafeVerdict: false,
+        defaultAssumption: [],
+        maxFreshnessSeconds: 3600,
+      },
+      {
+        key: 'gcs.retention_policy',
+        level: 'recommended',
+        description: 'Bucket retention policy preventing deletion',
+        blocksSafeVerdict: false,
+        maxFreshnessSeconds: 3600,
+      },
+    ] satisfies EvidenceRequirement[],
+  },
 
   getRecoverability(change: ResourceChange, _state: TerraformState | null): RecoverabilityResult {
     const isDelete = change.actions.includes('delete');
