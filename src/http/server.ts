@@ -235,10 +235,17 @@ function evaluate(request: EvaluateRequest) {
     }
 
     case 'mcp': {
-      const call = request.input as McpToolCall;
-      if (!call || typeof call.tool !== 'string') {
-        throw new Error('MCP input must have a "tool" field');
+      const raw = request.input as Record<string, unknown>;
+      // Accept both 'tool' and 'name' for MCP compatibility
+      const toolName = raw?.tool ?? raw?.name;
+      if (!toolName || typeof toolName !== 'string') {
+        throw new Error('MCP input must have a "tool" field (e.g., { "tool": "s3.delete_bucket", "arguments": {...} })');
       }
+      const call: McpToolCall = {
+        tool: toolName,
+        server: typeof raw.server === 'string' ? raw.server : undefined,
+        arguments: raw.arguments as Record<string, unknown> | undefined,
+      };
       return evaluateMcpToolCallConsequences(call, { adapterContext });
     }
 
