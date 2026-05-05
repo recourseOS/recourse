@@ -1,6 +1,7 @@
 import type { RecoverabilityResult } from '../resources/types.js';
 import type { DependencyImpact, EvidenceItem, MissingEvidence, MutationIntent, VerificationSuggestion } from './mutation.js';
 import type { EvidenceRequirementLevel, EvidenceSufficiency } from './state-schema.js';
+import type { CrossActionRisk } from '../analyzer/cross-action.js';
 
 export type ConsequenceDecision = 'allow' | 'warn' | 'block' | 'escalate';
 
@@ -112,4 +113,12 @@ export interface ConsequenceReport {
   // Required Evidence (Unknown-State Schema)
   /** Evidence requirements and current state for confident classification */
   requiredEvidence?: RequiredEvidence;
+
+  // Cross-Action Analysis
+  /**
+   * Cross-action risks detected in the plan.
+   * Empty array if no patterns matched.
+   * Always present when cross-action analysis runs (explicit "we checked").
+   */
+  crossActionRisks?: CrossActionRisk[];
 }

@@ -1,0 +1,49 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.6.0",
+  "resource_changes": [
+    {
+      "address": "aws_db_instance.production",
+      "type": "aws_db_instance",
+      "name": "production",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["update"],
+        "before": {
+          "identifier": "prod-orders",
+          "engine": "postgres",
+          "deletion_protection": true,
+          "skip_final_snapshot": true,
+          "backup_retention_period": 7
+        },
+        "after": {
+          "identifier": "prod-orders",
+          "engine": "postgres",
+          "deletion_protection": false,
+          "skip_final_snapshot": true,
+          "backup_retention_period": 7
+        },
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_db_instance.production",
+      "type": "aws_db_instance",
+      "name": "production",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "identifier": "prod-orders",
+          "engine": "postgres",
+          "deletion_protection": false,
+          "skip_final_snapshot": true,
+          "backup_retention_period": 7
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    }
+  ],
+  "_comment": "DANGEROUS: Same resource has deletion_protection disabled and is then deleted in same plan."
+}

@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>RecourseOS - Cross-Action Analysis</title>
+<meta name="description" content="Design for cross-action analysis - detecting dangerous patterns where individual actions are safe but their combination is unrecoverable." />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="site.css" />
+</head>
+<body>
+<div class="top-band">
+<nav class="container site-nav">
+  <a href="/" class="brand" aria-label="RecourseOS home">
+    <svg class="brand-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M50 5 L88.97 27.5 V72.5 L50 95 L11.03 72.5 V27.5 Z" fill="#06110e"/>
+      <path d="M50 9.8 L84.8 29.9 V70.1 L50 90.2 L15.2 70.1 V29.9 Z" stroke="#effbf3" stroke-width="5.6" stroke-linejoin="round"/>
+      <path d="M34 70 V30 H57.5 C67.2 30 74 36 74 44.6 C74 53.2 67.2 59.2 57.5 59.2 H34" stroke="#effbf3" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M55.5 59.5 L74 70.5" stroke="#effbf3" stroke-width="7" stroke-linecap="round"/>
+      <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round"/>
+      <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>
+      <span class="brand-name">Recourse<span class="os">OS</span></span>
+      <span class="brand-kicker">Consequence layer</span>
+    </span>
+  </a>
+  <div class="links">
+    <a href="/">home</a>
+    <a href="/docs.html">docs</a>
+    <a href="/console.html">console</a>
+    <a href="/about.html">about</a>
+    <a href="https://github.com/recourseOS/recourse" class="nav-cta">github</a>
+  </div>
+</nav>
+<header class="container doc-header">
+  <div class="eyebrow">implemented &middot; v0.1.36</div>
+  <h1>Cross-Action Analysis</h1>
+  <p class="lede">Detects dangerous patterns where individual actions are safe but their combination is unrecoverable.</p>
+  <div style="background: rgba(99, 230, 184, 0.15); border: 1px solid rgba(99, 230, 184, 0.3); padding: 16px 20px; border-radius: 6px; font-size: 14px; margin-top: 16px;">
+    <strong>Status: Implemented</strong><br>
+    Three patterns active: backup+protected, replica+primary, protection-disabled-then-deleted
+  </div>
+</header>
+</div>
+<main class="container doc-shell">
+  <aside class="toc">
+    <div class="toc-title">On this page</div>
+    <a href="#problem">Problem</a>
+    <a href="#how-it-works">How It Works</a>
+    <a href="#patterns">Pattern Catalog</a>
+    <a href="#output">Output Schema</a>
+    <a href="#confidence">Confidence Levels</a>
+    <a href="#limitations">Scope Limitations</a>
+  </aside>
+  <article>
+    <h2 id="problem">Problem Statement</h2>
+    <p>RecourseOS evaluates each resource change individually. This misses dangerous patterns where:</p>
+    <ul>
+      <li>Each action is safe in isolation</li>
+      <li>The combination is unrecoverable</li>
+    </ul>
+    <p><strong>Example:</strong> Deleting an RDS snapshot returns <code>RECOVERABLE_WITH_EFFORT</code> (you can recreate it). Deleting the RDS instance with backups enabled returns <code>RECOVERABLE_FROM_BACKUP</code>. But if both are in the same plan, and the snapshot <em>was</em> the backup, the sequence is <code>UNRECOVERABLE</code>.</p>
+    <p>Cross-action analysis catches these patterns.</p>
+
+    <h2 id="how-it-works">How It Works</h2>
+    <p>After evaluating each resource individually, RecourseOS runs cross-action analysis:</p>
+    <ol>
+      <li>Collect all resource changes and their individual verdicts</li>
+      <li>Run each pattern's detection function against the plan</li>
+      <li>For matches that meet confidence thresholds, upgrade the plan-level summary</li>
+      <li>Include <code>crossActionRisks</code> array in the consequence report</li>
+    </ol>
+    <p>Per-resource verdicts remain unchanged. The plan-level <code>worstRecoverability</code> and <code>riskAssessment</code> reflect the elevated risk when cross-action patterns match.</p>
+
+    <h2 id="patterns">Pattern Catalog</h2>
+
+    <h3>Pattern 1: Backup and Protected Resource Both Deleted</h3>
+    <p><strong>ID:</strong> <code>backup_and_protected_both_deleted</code></p>
+    <p><strong>Detects:</strong> A backup/snapshot is deleted in the same plan as the resource it backs up.</p>
+    <table>
+      <thead><tr><th>Scenario</th><th>Resources</th><th>Expected</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Dangerous</strong></td><td>Delete <code>aws_db_snapshot.final</code> + Delete <code>aws_db_instance.prod</code></td><td>Match, upgrade to UNRECOVERABLE</td></tr>
+        <tr><td><strong>Benign</strong></td><td>Delete <code>aws_db_snapshot.old</code> + Modify <code>aws_db_instance.prod</code></td><td>No match (instance not deleted)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Pattern 2: Replica and Primary Both Deleted</h3>
+    <p><strong>ID:</strong> <code>replica_and_primary_both_deleted</code></p>
+    <p><strong>Detects:</strong> A replica is deleted in the same plan as its primary.</p>
+    <table>
+      <thead><tr><th>Scenario</th><th>Resources</th><th>Expected</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Dangerous</strong></td><td>Delete <code>aws_db_instance.replica</code> + Delete <code>aws_db_instance.primary</code></td><td>Match, upgrade to UNRECOVERABLE</td></tr>
+        <tr><td><strong>Benign</strong></td><td>Delete <code>aws_db_instance.replica</code> only</td><td>No match (primary survives)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Pattern 3: Protection Disabled Then Resource Deleted</h3>
+    <p><strong>ID:</strong> <code>protection_disabled_then_deleted</code></p>
+    <p><strong>Detects:</strong> Deletion protection is removed AND the resource is deleted in the same plan.</p>
+    <table>
+      <thead><tr><th>Scenario</th><th>Resources</th><th>Expected</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Dangerous</strong></td><td>Update <code>deletion_protection: true→false</code> + Delete same resource</td><td>Match, upgrade to UNRECOVERABLE</td></tr>
+        <tr><td><strong>Benign</strong></td><td>Update <code>deletion_protection: true→false</code> only</td><td>No match (not deleted)</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="output">Output Schema</h2>
+    <p>Cross-action risks appear in the <code>crossActionRisks</code> array on the consequence report:</p>
+<pre><code>{
+  "crossActionRisks": [
+    {
+      "pattern": "backup_and_protected_both_deleted",
+      "patternName": "Backup and protected resource both deleted",
+      "affectedResources": [
+        "aws_db_instance.production",
+        "aws_db_snapshot.production_final"
+      ],
+      "relationship": {
+        "type": "backup",
+        "source": "aws_db_snapshot.production_final",
+        "target": "aws_db_instance.production",
+        "detectionMethod": "explicit_reference",
+        "confidence": "definite"
+      },
+      "explanation": "The backup is being deleted...",
+      "upgradedTier": 4,
+      "scopeWarning": "Analysis limited to resources in this plan..."
+    }
+  ]
+}</code></pre>
+    <p>The array is always present. Empty array means "we checked, nothing found."</p>
+
+    <h2 id="confidence">Confidence Levels</h2>
+    <p>Relationship detection produces confidence levels:</p>
+    <ul>
+      <li><strong>definite:</strong> Structural proof (explicit attribute reference, e.g., snapshot's <code>db_instance_identifier</code>)</li>
+      <li><strong>probable:</strong> Strong inference from state lookup</li>
+      <li><strong>possible:</strong> Heuristic match (naming convention)</li>
+    </ul>
+    <p>Patterns declare a <code>minimumConfidence</code>. The backup pattern requires <code>probable</code> or higher &mdash; naming-convention matches are too speculative for an UNRECOVERABLE verdict.</p>
+
+    <h2 id="limitations">Scope Limitations</h2>
+    <p>Cross-action analysis has explicit scope limits:</p>
+    <ul>
+      <li><strong>Plan scope only:</strong> Can only analyze resources in the current plan. Cross-state, cross-account, or externally-managed resources are invisible.</li>
+      <li><strong>State scope:</strong> Relationship detection relies on Terraform state when available. Without state, detection is limited to plan references.</li>
+      <li><strong>Confidence levels:</strong> Naming-convention matches produce <code>possible</code> confidence. Patterns can choose not to fire on low-confidence matches.</li>
+    </ul>
+    <p>Every <code>CrossActionRisk</code> includes a <code>scopeWarning</code> when relevant. Consumers know what the engine couldn't see.</p>
+  </article>
+</main>
+<footer class="container">
+  <span>&copy; 2026 RecourseOS</span>
+  <span>
+    <a href="/brand.html">brand</a>
+    <a href="https://github.com/recourseOS/recourse">github</a>
+    <a href="https://www.npmjs.com/package/recourse-cli">npm</a>
+  </span>
+</footer>
+</body>
+</html>

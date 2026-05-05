@@ -65,6 +65,7 @@ Each tool returns:
 - **riskAssessment**: engine's summary read — `allow`, `warn`, `escalate`, or `block`
 - **recoverability**: tier and reasoning for each mutation
 - **evidence**: what was found, what's missing, what's needed for confident classification
+- **crossActionRisks**: dangerous patterns where individual actions are safe but their combination is unrecoverable (e.g., deleting a backup + the database it backs up)
 
 The engine emits facts. Callers interpret them in context — a `block` assessment in staging might be acceptable; in production it might require approval.
 

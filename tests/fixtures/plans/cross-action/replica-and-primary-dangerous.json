@@ -1,0 +1,43 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.6.0",
+  "resource_changes": [
+    {
+      "address": "aws_db_instance.primary",
+      "type": "aws_db_instance",
+      "name": "primary",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "identifier": "prod-primary",
+          "engine": "postgres",
+          "deletion_protection": false,
+          "skip_final_snapshot": true,
+          "backup_retention_period": 7
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_db_instance.replica",
+      "type": "aws_db_instance",
+      "name": "replica",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "identifier": "prod-replica",
+          "engine": "postgres",
+          "replicate_source_db": "prod-primary",
+          "deletion_protection": false,
+          "skip_final_snapshot": true
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    }
+  ],
+  "_comment": "DANGEROUS: Replica and primary both deleted. Combined deletion removes all copies of data."
+}

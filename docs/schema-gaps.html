@@ -71,12 +71,16 @@
 <p>The EBS and RDS handlers include these limitations in their classification traces:</p>
 <ul><li><code>Cannot verify AWS Backup vault snapshots outside Terraform state</code></li><li><code>Cannot check for cross-region snapshot copies</code></li><li><code>Cannot verify AWS Backup vault configurations outside the plan</code></li><li><code>Cannot check for cross-region or cross-account snapshots</code></li></ul>
 <p>These trace limitations are visible to agents and can inform human review.</p>
-<h3 id="action-sequence-limitation">Action-Sequence Limitation</h3>
-<p>RecourseOS evaluates each action in a plan individually. It does not currently model dangerous action sequences where individually-safe actions become dangerous in combination:</p>
-<ul><li>&quot;Delete snapshot&quot; (recoverable if volume exists) + &quot;Delete volume&quot; (recoverable if snapshot exists) = <strong>unrecoverable</strong> together</li><li>A multi-step plan where step 1 removes backups and step 2 removes the protected resource</li></ul>
-<p>This is a fundamental architecture limitation. To address it would require: 1. Cross-action dependency analysis within a plan 2. Modeling the state after each action, not just the current state 3. Graph-based reasoning about recovery paths being severed</p>
-<p>For now, agents should:</p>
-<ul><li>Review plans with multiple deletions affecting the same resource family</li><li>Be especially cautious when both a resource and its backup are being deleted</li><li>Consider that <code>recoverable-from-backup</code> assumes the backup survives</li></ul>
+<h3 id="cross-action-analysis">Cross-Action Analysis</h3>
+<p><strong>Status: Implemented in v0.1.36</strong></p>
+<p>RecourseOS now detects dangerous action sequences where individually-safe actions become dangerous in combination:</p>
+<ul><li>&quot;Delete snapshot&quot; (recoverable if volume exists) + &quot;Delete volume&quot; (recoverable if snapshot exists) = <strong>unrecoverable</strong> together</li><li>A plan where deletion protection is disabled and the resource is deleted</li><li>A plan where both replica and primary are deleted</li></ul>
+<p>Cross-action analysis runs after per-resource evaluation and returns matches in the <code>crossActionRisks</code> array. Per-resource verdicts remain unchanged; the plan-level <code>worstRecoverability</code> and <code>riskAssessment</code> reflect the elevated risk.</p>
+<p>See [Cross-Action Analysis](/cross-action-analysis.html) for implementation details.</p>
+<p>#### Scope Limitations</p>
+<p>Cross-action analysis can only see resources in the current plan. It cannot detect:</p>
+<ul><li>Cross-state relationships (backup in different Terraform state)</li><li>Cross-account or cross-region backups managed outside Terraform</li><li>Externally-managed recovery mechanisms (AWS Backup vaults, etc.)</li></ul>
+<p>When these limitations apply, the <code>scopeWarning</code> field documents what the engine couldn't see.</p>
 <h2 id="bitnet-classifier">BitNet Classifier</h2>
 <p>BitNet is a 1-bit quantized neural network classifier for unknown resource types. It handles the long tail of cloud providers (Scaleway, UpCloud, Exoscale, Hetzner, etc.) that don't have explicit handlers.</p>
 <h3 id="architecture">Architecture</h3>

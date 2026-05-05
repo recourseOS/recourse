@@ -1,4 +1,12 @@
 import { analyzeBlastRadius } from '../analyzer/blast-radius.js';
+import { buildDependencyGraph } from '../analyzer/dependencies.js';
+import {
+  buildCrossActionContext,
+  detectCrossActionRisks,
+  getWorstCrossActionTier,
+  type CrossActionRisk,
+} from '../analyzer/cross-action.js';
+import { crossActionPatterns } from '../analyzer/cross-action-patterns.js';
 import { terraformChangeToMutation } from '../adapters/terraform.js';
 import type { AdapterContext } from '../adapters/types.js';
 import type {
@@ -96,9 +104,44 @@ export function evaluateTerraformPlanConsequences(
     };
   });
 
-  const worstRecoverability = getWorstRecoverability(
+  // Get effective state for cross-action analysis
+  const effectiveState = state || plan.priorState || null;
+
+  // Build verdicts map for cross-action context
+  const verdicts = new Map<string, RecoverabilityResult>();
+  for (const change of blastRadiusReport.changes) {
+    verdicts.set(change.resource.address, change.recoverability);
+  }
+
+  // Run cross-action analysis
+  const dependencyGraph = effectiveState ? buildDependencyGraph(effectiveState) : null;
+  const crossActionContext = buildCrossActionContext(
+    blastRadiusReport.changes.map(c => c.resource),
+    dependencyGraph,
+    verdicts,
+    effectiveState
+  );
+  const crossActionRisks = detectCrossActionRisks(crossActionContext, crossActionPatterns);
+
+  // Get worst tier from cross-action risks (may upgrade plan-level summary)
+  const crossActionWorstTier = getWorstCrossActionTier(crossActionRisks);
+
+  // Get worst recoverability from individual mutations
+  let worstRecoverability = getWorstRecoverability(
     blastRadiusReport.changes.map(change => change.recoverability)
   );
+
+  // Upgrade if cross-action analysis found worse tier
+  if (crossActionWorstTier !== null && crossActionWorstTier > worstRecoverability.tier) {
+    const crossActionReason = crossActionRisks
+      .map(r => r.patternName)
+      .join('; ');
+    worstRecoverability = {
+      tier: crossActionWorstTier,
+      label: RecoverabilityLabels[crossActionWorstTier],
+      reasoning: `Cross-action analysis: ${crossActionReason}`,
+    };
+  }
 
   // Aggregate verification suggestions from all mutations
   const verificationSuggestions: VerificationSuggestion[] = [];
@@ -170,17 +213,33 @@ export function evaluateTerraformPlanConsequences(
     }
   }
 
+  // Determine if plan has unrecoverable actions (including from cross-action analysis)
+  const hasUnrecoverableFromCrossAction = crossActionWorstTier === RecoverabilityTier.UNRECOVERABLE;
+  const hasUnrecoverable = blastRadiusReport.summary.hasUnrecoverable || hasUnrecoverableFromCrossAction;
+
+  // Re-evaluate policy with potentially upgraded worst tier
+  const finalPolicyEvaluation = hasUnrecoverableFromCrossAction
+    ? evaluateBlastRadiusReport(
+        { ...blastRadiusReport, summary: { ...blastRadiusReport.summary, hasUnrecoverable: true } },
+        options.policy
+      )
+    : policyEvaluation;
+
   const report: ConsequenceReport = {
     mutations,
     summary: {
       totalMutations: mutations.length,
       worstRecoverability,
       needsReview: worstRecoverability.tier === RecoverabilityTier.NEEDS_REVIEW,
-      hasUnrecoverable: blastRadiusReport.summary.hasUnrecoverable,
+      hasUnrecoverable,
       dependencyImpactCount: blastRadiusReport.summary.cascadeImpactCount,
     },
-    riskAssessment: policyEvaluation.decision,
-    assessmentReason: policyEvaluation.reason,
+    riskAssessment: finalPolicyEvaluation.decision,
+    assessmentReason: hasUnrecoverableFromCrossAction
+      ? `${finalPolicyEvaluation.reason} (cross-action risk detected)`
+      : finalPolicyEvaluation.reason,
+    // Always include cross-action risks (empty array if none detected)
+    crossActionRisks,
   };
 
   // Add verification protocol fields

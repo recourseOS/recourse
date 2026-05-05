@@ -1,0 +1,42 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.6.0",
+  "resource_changes": [
+    {
+      "address": "aws_db_instance.production",
+      "type": "aws_db_instance",
+      "name": "production",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["update"],
+        "before": {
+          "identifier": "prod-orders",
+          "engine": "postgres",
+          "instance_class": "db.t3.medium"
+        },
+        "after": {
+          "identifier": "prod-orders",
+          "engine": "postgres",
+          "instance_class": "db.t3.large"
+        },
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_db_snapshot.old_snapshot",
+      "type": "aws_db_snapshot",
+      "name": "old_snapshot",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "db_instance_identifier": "prod-orders",
+          "db_snapshot_identifier": "prod-orders-old-2025"
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    }
+  ],
+  "_comment": "BENIGN: Snapshot is deleted but instance is only updated, not deleted. Pattern should not match."
+}

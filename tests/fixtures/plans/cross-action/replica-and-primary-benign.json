@@ -1,0 +1,25 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.6.0",
+  "resource_changes": [
+    {
+      "address": "aws_db_instance.replica",
+      "type": "aws_db_instance",
+      "name": "replica",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "identifier": "prod-replica",
+          "engine": "postgres",
+          "replicate_source_db": "prod-primary",
+          "deletion_protection": false,
+          "skip_final_snapshot": true
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    }
+  ],
+  "_comment": "BENIGN: Only replica is deleted. Primary survives, so data is not lost."
+}

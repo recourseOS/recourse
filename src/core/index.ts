@@ -31,6 +31,15 @@ export type {
   VerificationStatusInfo,
 } from './consequence.js';
 
+// Cross-action analysis
+export type {
+  CrossActionRelationship,
+  CrossActionRisk,
+  RelationshipConfidence,
+  RelationshipDetectionMethod,
+  RelationshipType,
+} from '../analyzer/cross-action.js';
+
 // Unknown-state schema
 export type {
   EvidenceConflict,

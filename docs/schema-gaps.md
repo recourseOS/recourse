@@ -68,22 +68,29 @@ The EBS and RDS handlers include these limitations in their classification trace
 
 These trace limitations are visible to agents and can inform human review.
 
-### Action-Sequence Limitation
+### Cross-Action Analysis
 
-RecourseOS evaluates each action in a plan individually. It does not currently model dangerous action sequences where individually-safe actions become dangerous in combination:
+**Status: Implemented in v0.1.36**
+
+RecourseOS now detects dangerous action sequences where individually-safe actions become dangerous in combination:
 
 - "Delete snapshot" (recoverable if volume exists) + "Delete volume" (recoverable if snapshot exists) = **unrecoverable** together
-- A multi-step plan where step 1 removes backups and step 2 removes the protected resource
+- A plan where deletion protection is disabled and the resource is deleted
+- A plan where both replica and primary are deleted
 
-This is a fundamental architecture limitation. To address it would require:
-1. Cross-action dependency analysis within a plan
-2. Modeling the state after each action, not just the current state
-3. Graph-based reasoning about recovery paths being severed
+Cross-action analysis runs after per-resource evaluation and returns matches in the `crossActionRisks` array. Per-resource verdicts remain unchanged; the plan-level `worstRecoverability` and `riskAssessment` reflect the elevated risk.
 
-For now, agents should:
-- Review plans with multiple deletions affecting the same resource family
-- Be especially cautious when both a resource and its backup are being deleted
-- Consider that `recoverable-from-backup` assumes the backup survives
+See [Cross-Action Analysis](/cross-action-analysis.html) for implementation details.
+
+#### Scope Limitations
+
+Cross-action analysis can only see resources in the current plan. It cannot detect:
+
+- Cross-state relationships (backup in different Terraform state)
+- Cross-account or cross-region backups managed outside Terraform
+- Externally-managed recovery mechanisms (AWS Backup vaults, etc.)
+
+When these limitations apply, the `scopeWarning` field documents what the engine couldn't see.
 
 ## BitNet Classifier
 
