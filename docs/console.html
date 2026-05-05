@@ -13,8 +13,35 @@
 <style>
 .console-page { min-height: 100vh; background: var(--paper); }
 
-
 .console-body { padding: 32px 0 64px; }
+
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.result-content.visible {
+  animation: fadeInUp 0.3s ease-out;
+}
+.decision-banner {
+  transition: all 0.2s ease-out;
+}
+.decision-banner:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
 
 .console-grid {
   display: grid;
@@ -95,6 +122,9 @@
 }
 
 .evaluate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 20px;
   background: var(--green);
   border: none;
@@ -106,7 +136,28 @@
   cursor: pointer;
   transition: all 0.15s;
 }
-.evaluate-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+.evaluate-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+.evaluate-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+.evaluate-btn .spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0,0,0,0.2);
+  border-top-color: var(--night);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+.evaluate-btn .icon-check {
+  width: 14px;
+  height: 14px;
+}
+
+/* Keyboard shortcut hint */
+.shortcut-hint {
+  font-size: 10px;
+  color: var(--ink-faint);
+  margin-left: 8px;
+  opacity: 0.7;
+}
 
 .input-hint {
   color: var(--ink-faint);
@@ -347,8 +398,132 @@
   overflow: auto;
 }
 
+/* Attestation section */
+.attestation-section {
+  margin-top: 20px;
+  padding: 16px;
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: var(--radius);
+  display: none;
+}
+.attestation-section.visible { display: block; animation: fadeInUp 0.3s ease-out; }
+.attestation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.attestation-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+.attestation-title svg { width: 14px; height: 14px; }
+.attestation-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--green);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--night);
+}
+.attestation-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+  font-size: 12px;
+}
+.attestation-row:last-child { border-bottom: none; }
+.attestation-key { color: var(--ink-soft); }
+.attestation-value {
+  color: var(--ink);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.attestation-copy {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 4px;
+  font-size: 10px;
+  color: var(--green);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.attestation-copy:hover { background: rgba(16, 185, 129, 0.1); }
+
+/* Input syntax highlighting effect */
+.input-area {
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input-area.valid { border-color: rgba(16, 185, 129, 0.4); }
+.input-area.invalid { border-color: rgba(239, 68, 68, 0.4); }
+
+/* Card hover effects */
+.fixture-btn {
+  transition: all 0.15s ease-out;
+}
+.fixture-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.fixture-btn:active {
+  transform: translateY(0);
+}
+
+/* Toast notification */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 12px 20px;
+  background: var(--night);
+  color: var(--paper);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.3s ease-out;
+  z-index: 1000;
+}
+.toast.visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+.toast.success { background: var(--green); color: var(--night); }
+.toast.error { background: var(--red); color: #fff; }
+
+/* Result section animations */
+.result-section {
+  opacity: 0;
+  transform: translateY(8px);
+  animation: fadeInUp 0.3s ease-out forwards;
+}
+.result-section:nth-child(1) { animation-delay: 0.05s; }
+.result-section:nth-child(2) { animation-delay: 0.1s; }
+.result-section:nth-child(3) { animation-delay: 0.15s; }
+.result-section:nth-child(4) { animation-delay: 0.2s; }
+
 @media (max-width: 900px) {
   .console-grid { grid-template-columns: 1fr; }
+  .toast { left: 24px; right: 24px; }
 }
 </style>
 </head>
@@ -475,6 +650,40 @@
               <div class="result-section-title">Evidence Needed</div>
               <ul class="evidence-list missing" id="evidence-missing"></ul>
             </div>
+
+            <div class="attestation-section" id="attestation-section">
+              <div class="attestation-header">
+                <div class="attestation-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="M9 12l2 2 4-4"/>
+                  </svg>
+                  Attestation
+                </div>
+                <span class="attestation-verified" id="attestation-verified">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                  Signed
+                </span>
+              </div>
+              <div class="attestation-row">
+                <span class="attestation-key">ID</span>
+                <span class="attestation-value" id="attestation-id">—</span>
+              </div>
+              <div class="attestation-row">
+                <span class="attestation-key">Timestamp</span>
+                <span class="attestation-value" id="attestation-timestamp">—</span>
+              </div>
+              <div class="attestation-row">
+                <span class="attestation-key">Signature</span>
+                <span class="attestation-value" id="attestation-signature">—</span>
+              </div>
+              <div style="margin-top: 12px; display: flex; gap: 8px;">
+                <button class="attestation-copy" id="copy-attestation">Copy Attestation</button>
+                <button class="attestation-copy" id="verify-attestation">Verify</button>
+              </div>
+            </div>
           </div>
 
           <div class="json-output" id="json-output">
@@ -597,6 +806,7 @@ const examples = {
 
 const fixtures = {
   terraform: {
+    // AWS
     'rds-unsafe': {
       resource_changes: [{
         address: 'aws_db_instance.production',
@@ -651,17 +861,132 @@ const fixtures = {
         }
       }]
     },
-    'iam-role': {
+    'dynamodb': {
       resource_changes: [{
-        address: 'aws_iam_role.service',
-        type: 'aws_iam_role',
+        address: 'aws_dynamodb_table.users',
+        type: 'aws_dynamodb_table',
         provider_name: 'registry.terraform.io/hashicorp/aws',
         change: {
           actions: ['delete'],
           before: {
-            name: 'prod-service-role',
-            assume_role_policy: '{}',
-            managed_policy_arns: ['arn:aws:iam::aws:policy/AdministratorAccess']
+            name: 'prod-users',
+            point_in_time_recovery: [{ enabled: false }],
+            deletion_protection_enabled: false
+          },
+          after: null
+        }
+      }]
+    },
+    'kms-key': {
+      resource_changes: [{
+        address: 'aws_kms_key.master',
+        type: 'aws_kms_key',
+        provider_name: 'registry.terraform.io/hashicorp/aws',
+        change: {
+          actions: ['delete'],
+          before: {
+            key_id: 'mrk-1234567890',
+            deletion_window_in_days: 7,
+            is_enabled: true
+          },
+          after: null
+        }
+      }]
+    },
+    // GCP
+    'cloudsql': {
+      resource_changes: [{
+        address: 'google_sql_database_instance.main',
+        type: 'google_sql_database_instance',
+        provider_name: 'registry.terraform.io/hashicorp/google',
+        change: {
+          actions: ['delete'],
+          before: {
+            name: 'prod-postgres',
+            deletion_protection: false,
+            settings: [{
+              backup_configuration: [{ enabled: false }]
+            }]
+          },
+          after: null
+        }
+      }]
+    },
+    'gcs-bucket': {
+      resource_changes: [{
+        address: 'google_storage_bucket.data',
+        type: 'google_storage_bucket',
+        provider_name: 'registry.terraform.io/hashicorp/google',
+        change: {
+          actions: ['delete'],
+          before: {
+            name: 'prod-data-lake',
+            versioning: [{ enabled: false }],
+            force_destroy: true
+          },
+          after: null
+        }
+      }]
+    },
+    'bigquery': {
+      resource_changes: [{
+        address: 'google_bigquery_dataset.analytics',
+        type: 'google_bigquery_dataset',
+        provider_name: 'registry.terraform.io/hashicorp/google',
+        change: {
+          actions: ['delete'],
+          before: {
+            dataset_id: 'prod_analytics',
+            delete_contents_on_destroy: true
+          },
+          after: null
+        }
+      }]
+    },
+    // Azure
+    'azure-sql': {
+      resource_changes: [{
+        address: 'azurerm_mssql_database.main',
+        type: 'azurerm_mssql_database',
+        provider_name: 'registry.terraform.io/hashicorp/azurerm',
+        change: {
+          actions: ['delete'],
+          before: {
+            name: 'prod-sqldb',
+            short_term_retention_policy: [{ retention_days: 0 }]
+          },
+          after: null
+        }
+      }]
+    },
+    'azure-storage': {
+      resource_changes: [{
+        address: 'azurerm_storage_account.main',
+        type: 'azurerm_storage_account',
+        provider_name: 'registry.terraform.io/hashicorp/azurerm',
+        change: {
+          actions: ['delete'],
+          before: {
+            name: 'prodstorageacct',
+            blob_properties: [{
+              container_delete_retention_policy: [{ days: 0 }],
+              delete_retention_policy: [{ days: 0 }]
+            }]
+          },
+          after: null
+        }
+      }]
+    },
+    'cosmosdb': {
+      resource_changes: [{
+        address: 'azurerm_cosmosdb_account.main',
+        type: 'azurerm_cosmosdb_account',
+        provider_name: 'registry.terraform.io/hashicorp/azurerm',
+        change: {
+          actions: ['delete'],
+          before: {
+            name: 'prod-cosmos',
+            backup: [{ type: 'Periodic', interval_in_minutes: 240 }]
           },
           after: null
         }
@@ -672,12 +997,17 @@ const fixtures = {
     's3-delete': 'aws s3 rm s3://prod-data --recursive',
     'ec2-terminate': 'aws ec2 terminate-instances --instance-ids i-1234567890abcdef0',
     'rds-delete': 'aws rds delete-db-instance --db-instance-identifier prod-db --skip-final-snapshot',
-    'kubectl-delete': 'kubectl delete deployment production-api -n prod'
+    'kubectl-delete': 'kubectl delete deployment production-api -n prod',
+    'gcloud-sql': 'gcloud sql instances delete prod-postgres --quiet',
+    'az-storage': 'az storage account delete --name prodstorageacct --yes',
+    'rm-rf': 'rm -rf /var/data/backups/*'
   },
   mcp: {
     's3-delete': { server: 'aws', tool: 's3.delete_bucket', arguments: { bucket: 'prod-data', force: true } },
     'rds-delete': { server: 'aws', tool: 'rds.delete_instance', arguments: { identifier: 'prod-db', skip_snapshot: true } },
-    'k8s-delete': { server: 'kubernetes', tool: 'delete_deployment', arguments: { name: 'api', namespace: 'production' } }
+    'k8s-delete': { server: 'kubernetes', tool: 'delete_deployment', arguments: { name: 'api', namespace: 'production' } },
+    'gcs-delete': { server: 'gcp', tool: 'storage.delete_bucket', arguments: { bucket: 'prod-data-lake', force: true } },
+    'cosmos-delete': { server: 'azure', tool: 'cosmosdb.delete_account', arguments: { name: 'prod-cosmos', resource_group: 'production' } }
   }
 };
 
@@ -685,19 +1015,31 @@ const fixtureLabels = {
   terraform: {
     'rds-unsafe': 'RDS unsafe',
     'rds-safe': 'RDS safe',
-    's3-no-versioning': 'S3 no versioning',
-    'iam-role': 'IAM role'
+    's3-no-versioning': 'S3 no version',
+    'dynamodb': 'DynamoDB',
+    'kms-key': 'KMS key',
+    'cloudsql': 'Cloud SQL',
+    'gcs-bucket': 'GCS bucket',
+    'bigquery': 'BigQuery',
+    'azure-sql': 'Azure SQL',
+    'azure-storage': 'Azure Storage',
+    'cosmosdb': 'CosmosDB'
   },
   shell: {
     's3-delete': 'S3 delete',
     'ec2-terminate': 'EC2 terminate',
     'rds-delete': 'RDS delete',
-    'kubectl-delete': 'kubectl delete'
+    'kubectl-delete': 'kubectl',
+    'gcloud-sql': 'gcloud SQL',
+    'az-storage': 'az storage',
+    'rm-rf': 'rm -rf'
   },
   mcp: {
     's3-delete': 'S3 delete',
     'rds-delete': 'RDS delete',
-    'k8s-delete': 'K8s delete'
+    'k8s-delete': 'K8s delete',
+    'gcs-delete': 'GCS delete',
+    'cosmos-delete': 'CosmosDB'
   }
 };
 
@@ -735,12 +1077,57 @@ fixtureButtonsContainer.addEventListener('click', (e) => {
 inputArea.value = examples.terraform;
 updateFixtureButtons('terraform');
 
+// Input validation feedback
+inputArea.addEventListener('input', () => {
+  if (activeSource === 'shell') {
+    inputArea.classList.remove('valid', 'invalid');
+    return;
+  }
+  try {
+    JSON.parse(inputArea.value);
+    inputArea.classList.add('valid');
+    inputArea.classList.remove('invalid');
+  } catch {
+    if (inputArea.value.trim()) {
+      inputArea.classList.add('invalid');
+      inputArea.classList.remove('valid');
+    } else {
+      inputArea.classList.remove('valid', 'invalid');
+    }
+  }
+});
+
+// Keyboard shortcut (Cmd/Ctrl + Enter)
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    e.preventDefault();
+    evaluateBtn.click();
+  }
+});
+
+// Toast notification
+function showToast(message, type = 'success') {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  requestAnimationFrame(() => toast.classList.add('visible'));
+  setTimeout(() => {
+    toast.classList.remove('visible');
+    setTimeout(() => toast.remove(), 300);
+  }, 2500);
+}
+
 evaluateBtn.addEventListener('click', async () => {
   const input = inputArea.value.trim();
   if (!input) return;
 
   evaluateBtn.disabled = true;
-  evaluateBtn.textContent = 'Evaluating...';
+  evaluateBtn.innerHTML = '<span class="spinner"></span> Evaluating...';
 
   try {
     let report;
@@ -751,6 +1138,7 @@ evaluateBtn.addEventListener('click', async () => {
     }
     renderResult(report);
   } catch (error) {
+    showToast(error.message || 'Evaluation failed', 'error');
     renderResult({
       decision: 'escalate',
       tier: 'needs-review',
@@ -763,9 +1151,11 @@ evaluateBtn.addEventListener('click', async () => {
     });
   } finally {
     evaluateBtn.disabled = false;
-    evaluateBtn.textContent = 'Evaluate';
+    evaluateBtn.innerHTML = 'Evaluate';
   }
 });
+
+let lastAttestation = null;
 
 async function evaluateWithServer(source, input) {
   const body = {
@@ -786,6 +1176,13 @@ async function evaluateWithServer(source, input) {
 
   const data = await res.json();
 
+  // Store attestation if present
+  if (data.attestation) {
+    lastAttestation = data.attestation;
+  } else {
+    lastAttestation = null;
+  }
+
   // Convert server response to console format
   const mutation = data.mutations?.[0] || {};
   return {
@@ -796,9 +1193,35 @@ async function evaluateWithServer(source, input) {
     provider: mutation.provider || 'unknown',
     reason: data.assessmentReason || mutation.recoverability?.reasoning || 'See evidence',
     evidence: mutation.recoverability?.evidence || [],
-    missing: mutation.recoverability?.missingEvidence || []
+    missing: mutation.recoverability?.missingEvidence || [],
+    attestation: data.attestation || null
   };
 }
+
+// Attestation handlers
+document.getElementById('copy-attestation')?.addEventListener('click', async () => {
+  if (!lastAttestation) return;
+  await navigator.clipboard.writeText(JSON.stringify(lastAttestation, null, 2));
+  showToast('Attestation copied to clipboard');
+});
+
+document.getElementById('verify-attestation')?.addEventListener('click', async () => {
+  if (!lastAttestation || !serverAvailable) {
+    showToast('No attestation to verify', 'error');
+    return;
+  }
+  try {
+    const res = await fetch(`${apiBase}/attestation/${lastAttestation.id}/verify`);
+    const data = await res.json();
+    if (data.valid) {
+      showToast('Signature verified');
+    } else {
+      showToast('Verification failed: ' + (data.error || 'Invalid signature'), 'error');
+    }
+  } catch (e) {
+    showToast('Verification failed', 'error');
+  }
+});
 
 jsonToggle.addEventListener('click', () => {
   jsonOutput.classList.toggle('visible');
@@ -1230,6 +1653,22 @@ function renderResult(report) {
     missingSection.style.display = 'none';
   }
 
+  // Attestation display
+  const attestationSection = document.getElementById('attestation-section');
+  if (report.attestation || lastAttestation) {
+    const att = report.attestation || lastAttestation;
+    attestationSection.classList.add('visible');
+    document.getElementById('attestation-id').textContent = att.id || '—';
+    document.getElementById('attestation-timestamp').textContent = att.timestamp
+      ? new Date(att.timestamp).toLocaleString()
+      : '—';
+    document.getElementById('attestation-signature').textContent = att.signature
+      ? att.signature.substring(0, 24) + '...'
+      : '—';
+  } else {
+    attestationSection.classList.remove('visible');
+  }
+
   jsonContent.textContent = JSON.stringify({
     schemaVersion: 'recourse.consequence.v1',
     riskAssessment: report.decision,
@@ -1243,7 +1682,8 @@ function renderResult(report) {
       recoverability: report.tier,
       evidence: report.evidence,
       missingEvidence: report.missing
-    }]
+    }],
+    ...(lastAttestation ? { attestation: lastAttestation } : {})
   }, null, 2);
 }
 
