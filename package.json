@@ -5,7 +5,7 @@
   "description": "MCP server for AI agents to evaluate consequences before destructive actions. Analyzes Terraform plans, shell commands, and MCP tool calls.",
   "main": "dist/index.js",
   "bin": {
-    "recourse": "./bin/recourse"
+    "recourse": "bin/recourse"
   },
   "scripts": {
     "build": "tsc",

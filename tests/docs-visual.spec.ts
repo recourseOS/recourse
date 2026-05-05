@@ -95,7 +95,9 @@ test.describe('public docs visual QA', () => {
       expect(metrics.primaryContentVisible).toBe(true);
       // Allow some overflow on mobile (tables, code blocks with long content)
       // Desktop should have minimal overflow
-      const maxOverflow = testInfo.project.name === 'mobile' ? 5 : 1;
+      // mobile-small (320px) is extremely narrow - allow more overflow
+      const isMobile = testInfo.project.name === 'mobile' || testInfo.project.name === 'mobile-small';
+      const maxOverflow = isMobile ? 5 : 1;
       expect(metrics.overflowing.length).toBeLessThanOrEqual(maxOverflow);
       expect(consoleErrors).toEqual([]);
 
