@@ -1,0 +1,11 @@
+name: recourse-policy
+description: RecourseOS consequence evaluation policy pack for Pulumi
+author: RecourseOS
+version: 0.1.0
+keywords:
+  - pulumi
+  - policy
+  - recourse
+  - safety
+  - infrastructure
+license: MIT

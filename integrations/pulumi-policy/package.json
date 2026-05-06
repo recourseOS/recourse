@@ -1,0 +1,27 @@
+{
+  "name": "recourse-policy",
+  "version": "0.1.0",
+  "description": "Pulumi policy pack powered by RecourseOS consequence evaluation",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint index.ts"
+  },
+  "keywords": [
+    "pulumi",
+    "policy",
+    "recourse",
+    "consequence-evaluation",
+    "infrastructure-safety"
+  ],
+  "author": "RecourseOS",
+  "license": "MIT",
+  "dependencies": {
+    "@pulumi/policy": "^1.10.0",
+    "@pulumi/pulumi": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "typescript": "^5.0.0"
+  }
+}
