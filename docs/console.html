@@ -129,8 +129,10 @@
 .evaluate-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 12px 24px;
+  min-width: 130px;
   background: linear-gradient(135deg, var(--green) 0%, #059669 100%);
   border: none;
   border-radius: 8px;
@@ -139,15 +141,11 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.2s, box-shadow 0.2s;
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
 }
 .evaluate-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
-}
-.evaluate-btn:active:not(:disabled) {
-  transform: translateY(0);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
 }
 .evaluate-btn:disabled {
   opacity: 0.8;
@@ -188,6 +186,8 @@
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+  min-height: 32px;
+  align-content: flex-start;
 }
 .fixture-btn {
   display: inline-flex;
@@ -201,11 +201,17 @@
   font-size: 10px;
   color: rgba(240, 253, 244, 0.6);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  flex-shrink: 0;
 }
 .fixture-btn:hover { border-color: var(--green); color: var(--green); }
+.fixture-btn.selected {
+  border-color: var(--green);
+  color: var(--green);
+  background: rgba(16, 185, 129, 0.1);
+}
 .fixture-btn .fixture-icon { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.8; }
-.fixture-btn:hover .fixture-icon { opacity: 1; }
+.fixture-btn:hover .fixture-icon, .fixture-btn.selected .fixture-icon { opacity: 1; }
 
 .server-status {
   display: inline-flex;
@@ -556,16 +562,9 @@
 .input-area.valid { border-color: rgba(16, 185, 129, 0.4); }
 .input-area.invalid { border-color: rgba(239, 68, 68, 0.4); }
 
-/* Card hover effects */
-.fixture-btn {
-  transition: all 0.15s ease-out;
-}
+/* Fixture button hover - no transforms to prevent layout shift */
 .fixture-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-.fixture-btn:active {
-  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Toast notification */
@@ -592,19 +591,17 @@
 .toast.success { background: var(--green); color: var(--night); }
 .toast.error { background: var(--red); color: #fff; }
 
-/* Result section animations */
+/* Result section animations - subtle fade only */
 .result-content.visible .decision-banner {
-  animation: fadeInUp 0.4s ease-out;
+  animation: fadeIn 0.25s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 .result-content.visible .result-section {
-  opacity: 0;
-  transform: translateY(12px);
-  animation: fadeInUp 0.4s ease-out forwards;
+  animation: fadeIn 0.25s ease-out;
 }
-.result-content.visible .result-section:nth-child(2) { animation-delay: 0.08s; }
-.result-content.visible .result-section:nth-child(3) { animation-delay: 0.16s; }
-.result-content.visible .result-section:nth-child(4) { animation-delay: 0.24s; }
-.result-content.visible .result-section:nth-child(5) { animation-delay: 0.32s; }
 
 /* Block decision pulse effect */
 .decision-banner.block {
@@ -1015,57 +1012,58 @@ const fixtures = {
         }
       }]
     },
-    'kms-key': {
+    's3-versioned': {
       resource_changes: [{
-        address: 'aws_kms_key.master',
-        type: 'aws_kms_key',
+        address: 'aws_s3_bucket.backup',
+        type: 'aws_s3_bucket',
         provider_name: 'registry.terraform.io/hashicorp/aws',
         change: {
           actions: ['delete'],
           before: {
-            key_id: 'mrk-1234567890',
-            deletion_window_in_days: 7,
-            is_enabled: true
+            bucket: 'company-backups',
+            versioning: [{ enabled: true }],
+            force_destroy: false
           },
           after: null
+        }
+      }]
+    },
+    'dynamodb-pitr': {
+      resource_changes: [{
+        address: 'aws_dynamodb_table.sessions',
+        type: 'aws_dynamodb_table',
+        provider_name: 'registry.terraform.io/hashicorp/aws',
+        change: {
+          actions: ['delete'],
+          before: {
+            name: 'user-sessions',
+            point_in_time_recovery: [{ enabled: true }],
+            deletion_protection_enabled: false
+          },
+          after: null
+        }
+      }]
+    },
+    'ec2-update': {
+      resource_changes: [{
+        address: 'aws_instance.web',
+        type: 'aws_instance',
+        provider_name: 'registry.terraform.io/hashicorp/aws',
+        change: {
+          actions: ['update'],
+          before: {
+            instance_type: 't3.medium',
+            ami: 'ami-0123456789'
+          },
+          after: {
+            instance_type: 't3.medium',
+            ami: 'ami-0123456789',
+            tags: { Name: 'web-server', Environment: 'production' }
+          }
         }
       }]
     },
     // GCP
-    'cloudsql': {
-      resource_changes: [{
-        address: 'google_sql_database_instance.main',
-        type: 'google_sql_database_instance',
-        provider_name: 'registry.terraform.io/hashicorp/google',
-        change: {
-          actions: ['delete'],
-          before: {
-            name: 'prod-postgres',
-            deletion_protection: false,
-            settings: [{
-              backup_configuration: [{ enabled: false }]
-            }]
-          },
-          after: null
-        }
-      }]
-    },
-    'gcs-bucket': {
-      resource_changes: [{
-        address: 'google_storage_bucket.data',
-        type: 'google_storage_bucket',
-        provider_name: 'registry.terraform.io/hashicorp/google',
-        change: {
-          actions: ['delete'],
-          before: {
-            name: 'prod-data-lake',
-            versioning: [{ enabled: false }],
-            force_destroy: true
-          },
-          after: null
-        }
-      }]
-    },
     'bigquery': {
       resource_changes: [{
         address: 'google_bigquery_dataset.analytics',
@@ -1082,39 +1080,6 @@ const fixtures = {
       }]
     },
     // Azure
-    'azure-sql': {
-      resource_changes: [{
-        address: 'azurerm_mssql_database.main',
-        type: 'azurerm_mssql_database',
-        provider_name: 'registry.terraform.io/hashicorp/azurerm',
-        change: {
-          actions: ['delete'],
-          before: {
-            name: 'prod-sqldb',
-            short_term_retention_policy: [{ retention_days: 0 }]
-          },
-          after: null
-        }
-      }]
-    },
-    'azure-storage': {
-      resource_changes: [{
-        address: 'azurerm_storage_account.main',
-        type: 'azurerm_storage_account',
-        provider_name: 'registry.terraform.io/hashicorp/azurerm',
-        change: {
-          actions: ['delete'],
-          before: {
-            name: 'prodstorageacct',
-            blob_properties: [{
-              container_delete_retention_policy: [{ days: 0 }],
-              delete_retention_policy: [{ days: 0 }]
-            }]
-          },
-          after: null
-        }
-      }]
-    },
     'cosmosdb': {
       resource_changes: [{
         address: 'azurerm_cosmosdb_account.main',
@@ -1135,50 +1100,48 @@ const fixtures = {
     's3-delete': 'aws s3 rm s3://prod-data --recursive',
     'ec2-terminate': 'aws ec2 terminate-instances --instance-ids i-1234567890abcdef0',
     'rds-delete': 'aws rds delete-db-instance --db-instance-identifier prod-db --skip-final-snapshot',
+    'rds-snapshot': 'aws rds delete-db-instance --db-instance-identifier staging-db --final-db-snapshot-identifier staging-final',
     'kubectl-delete': 'kubectl delete deployment production-api -n prod',
-    'gcloud-sql': 'gcloud sql instances delete prod-postgres --quiet',
-    'az-storage': 'az storage account delete --name prodstorageacct --yes',
+    'docker-prune': 'docker system prune -af --volumes',
     'rm-rf': 'rm -rf /var/data/backups/*'
   },
   mcp: {
     's3-delete': { server: 'aws', tool: 's3.delete_bucket', arguments: { bucket: 'prod-data', force: true } },
     'rds-delete': { server: 'aws', tool: 'rds.delete_instance', arguments: { identifier: 'prod-db', skip_snapshot: true } },
+    's3-list': { server: 'aws', tool: 's3.list_objects', arguments: { bucket: 'prod-data', prefix: 'logs/' } },
     'k8s-delete': { server: 'kubernetes', tool: 'delete_deployment', arguments: { name: 'api', namespace: 'production' } },
-    'gcs-delete': { server: 'gcp', tool: 'storage.delete_bucket', arguments: { bucket: 'prod-data-lake', force: true } },
-    'cosmos-delete': { server: 'azure', tool: 'cosmosdb.delete_account', arguments: { name: 'prod-cosmos', resource_group: 'production' } }
+    'gcs-delete': { server: 'gcp', tool: 'storage.delete_bucket', arguments: { bucket: 'prod-data-lake', force: true } }
   }
 };
 
 const fixtureLabels = {
   terraform: {
-    'rds-unsafe': 'RDS unsafe',
-    'rds-safe': 'RDS safe',
-    's3-no-versioning': 'S3 no version',
+    'ec2-update': 'EC2 update',
+    'rds-safe': 'RDS protected',
+    's3-versioned': 'S3 versioned',
+    'dynamodb-pitr': 'DynamoDB PITR',
     'iam-role': 'IAM role',
-    'dynamodb': 'DynamoDB',
-    'kms-key': 'KMS key',
-    'cloudsql': 'Cloud SQL',
-    'gcs-bucket': 'GCS bucket',
-    'bigquery': 'BigQuery',
-    'azure-sql': 'Azure SQL',
-    'azure-storage': 'Azure Storage',
-    'cosmosdb': 'CosmosDB'
+    'cosmosdb': 'CosmosDB',
+    'rds-unsafe': 'RDS unsafe',
+    's3-no-versioning': 'S3 unsafe',
+    'dynamodb': 'DynamoDB unsafe',
+    'bigquery': 'BigQuery unsafe'
   },
   shell: {
     's3-delete': 'S3 delete',
     'ec2-terminate': 'EC2 terminate',
     'rds-delete': 'RDS delete',
+    'rds-snapshot': 'RDS + snapshot',
     'kubectl-delete': 'kubectl',
-    'gcloud-sql': 'gcloud SQL',
-    'az-storage': 'az storage',
+    'docker-prune': 'docker prune',
     'rm-rf': 'rm -rf'
   },
   mcp: {
     's3-delete': 'S3 delete',
     'rds-delete': 'RDS delete',
+    's3-list': 'S3 list',
     'k8s-delete': 'K8s delete',
-    'gcs-delete': 'GCS delete',
-    'cosmos-delete': 'CosmosDB'
+    'gcs-delete': 'GCS delete'
   }
 };
 
@@ -1200,19 +1163,17 @@ const fixtureIcons = {
 // Map fixture keys to their icon types
 const fixtureIconMap = {
   terraform: {
-    'rds-unsafe': 'aws', 'rds-safe': 'aws', 's3-no-versioning': 'aws',
-    'dynamodb': 'aws', 'kms-key': 'aws', 'iam-role': 'aws',
-    'cloudsql': 'gcp', 'gcs-bucket': 'gcp', 'bigquery': 'gcp',
-    'azure-sql': 'azure', 'azure-storage': 'azure', 'cosmosdb': 'azure'
+    'ec2-update': 'aws', 'rds-safe': 'aws', 's3-versioned': 'aws', 'dynamodb-pitr': 'aws',
+    'iam-role': 'aws', 'cosmosdb': 'azure',
+    'rds-unsafe': 'aws', 's3-no-versioning': 'aws', 'dynamodb': 'aws', 'bigquery': 'gcp'
   },
   shell: {
-    's3-delete': 'aws', 'ec2-terminate': 'aws', 'rds-delete': 'aws',
-    'kubectl-delete': 'k8s', 'gcloud-sql': 'gcp', 'az-storage': 'azure',
-    'rm-rf': 'shell'
+    's3-delete': 'aws', 'ec2-terminate': 'aws', 'rds-delete': 'aws', 'rds-snapshot': 'aws',
+    'kubectl-delete': 'k8s', 'docker-prune': 'shell', 'rm-rf': 'shell'
   },
   mcp: {
-    's3-delete': 'aws', 'rds-delete': 'aws', 'k8s-delete': 'k8s',
-    'gcs-delete': 'gcp', 'cosmos-delete': 'azure'
+    's3-delete': 'aws', 'rds-delete': 'aws', 's3-list': 'aws', 'k8s-delete': 'k8s',
+    'gcs-delete': 'gcp'
   }
 };
 
@@ -1235,15 +1196,22 @@ sourceTabs.forEach(tab => {
     activeSource = tab.dataset.source;
     inputArea.placeholder = hints[activeSource] + '...';
     inputArea.value = examples[activeSource];
+    // Clear any selected fixture when switching tabs
+    fixtureButtonsContainer.querySelectorAll('.fixture-btn').forEach(b => b.classList.remove('selected'));
     updateFixtureButtons(activeSource);
   });
 });
 
 fixtureButtonsContainer.addEventListener('click', (e) => {
-  if (!e.target.classList.contains('fixture-btn')) return;
-  const fixtureKey = e.target.dataset.fixture;
+  const btn = e.target.closest('.fixture-btn');
+  if (!btn) return;
+  const fixtureKey = btn.dataset.fixture;
   const fixtureData = fixtures[activeSource]?.[fixtureKey];
   if (fixtureData) {
+    // Remove selected from all buttons
+    fixtureButtonsContainer.querySelectorAll('.fixture-btn').forEach(b => b.classList.remove('selected'));
+    // Add selected to clicked button
+    btn.classList.add('selected');
     inputArea.value = typeof fixtureData === 'string' ? fixtureData : JSON.stringify(fixtureData, null, 2);
   }
 });
