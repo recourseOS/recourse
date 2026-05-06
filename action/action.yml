@@ -1,0 +1,115 @@
+name: 'RecourseOS Terraform Check'
+description: 'Evaluate Terraform plan consequences before apply. Blocks dangerous changes, escalates risky ones.'
+author: 'RecourseOS'
+branding:
+  icon: 'shield'
+  color: 'green'
+
+inputs:
+  plan-json:
+    description: 'Path to Terraform plan JSON file (from terraform show -json plan.out)'
+    required: true
+  state-json:
+    description: 'Path to Terraform state JSON file (optional, improves accuracy)'
+    required: false
+  fail-on:
+    description: 'Fail workflow on this risk level or higher (block, escalate, warn, none)'
+    required: false
+    default: 'block'
+  format:
+    description: 'Output format (human, json)'
+    required: false
+    default: 'human'
+
+outputs:
+  risk-assessment:
+    description: 'Overall risk assessment (allow, warn, escalate, block)'
+    value: ${{ steps.evaluate.outputs.risk }}
+  worst-tier:
+    description: 'Worst recoverability tier found'
+    value: ${{ steps.evaluate.outputs.tier }}
+  report:
+    description: 'Full consequence report (JSON)'
+    value: ${{ steps.evaluate.outputs.report }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Evaluate Terraform Plan
+      id: evaluate
+      shell: bash
+      env:
+        PLAN_JSON: ${{ inputs.plan-json }}
+        STATE_JSON: ${{ inputs.state-json }}
+        FAIL_ON: ${{ inputs.fail-on }}
+        FORMAT: ${{ inputs.format }}
+      run: |
+        # Build command
+        CMD="npx -y recourse-cli@latest plan \"$PLAN_JSON\" --format json"
+
+        if [ -n "$STATE_JSON" ]; then
+          CMD="$CMD --state \"$STATE_JSON\""
+        fi
+
+        # Run evaluation and capture output
+        echo "::group::RecourseOS Evaluation"
+        RESULT=$(eval $CMD 2>&1) || true
+        echo "$RESULT"
+        echo "::endgroup::"
+
+        # Parse results
+        TIER=$(echo "$RESULT" | jq -r '.summary.worstTier // "unknown"' 2>/dev/null || echo "unknown")
+        HAS_UNRECOVERABLE=$(echo "$RESULT" | jq -r '.summary.hasUnrecoverable // false' 2>/dev/null || echo "false")
+        NEEDS_REVIEW=$(echo "$RESULT" | jq -r '.summary.needsReview // 0' 2>/dev/null || echo "0")
+
+        # Map tier to risk assessment
+        if [ "$HAS_UNRECOVERABLE" = "true" ]; then
+          RISK="block"
+        elif [ "$NEEDS_REVIEW" -gt 0 ] 2>/dev/null; then
+          RISK="escalate"
+        elif [ "$TIER" = "recoverable-from-backup" ] || [ "$TIER" = "recoverable-with-effort" ]; then
+          RISK="warn"
+        else
+          RISK="allow"
+        fi
+
+        # Set outputs
+        echo "risk=$RISK" >> $GITHUB_OUTPUT
+        echo "tier=$TIER" >> $GITHUB_OUTPUT
+
+        # Escape JSON for output
+        ESCAPED=$(echo "$RESULT" | jq -c '.' 2>/dev/null || echo '{}')
+        echo "report=$ESCAPED" >> $GITHUB_OUTPUT
+
+        # Human-readable summary
+        if [ "$FORMAT" = "human" ]; then
+          npx -y recourse-cli@latest plan "$PLAN_JSON" --format human ${STATE_JSON:+--state "$STATE_JSON"} || true
+        fi
+
+        # Determine if we should fail
+        SHOULD_FAIL=false
+        case "$FAIL_ON" in
+          block)
+            [ "$RISK" = "block" ] && SHOULD_FAIL=true
+            ;;
+          escalate)
+            [ "$RISK" = "block" ] || [ "$RISK" = "escalate" ] && SHOULD_FAIL=true
+            ;;
+          warn)
+            [ "$RISK" = "block" ] || [ "$RISK" = "escalate" ] || [ "$RISK" = "warn" ] && SHOULD_FAIL=true
+            ;;
+        esac
+
+        if [ "$SHOULD_FAIL" = true ]; then
+          echo ""
+          echo "::error::RecourseOS blocked this plan (risk=$RISK, tier=$TIER)"
+          exit 1
+        fi
+
+        echo ""
+        echo "✅ RecourseOS approved (risk=$RISK, tier=$TIER)"
