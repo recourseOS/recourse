@@ -133,7 +133,7 @@ jobs:
           }
           EOF
 
-      - name: RecourseOS Check (fail-on: block only)
+      - name: "RecourseOS Check (fail-on: block only)"
         id: recourse
         uses: ./action
         with:
