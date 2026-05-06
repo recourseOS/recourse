@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .npm-cache/
+INTEGRATIONS.md
 docs/ARCHITECTURE.md
 docs/WHITEPAPER.md
 docs/REPOSITORY_STRATEGY.md
@@ -28,3 +29,4 @@ test-results/
 !.dev.vars.example
 .env*
 !.env.example
+__pycache__/
