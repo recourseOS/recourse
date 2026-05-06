@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: RecourseOS Serverless API - Consequence evaluation for AI agents
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: nodejs18.x
+    MemorySize: 256
+
+Resources:
+  RecourseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/
+      Handler: handler.handler
+      Description: RecourseOS consequence evaluation API
+      Events:
+        EvaluateTerraform:
+          Type: Api
+          Properties:
+            Path: /evaluate/terraform
+            Method: post
+        EvaluateShell:
+          Type: Api
+          Properties:
+            Path: /evaluate/shell
+            Method: post
+        EvaluateMcp:
+          Type: Api
+          Properties:
+            Path: /evaluate/mcp
+            Method: post
+        Health:
+          Type: Api
+          Properties:
+            Path: /health
+            Method: get
+        Options:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: options
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        EntryPoints:
+          - handler.ts
+
+Outputs:
+  ApiUrl:
+    Description: RecourseOS API Gateway endpoint URL
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+
+  FunctionArn:
+    Description: RecourseOS Lambda Function ARN
+    Value: !GetAtt RecourseFunction.Arn
