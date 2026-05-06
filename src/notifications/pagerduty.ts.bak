@@ -4,7 +4,7 @@
  * Creates incidents for blocked/escalated changes using the Events API v2.
  */
 
-import type { BlastRadiusReport } from '../analyzer/blast-radius.js';
+import type { BlastRadiusReport } from '../resources/types.js';
 
 interface PagerDutyConfig {
   routingKey: string;  // Integration key from PagerDuty service
