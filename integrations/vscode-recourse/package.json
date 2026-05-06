@@ -1,0 +1,101 @@
+{
+  "name": "vscode-recourse",
+  "displayName": "RecourseOS",
+  "description": "Consequence evaluation for Terraform and Kubernetes files",
+  "version": "0.1.0",
+  "publisher": "recourseos",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/recourseos/recourse"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "terraform",
+    "kubernetes",
+    "infrastructure",
+    "safety",
+    "consequence-evaluation",
+    "recourse"
+  ],
+  "activationEvents": [
+    "onLanguage:terraform",
+    "workspaceContains:**/*.tf",
+    "workspaceContains:**/*.yaml",
+    "workspaceContains:**/*.yml"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "recourse.analyze",
+        "title": "RecourseOS: Analyze Current File"
+      },
+      {
+        "command": "recourse.evaluatePlan",
+        "title": "RecourseOS: Evaluate Terraform Plan"
+      },
+      {
+        "command": "recourse.evaluateManifest",
+        "title": "RecourseOS: Evaluate Kubernetes Manifest"
+      }
+    ],
+    "configuration": {
+      "title": "RecourseOS",
+      "properties": {
+        "recourse.enableDiagnostics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable inline diagnostics for risky configurations"
+        },
+        "recourse.severity.block": {
+          "type": "string",
+          "default": "Error",
+          "enum": ["Error", "Warning", "Information", "Hint"],
+          "description": "Severity level for BLOCK risks"
+        },
+        "recourse.severity.escalate": {
+          "type": "string",
+          "default": "Warning",
+          "enum": ["Error", "Warning", "Information", "Hint"],
+          "description": "Severity level for ESCALATE risks"
+        },
+        "recourse.severity.warn": {
+          "type": "string",
+          "default": "Information",
+          "enum": ["Error", "Warning", "Information", "Hint"],
+          "description": "Severity level for WARN risks"
+        }
+      }
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "command": "recourse.analyze",
+          "when": "resourceExtname == .tf || resourceExtname == .yaml || resourceExtname == .yml",
+          "group": "recourse"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "watch": "npm run compile -- --watch",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.80.0",
+    "@vscode/vsce": "^2.22.0",
+    "esbuild": "^0.19.0",
+    "typescript": "^5.0.0"
+  }
+}
