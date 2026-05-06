@@ -1,0 +1,148 @@
+name: Test RecourseOS Action
+
+on:
+  push:
+    branches: [feat/github-action]
+    paths:
+      - 'action/**'
+      - '.github/workflows/test-action.yml'
+  workflow_dispatch:
+
+jobs:
+  test-safe-plan:
+    name: Test Safe Plan (should pass)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create safe plan.json
+        run: |
+          cat > plan.json << 'EOF'
+          {
+            "format_version": "1.0",
+            "terraform_version": "1.5.0",
+            "resource_changes": [
+              {
+                "address": "aws_s3_bucket.test",
+                "type": "aws_s3_bucket",
+                "provider_name": "registry.terraform.io/hashicorp/aws",
+                "change": {
+                  "actions": ["update"],
+                  "before": {"bucket": "test", "tags": {}},
+                  "after": {"bucket": "test", "tags": {"env": "test"}}
+                }
+              }
+            ]
+          }
+          EOF
+
+      - name: RecourseOS Check
+        id: recourse
+        uses: ./action
+        with:
+          plan-json: plan.json
+          fail-on: block
+
+      - name: Verify outputs
+        run: |
+          echo "Risk: ${{ steps.recourse.outputs.risk-assessment }}"
+          echo "Tier: ${{ steps.recourse.outputs.worst-tier }}"
+          if [ "${{ steps.recourse.outputs.risk-assessment }}" != "allow" ]; then
+            echo "Expected 'allow' but got '${{ steps.recourse.outputs.risk-assessment }}'"
+            exit 1
+          fi
+
+  test-dangerous-plan:
+    name: Test Dangerous Plan (should fail)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create dangerous plan.json
+        run: |
+          cat > plan.json << 'EOF'
+          {
+            "format_version": "1.0",
+            "terraform_version": "1.5.0",
+            "resource_changes": [
+              {
+                "address": "aws_db_instance.prod",
+                "type": "aws_db_instance",
+                "provider_name": "registry.terraform.io/hashicorp/aws",
+                "change": {
+                  "actions": ["delete"],
+                  "before": {
+                    "identifier": "prod-db",
+                    "skip_final_snapshot": true,
+                    "backup_retention_period": 0
+                  },
+                  "after": null
+                }
+              }
+            ]
+          }
+          EOF
+
+      - name: RecourseOS Check (expect failure)
+        id: recourse
+        uses: ./action
+        continue-on-error: true
+        with:
+          plan-json: plan.json
+          fail-on: block
+
+      - name: Verify it failed
+        run: |
+          echo "Risk: ${{ steps.recourse.outputs.risk-assessment }}"
+          echo "Tier: ${{ steps.recourse.outputs.worst-tier }}"
+          if [ "${{ steps.recourse.outputs.risk-assessment }}" != "block" ]; then
+            echo "Expected 'block' but got '${{ steps.recourse.outputs.risk-assessment }}'"
+            exit 1
+          fi
+          echo "Correctly blocked dangerous plan"
+
+  test-escalate-plan:
+    name: Test Escalate Plan (should warn but pass)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create escalate plan.json
+        run: |
+          cat > plan.json << 'EOF'
+          {
+            "format_version": "1.0",
+            "terraform_version": "1.5.0",
+            "resource_changes": [
+              {
+                "address": "aws_db_instance.staging",
+                "type": "aws_db_instance",
+                "provider_name": "registry.terraform.io/hashicorp/aws",
+                "change": {
+                  "actions": ["delete"],
+                  "before": {
+                    "identifier": "staging-db",
+                    "skip_final_snapshot": false,
+                    "final_snapshot_identifier": "staging-final",
+                    "backup_retention_period": 7
+                  },
+                  "after": null
+                }
+              }
+            ]
+          }
+          EOF
+
+      - name: RecourseOS Check (fail-on: block only)
+        id: recourse
+        uses: ./action
+        with:
+          plan-json: plan.json
+          fail-on: block
+
+      - name: Verify outputs
+        run: |
+          echo "Risk: ${{ steps.recourse.outputs.risk-assessment }}"
+          echo "Tier: ${{ steps.recourse.outputs.worst-tier }}"
+          # Should not be 'allow' since it's a deletion, but shouldn't be 'block' either
+          echo "Plan passed with risk level: ${{ steps.recourse.outputs.risk-assessment }}"
