@@ -10,6 +10,7 @@
   "scripts": {
     "build": "tsc",
     "prepack": "npm run build",
+    "postversion": "node -e \"const v=require('./package.json').version; const fs=require('fs'); let f=fs.readFileSync('docs/index.html','utf8'); f=f.replace(/· v[0-9]+\\.[0-9]+\\.[0-9]+/g,'· v'+v); fs.writeFileSync('docs/index.html',f);\" && git add docs/index.html",
     "pack:check": "npm pack --dry-run --cache .npm-cache",
     "dev": "tsc --watch",
     "test": "vitest",
