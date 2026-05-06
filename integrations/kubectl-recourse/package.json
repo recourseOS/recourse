@@ -1,0 +1,27 @@
+{
+  "name": "kubectl-recourse",
+  "version": "0.1.0",
+  "description": "kubectl plugin for RecourseOS consequence evaluation",
+  "bin": {
+    "kubectl-recourse": "./dist/kubectl-recourse.js"
+  },
+  "scripts": {
+    "build": "esbuild kubectl-recourse.ts --bundle --platform=node --outfile=dist/kubectl-recourse.js --external:child_process --external:fs --external:path && chmod +x dist/kubectl-recourse.js",
+    "postinstall": "npm run build || true"
+  },
+  "keywords": [
+    "kubectl",
+    "kubernetes",
+    "k8s",
+    "plugin",
+    "recourse",
+    "consequence-evaluation"
+  ],
+  "author": "RecourseOS",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "esbuild": "^0.19.0",
+    "typescript": "^5.0.0"
+  }
+}
