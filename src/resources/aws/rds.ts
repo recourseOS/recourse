@@ -232,7 +232,7 @@ function classifyDbInstance(
   if (deletionProtection === true) {
     return {
       tier: RecoverabilityTier.REVERSIBLE,
-      label: 'blocked',
+      label: 'reversible',
       reasoning: 'APPLY WILL FAIL: deletion_protection=true; disable protection first to delete',
     };
   }
@@ -382,7 +382,7 @@ function classifyRdsCluster(
   if (deletionProtection === true) {
     return {
       tier: RecoverabilityTier.REVERSIBLE,
-      label: 'blocked',
+      label: 'reversible',
       reasoning: 'APPLY WILL FAIL: deletion_protection=true; disable protection first to delete',
     };
   }

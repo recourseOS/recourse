@@ -27,14 +27,14 @@ describe('multi-cloud deterministic recoverability rules', () => {
     expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
   });
 
-  it('classifies protected Cloud SQL deletion as blocked', () => {
+  it('classifies protected Cloud SQL deletion as reversible (apply will fail)', () => {
     const result = getRecoverability(change('google_sql_database_instance', {
       name: 'prod-sql',
       deletion_protection: true,
     }), null);
 
     expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
-    expect(result.label).toBe('blocked');
+    expect(result.label).toBe('reversible');
   });
 
   it('classifies Cloud SQL with PITR as recoverable from backup', () => {

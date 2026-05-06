@@ -185,7 +185,7 @@ function classifyDynamoDBTable(
   if (deletionProtection) {
     return {
       tier: RecoverabilityTier.REVERSIBLE,
-      label: 'blocked',
+      label: 'reversible',
       reasoning: 'APPLY WILL FAIL: deletion_protection_enabled=true; disable protection first to delete',
     };
   }

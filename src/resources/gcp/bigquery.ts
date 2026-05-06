@@ -118,7 +118,7 @@ function classifyTable(change: ResourceChange): RecoverabilityResult {
   if (values.deletion_protection === true) {
     return {
       tier: RecoverabilityTier.REVERSIBLE,
-      label: 'blocked',
+      label: 'reversible',
       reasoning: 'APPLY WILL FAIL: deletion_protection=true; disable protection first to delete',
     };
   }

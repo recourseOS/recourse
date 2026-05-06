@@ -11,9 +11,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="site.css" />
 <style>
-.console-page { min-height: 100vh; background: var(--paper); }
+.console-page { min-height: 100vh; background: var(--night); }
+.console-page .top-band { background: linear-gradient(180deg, var(--night) 0%, var(--night-2) 100%); }
 
-.console-body { padding: 32px 0 64px; }
+.console-body { padding: 0 0 64px; }
 
 /* Animations */
 @keyframes fadeInUp {
@@ -50,8 +51,8 @@
 }
 
 .console-panel {
-  background: var(--paper-card);
-  border: 1px solid var(--line);
+  background: var(--night-2);
+  border: 1px solid rgba(240, 253, 244, 0.08);
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
@@ -62,8 +63,8 @@
   justify-content: space-between;
   gap: 16px;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--line);
-  background: var(--paper-soft);
+  border-bottom: 1px solid rgba(240, 253, 244, 0.08);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .panel-title {
@@ -72,29 +73,33 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-soft);
+  color: rgba(240, 253, 244, 0.6);
 }
 
 .source-tabs {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 .source-tab {
-  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
   background: transparent;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(240, 253, 244, 0.15);
   border-radius: 6px;
   font-family: "JetBrains Mono", monospace;
   font-size: 11px;
   font-weight: 500;
-  color: var(--ink-soft);
+  color: rgba(240, 253, 244, 0.6);
   cursor: pointer;
   transition: all 0.15s;
 }
 .source-tab:hover { border-color: var(--green); color: var(--green); }
 .source-tab.active { background: var(--green); border-color: var(--green); color: var(--night); }
+.tab-icon { width: 14px; height: 14px; flex-shrink: 0; }
 
-.panel-body { padding: 20px; }
+.panel-body { padding: 20px; background: var(--night-2); }
 
 .input-area {
   width: 100%;
@@ -117,31 +122,42 @@
   justify-content: space-between;
   gap: 16px;
   padding: 16px 20px;
-  border-top: 1px solid var(--line);
-  background: var(--paper-soft);
+  border-top: 1px solid rgba(240, 253, 244, 0.08);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .evaluate-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
-  background: var(--green);
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--green) 0%, #059669 100%);
   border: none;
   border-radius: 8px;
   color: var(--night);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
 }
-.evaluate-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
-.evaluate-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+.evaluate-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+}
+.evaluate-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+.evaluate-btn:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+  background: var(--green);
+}
 .evaluate-btn .spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(0,0,0,0.2);
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0,0,0,0.15);
   border-top-color: var(--night);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
@@ -149,6 +165,10 @@
 .evaluate-btn .icon-check {
   width: 14px;
   height: 14px;
+}
+.evaluate-btn .btn-icon {
+  width: 16px;
+  height: 16px;
 }
 
 /* Keyboard shortcut hint */
@@ -160,7 +180,7 @@
 }
 
 .input-hint {
-  color: var(--ink-faint);
+  color: rgba(240, 253, 244, 0.4);
   font-size: 12px;
 }
 
@@ -170,17 +190,22 @@
   flex-wrap: wrap;
 }
 .fixture-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 6px 10px;
   background: transparent;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(240, 253, 244, 0.15);
   border-radius: 5px;
   font-family: "JetBrains Mono", monospace;
   font-size: 10px;
-  color: var(--ink-soft);
+  color: rgba(240, 253, 244, 0.6);
   cursor: pointer;
   transition: all 0.15s;
 }
 .fixture-btn:hover { border-color: var(--green); color: var(--green); }
+.fixture-btn .fixture-icon { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.8; }
+.fixture-btn:hover .fixture-icon { opacity: 1; }
 
 .server-status {
   display: inline-flex;
@@ -215,7 +240,7 @@
   align-items: center;
   justify-content: center;
   min-height: 280px;
-  color: var(--ink-faint);
+  color: rgba(240, 253, 244, 0.4);
   text-align: center;
 }
 .result-empty-icon {
@@ -223,6 +248,7 @@
   height: 48px;
   margin-bottom: 16px;
   opacity: 0.3;
+  color: var(--green);
 }
 .result-empty p { font-size: 14px; max-width: 240px; }
 
@@ -234,71 +260,117 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 20px;
-  border-radius: var(--radius);
-  margin-bottom: 20px;
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.decision-banner::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
 }
 .decision-banner.allow { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); }
+.decision-banner.allow::before { background: var(--green); }
 .decision-banner.warn { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); }
-.decision-banner.block { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); }
-.decision-banner.escalate { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); }
+.decision-banner.warn::before { background: var(--amber); }
+.decision-banner.block { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); }
+.decision-banner.block::before { background: var(--red); }
+.decision-banner.escalate { background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); }
+.decision-banner.escalate::before { background: #8b5cf6; }
 
 .decision-label {
   font-family: "JetBrains Mono", monospace;
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--ink-soft);
-  margin-bottom: 4px;
+  color: rgba(240, 253, 244, 0.6);
+  margin-bottom: 6px;
 }
 .decision-value {
-  font-size: 28px;
-  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 32px;
+  font-weight: 800;
   letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+.decision-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
 }
 .decision-banner.allow .decision-value { color: var(--green); }
 .decision-banner.warn .decision-value { color: var(--amber); }
 .decision-banner.block .decision-value { color: var(--red); }
-.decision-banner.escalate .decision-value { color: var(--amber); }
+.decision-banner.escalate .decision-value { color: #8b5cf6; }
 
 .tier-pill {
-  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
   border-radius: 8px;
   font-family: "JetBrains Mono", monospace;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
+.tier-icon { width: 14px; height: 14px; }
 .tier-pill.reversible { background: var(--green); color: var(--night); }
-.tier-pill.recoverable { background: var(--green-dark); color: #fff; }
+.tier-pill.recoverable { background: #059669; color: #fff; }
 .tier-pill.backup { background: var(--amber); color: var(--night); }
-.tier-pill.unrecoverable { background: var(--red); color: #fff; }
-.tier-pill.review { background: var(--amber); color: var(--night); }
+.tier-pill.unrecoverable { background: var(--red); color: #fff; box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+.tier-pill.review { background: #8b5cf6; color: #fff; }
 
-.result-section { margin-bottom: 20px; }
+.result-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(240, 253, 244, 0.06);
+}
 .result-section:last-child { margin-bottom: 0; }
 
 .result-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-family: "JetBrains Mono", monospace;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--green-dark);
-  margin-bottom: 8px;
+  color: var(--green);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(99, 230, 184, 0.2);
+}
+.result-section-title::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: var(--green);
+  border-radius: 2px;
 }
 
 .result-row {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--line);
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(240, 253, 244, 0.06);
   font-size: 13px;
 }
 .result-row:last-child { border-bottom: none; }
-.result-key { color: var(--ink-soft); }
-.result-value { color: var(--ink); font-weight: 500; font-family: "JetBrains Mono", monospace; font-size: 12px; }
+.result-key { color: rgba(240, 253, 244, 0.5); font-size: 12px; }
+.result-value { color: var(--paper); font-weight: 500; font-family: "JetBrains Mono", monospace; font-size: 12px; text-align: right; max-width: 60%; word-break: break-word; }
 
 .evidence-list {
   list-style: none;
@@ -306,27 +378,37 @@
   margin: 0;
 }
 .evidence-list li {
-  padding: 6px 0;
-  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: rgba(16, 185, 129, 0.08);
+  border-radius: 6px;
+  border-left: 3px solid var(--green);
   font-family: "JetBrains Mono", monospace;
   font-size: 12px;
-  color: var(--ink-soft);
+  color: rgba(240, 253, 244, 0.85);
 }
-.evidence-list li:last-child { border-bottom: none; }
-.evidence-list li::before { content: ""; display: inline-block; width: 6px; height: 6px; background: var(--green); border-radius: 50%; margin-right: 10px; }
-.evidence-list.missing li::before { background: var(--amber); }
+.evidence-list li:last-child { margin-bottom: 0; }
+.evidence-list.missing li {
+  background: rgba(245, 158, 11, 0.08);
+  border-left-color: var(--amber);
+  color: rgba(240, 253, 244, 0.7);
+}
 
 .reason-text {
-  color: var(--ink-soft);
+  color: rgba(240, 253, 244, 0.85);
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.7;
+  padding: 0 4px;
 }
 
 /* MCP Config section */
 .mcp-section {
   margin-top: 24px;
   padding-top: 24px;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid rgba(240, 253, 244, 0.08);
 }
 
 .mcp-config {
@@ -361,7 +443,7 @@
 .mcp-copy:hover { border-color: var(--green); color: var(--green); }
 
 .local-hint {
-  color: var(--ink-soft);
+  color: rgba(240, 253, 244, 0.6);
   font-size: 13px;
   margin-bottom: 12px;
 }
@@ -378,10 +460,10 @@
   gap: 8px;
   padding: 8px 12px;
   background: transparent;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(240, 253, 244, 0.15);
   border-radius: 6px;
   font-size: 12px;
-  color: var(--ink-soft);
+  color: rgba(240, 253, 244, 0.6);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -511,15 +593,39 @@
 .toast.error { background: var(--red); color: #fff; }
 
 /* Result section animations */
-.result-section {
-  opacity: 0;
-  transform: translateY(8px);
-  animation: fadeInUp 0.3s ease-out forwards;
+.result-content.visible .decision-banner {
+  animation: fadeInUp 0.4s ease-out;
 }
-.result-section:nth-child(1) { animation-delay: 0.05s; }
-.result-section:nth-child(2) { animation-delay: 0.1s; }
-.result-section:nth-child(3) { animation-delay: 0.15s; }
-.result-section:nth-child(4) { animation-delay: 0.2s; }
+.result-content.visible .result-section {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+.result-content.visible .result-section:nth-child(2) { animation-delay: 0.08s; }
+.result-content.visible .result-section:nth-child(3) { animation-delay: 0.16s; }
+.result-content.visible .result-section:nth-child(4) { animation-delay: 0.24s; }
+.result-content.visible .result-section:nth-child(5) { animation-delay: 0.32s; }
+
+/* Block decision pulse effect */
+.decision-banner.block {
+  animation: blockPulse 2s ease-in-out infinite;
+}
+@keyframes blockPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  50% { box-shadow: 0 0 20px 2px rgba(239, 68, 68, 0.2); }
+}
+
+/* Dark theme footer override */
+.console-page footer {
+  border-top: 1px solid rgba(240, 253, 244, 0.08);
+  color: rgba(240, 253, 244, 0.5);
+}
+.console-page footer a {
+  color: rgba(240, 253, 244, 0.6);
+}
+.console-page footer a:hover {
+  color: var(--green);
+}
 
 @media (max-width: 900px) {
   .console-grid { grid-template-columns: 1fr; }
@@ -527,9 +633,9 @@
 }
 </style>
 </head>
-<body class="console-page">
+<body class="console-page dark-theme">
 
-<div class="top-band" style="padding-bottom: 0;">
+<div class="top-band">
 <nav class="container site-nav">
   <a href="/" class="brand" aria-label="RecourseOS home">
     <svg class="brand-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -553,6 +659,11 @@
     <a href="https://github.com/recourseOS/recourse" class="nav-cta">github</a>
   </div>
 </nav>
+<header class="container doc-header">
+  <div class="eyebrow">playground</div>
+  <h1>Console</h1>
+  <p class="lede">Test consequence evaluations. Paste Terraform plans, shell commands, or MCP tool calls and see what your agent would receive.</p>
+</header>
 </div>
 
 <main class="console-body">
@@ -565,9 +676,18 @@
           <span class="panel-title">Input</span>
           <span class="server-status" id="server-status"></span>
           <div class="source-tabs">
-            <button class="source-tab active" data-source="terraform">Terraform</button>
-            <button class="source-tab" data-source="shell">Shell</button>
-            <button class="source-tab" data-source="mcp">MCP</button>
+            <button class="source-tab active" data-source="terraform">
+              <svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M1.5 3.5v6.8l5.9 3.4V6.9L1.5 3.5zm6.6 13.7 5.9 3.4V13l-5.9-3.4v7.6zm0-8.5 5.9 3.4V5.3L8.1 1.9v6.8zm6.6-4.9v6.8l5.9-3.4V.4l-5.9 3.4z"/></svg>
+              Terraform
+            </button>
+            <button class="source-tab" data-source="shell">
+              <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17l6-6-6-6M12 19h8"/></svg>
+              Shell
+            </button>
+            <button class="source-tab" data-source="mcp">
+              <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><circle cx="12" cy="10" r="3"/></svg>
+              MCP
+            </button>
           </div>
         </div>
         <div class="panel-body">
@@ -580,7 +700,10 @@
             <button class="fixture-btn" data-fixture="s3-no-versioning">S3 no versioning</button>
             <button class="fixture-btn" data-fixture="iam-role">IAM role</button>
           </div>
-          <button class="evaluate-btn" id="evaluate">Evaluate</button>
+          <button class="evaluate-btn" id="evaluate">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+            Evaluate
+          </button>
         </div>
       </div>
 
@@ -860,6 +983,22 @@ const fixtures = {
         }
       }]
     },
+    'iam-role': {
+      resource_changes: [{
+        address: 'aws_iam_role.service',
+        type: 'aws_iam_role',
+        provider_name: 'registry.terraform.io/hashicorp/aws',
+        change: {
+          actions: ['delete'],
+          before: {
+            name: 'production-service-role',
+            assume_role_policy: '{}',
+            tags: { environment: 'production' }
+          },
+          after: null
+        }
+      }]
+    },
     'dynamodb': {
       resource_changes: [{
         address: 'aws_dynamodb_table.users',
@@ -1015,6 +1154,7 @@ const fixtureLabels = {
     'rds-unsafe': 'RDS unsafe',
     'rds-safe': 'RDS safe',
     's3-no-versioning': 'S3 no version',
+    'iam-role': 'IAM role',
     'dynamodb': 'DynamoDB',
     'kms-key': 'KMS key',
     'cloudsql': 'Cloud SQL',
@@ -1044,10 +1184,47 @@ const fixtureLabels = {
 
 const fixtureButtonsContainer = document.getElementById('fixture-buttons');
 
+const fixtureIcons = {
+  // AWS icon
+  aws: '<svg class="fixture-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M6.763 10.036c0 .296.032.535.088.71.064.176.144.368.256.576.04.063.056.127.056.183 0 .08-.048.16-.152.24l-.503.335a.383.383 0 0 1-.208.072c-.08 0-.16-.04-.239-.112a2.47 2.47 0 0 1-.287-.375 6.18 6.18 0 0 1-.248-.471c-.622.734-1.405 1.101-2.347 1.101-.67 0-1.205-.191-1.596-.574-.391-.384-.59-.894-.59-1.533 0-.678.239-1.23.726-1.644.487-.415 1.133-.623 1.955-.623.272 0 .551.024.846.064.296.04.6.104.918.176v-.583c0-.607-.127-1.03-.375-1.277-.255-.248-.686-.367-1.3-.367-.28 0-.568.031-.863.103-.295.072-.583.16-.862.272a2.1 2.1 0 0 1-.263.096.489.489 0 0 1-.127.024c-.112 0-.168-.08-.168-.247v-.391c0-.128.016-.224.056-.28a.597.597 0 0 1 .224-.167c.279-.144.614-.264 1.005-.36a4.84 4.84 0 0 1 1.246-.151c.95 0 1.644.216 2.091.647.439.43.662 1.085.662 1.963v2.586zm-3.24 1.214c.263 0 .534-.048.822-.144.287-.096.543-.271.758-.51.128-.152.224-.32.272-.512.047-.191.08-.423.08-.694v-.335a6.66 6.66 0 0 0-.735-.136 6.02 6.02 0 0 0-.75-.048c-.535 0-.926.104-1.19.32-.263.215-.39.518-.39.917 0 .375.095.655.295.846.191.2.47.296.838.296zm6.41.862c-.144 0-.24-.024-.304-.08-.064-.048-.12-.16-.168-.311L7.586 5.55a1.398 1.398 0 0 1-.072-.32c0-.128.064-.2.191-.2h.783c.151 0 .255.025.31.08.065.048.113.16.16.312l1.342 5.284 1.245-5.284c.04-.16.088-.264.151-.312a.549.549 0 0 1 .32-.08h.638c.152 0 .256.025.32.08.063.048.12.16.151.312l1.261 5.348 1.381-5.348c.048-.16.104-.264.16-.312a.52.52 0 0 1 .311-.08h.743c.127 0 .2.065.2.2 0 .04-.009.08-.017.128a1.137 1.137 0 0 1-.056.2l-1.923 6.17c-.048.16-.104.263-.168.311a.51.51 0 0 1-.303.08h-.687c-.151 0-.255-.024-.32-.08-.063-.056-.119-.16-.15-.32l-1.238-5.148-1.23 5.14c-.04.16-.087.264-.15.32-.065.056-.177.08-.32.08zm10.256.215c-.415 0-.83-.048-1.229-.143-.399-.096-.71-.2-.918-.32-.128-.071-.215-.151-.247-.223a.563.563 0 0 1-.048-.224v-.407c0-.167.064-.247.183-.247.048 0 .096.008.144.024.048.016.12.048.2.08.271.12.566.215.878.279.319.064.63.096.95.096.502 0 .894-.088 1.165-.264a.86.86 0 0 0 .415-.758.777.777 0 0 0-.215-.559c-.144-.151-.416-.287-.807-.415l-1.157-.36c-.583-.183-1.014-.454-1.277-.813a1.902 1.902 0 0 1-.4-1.158c0-.335.073-.63.216-.886.144-.255.336-.479.575-.654.24-.184.51-.32.83-.415.32-.096.655-.136 1.006-.136.176 0 .359.008.535.032.183.024.35.056.518.088.16.04.312.08.455.127.144.048.256.096.336.144a.69.69 0 0 1 .24.2.43.43 0 0 1 .071.263v.375c0 .168-.064.256-.184.256a.83.83 0 0 1-.303-.096 3.652 3.652 0 0 0-1.532-.311c-.455 0-.815.071-1.062.223-.248.152-.375.383-.375.71 0 .224.08.416.24.567.159.152.454.304.877.44l1.134.358c.574.184.99.44 1.237.767.247.327.367.702.367 1.117 0 .343-.072.655-.207.926-.144.272-.336.511-.583.703-.248.2-.543.343-.886.447-.36.111-.734.167-1.142.167zM21.698 16.207c-2.626 1.94-6.442 2.969-9.722 2.969-4.598 0-8.74-1.7-11.87-4.526-.247-.223-.024-.527.27-.351 3.384 1.963 7.559 3.153 11.877 3.153 2.914 0 6.114-.607 9.06-1.852.439-.2.814.287.385.607z"/><path d="M22.792 14.961c-.336-.43-2.22-.207-3.074-.103-.255.032-.295-.192-.063-.36 1.5-1.053 3.967-.75 4.254-.399.287.36-.08 2.826-1.485 4.007-.215.184-.423.088-.327-.151.32-.79 1.03-2.57.695-2.994z"/></svg>',
+  // GCP icon
+  gcp: '<svg class="fixture-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12.19 2.38a9.344 9.344 0 0 0-9.234 6.893c.053-.02-.055.013 0 0-3.875 2.551-3.922 8.11-.247 10.941l.006-.007-.007.03a6.717 6.717 0 0 0 4.077 1.356h5.173l.03.03h5.192c6.687.053 9.376-8.605 3.835-12.35a9.365 9.365 0 0 0-8.825-6.893zm.142 2.34a6.987 6.987 0 0 1 6.399 4.394l-3.659 3.66-.018-.023c-2.105-2.097-5.591-2.057-7.656.091a5.436 5.436 0 0 0-.096 7.603l-.022-.023-1.218 1.218a8.305 8.305 0 0 1-1.283-1.063 8.09 8.09 0 0 1 .025-11.452 8.09 8.09 0 0 1 7.528-4.405zm3.892 6.49h3.979c3.126 4.636-1.017 9.632-5.97 8.835l1.218-1.218c2.851-.09 4.592-3.07 3.183-5.47h-2.41c-.153 0-.267-.053-.347-.16-.08-.107-.133-.267-.16-.48v-1.507z"/></svg>',
+  // Azure icon
+  azure: '<svg class="fixture-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M13.05 4.24 6.56 18.05a.5.5 0 0 1-.47.31H5a.5.5 0 0 1-.44-.76l6.26-12a.5.5 0 0 0-.4-.75H8.28a.5.5 0 0 1-.44-.76l2-3.87a.5.5 0 0 1 .89 0l2.65 5.11a.5.5 0 0 1-.33.72zm9.51 11.78-5.08 1.59a.5.5 0 0 0-.33.57l.31 1.2a.5.5 0 0 0 .58.37l6.27-1.23a.5.5 0 0 0 .37-.67l-1.45-3.52a.5.5 0 0 0-.67-.31zm-6.17-6.75L9.83 18.91a.5.5 0 0 0 .27.73l9.14 3.31a.5.5 0 0 0 .66-.44l.47-9.15a.5.5 0 0 0-.7-.48l-3.29 1.48a.5.5 0 0 1-.65-.24l-2.01-4.14a.5.5 0 0 0-.9 0l-1.55 3.2a.5.5 0 0 0 .27.69l4.85 1.71a.5.5 0 0 1 0 .94z"/></svg>',
+  // Kubernetes icon
+  k8s: '<svg class="fixture-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10.204 14.35l.007.01-.999 2.413a5.171 5.171 0 0 1-2.075-2.597l2.578-.437.004.005a.44.44 0 0 1 .484.606zm-.833-2.129a.44.44 0 0 0 .173-.756l.002-.011L7.585 9.7a5.143 5.143 0 0 0-.73 3.255l2.514-.725.002-.009zm1.145-1.98a.44.44 0 0 0 .699-.337l-.003-.023.152-2.618a5.07 5.07 0 0 0-3.01 1.442l2.162 1.536zM12 0a12 12 0 1 0 0 24 12 12 0 0 0 0-24zm4.227 14.37l-.004.005.999 2.413a5.171 5.171 0 0 0 2.075-2.597l-2.578-.437-.004.005a.44.44 0 0 0-.488.611zm.833-2.129a.44.44 0 0 1-.173-.756l-.002-.011 1.961-1.754a5.143 5.143 0 0 1 .73 3.255l-2.514-.725-.002-.009zm-1.145-1.98a.44.44 0 0 1-.699-.337l.003-.023-.152-2.618a5.07 5.07 0 0 1 3.01 1.442l-2.162 1.536zM12 6.042c.94 0 1.845.17 2.693.474l-.152 2.618a.44.44 0 0 0 .7.343l2.162-1.536c.662.74 1.154 1.622 1.442 2.59l-2.514.725a.44.44 0 0 0-.176.756l1.961 1.754a5.202 5.202 0 0 1-1.13 2.208l-.999-2.413a.44.44 0 0 0-.486-.606l.004-.005-2.578.437a5.18 5.18 0 0 1-.06 1.168l2.578.437a.44.44 0 0 1 .486.606l-.004.005.999 2.413a5.202 5.202 0 0 0 1.13-2.208l-1.961-1.754a.44.44 0 0 1 .176-.756l2.514-.725a5.143 5.143 0 0 0-1.442-2.59l-2.162 1.536a.44.44 0 0 1-.7-.343l.152-2.618A5.18 5.18 0 0 0 12 6.042z"/></svg>',
+  // Shell/terminal icon
+  shell: '<svg class="fixture-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17l6-6-6-6M12 19h8"/></svg>'
+};
+
+// Map fixture keys to their icon types
+const fixtureIconMap = {
+  terraform: {
+    'rds-unsafe': 'aws', 'rds-safe': 'aws', 's3-no-versioning': 'aws',
+    'dynamodb': 'aws', 'kms-key': 'aws', 'iam-role': 'aws',
+    'cloudsql': 'gcp', 'gcs-bucket': 'gcp', 'bigquery': 'gcp',
+    'azure-sql': 'azure', 'azure-storage': 'azure', 'cosmosdb': 'azure'
+  },
+  shell: {
+    's3-delete': 'aws', 'ec2-terminate': 'aws', 'rds-delete': 'aws',
+    'kubectl-delete': 'k8s', 'gcloud-sql': 'gcp', 'az-storage': 'azure',
+    'rm-rf': 'shell'
+  },
+  mcp: {
+    's3-delete': 'aws', 'rds-delete': 'aws', 'k8s-delete': 'k8s',
+    'gcs-delete': 'gcp', 'cosmos-delete': 'azure'
+  }
+};
+
 function updateFixtureButtons(source) {
   const labels = fixtureLabels[source] || {};
+  const iconMap = fixtureIconMap[source] || {};
   fixtureButtonsContainer.innerHTML = Object.entries(labels)
-    .map(([key, label]) => `<button class="fixture-btn" data-fixture="${key}">${label}</button>`)
+    .map(([key, label]) => {
+      const iconType = iconMap[key] || 'aws';
+      const icon = fixtureIcons[iconType] || '';
+      return `<button class="fixture-btn" data-fixture="${key}">${icon}${label}</button>`;
+    })
     .join('');
 }
 
@@ -1120,21 +1297,26 @@ function showToast(message, type = 'success') {
   }, 2500);
 }
 
+const evaluateBtnDefault = `<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>Evaluate`;
+
 evaluateBtn.addEventListener('click', async () => {
   const input = inputArea.value.trim();
   if (!input) return;
 
   evaluateBtn.disabled = true;
-  evaluateBtn.innerHTML = '<span class="spinner"></span> Evaluating...';
+  evaluateBtn.innerHTML = '<span class="spinner"></span> Analyzing...';
 
   try {
     let report;
     if (serverAvailable) {
       report = await evaluateWithServer(activeSource, input);
     } else {
+      // Small delay to show the loading state in demo mode
+      await new Promise(r => setTimeout(r, 300));
       report = evaluate(activeSource, input);
     }
     renderResult(report);
+    showToast(`Assessment: ${report.decision.toUpperCase()}`, report.decision === 'block' ? 'error' : 'success');
   } catch (error) {
     showToast(error.message || 'Evaluation failed', 'error');
     renderResult({
@@ -1149,7 +1331,7 @@ evaluateBtn.addEventListener('click', async () => {
     });
   } finally {
     evaluateBtn.disabled = false;
-    evaluateBtn.innerHTML = 'Evaluate';
+    evaluateBtn.innerHTML = evaluateBtnDefault;
   }
 });
 
@@ -1452,6 +1634,255 @@ function evaluateTerraform(input) {
       };
     }
 
+    // DynamoDB tables
+    if (/dynamodb_table/.test(resourceType)) {
+      const pitr = before.point_in_time_recovery?.[0]?.enabled === true;
+      const deletionProtection = before.deletion_protection_enabled === true;
+
+      if (deletionProtection) {
+        return {
+          decision: 'allow',
+          tier: 'reversible',
+          target: change.address,
+          action: 'delete',
+          provider,
+          reason: 'Deletion protection enabled - action will fail safely',
+          evidence: ['deletion_protection_enabled=true'],
+          missing: []
+        };
+      }
+
+      if (!pitr) {
+        return {
+          decision: 'block',
+          tier: 'unrecoverable',
+          target: change.address,
+          action: 'delete',
+          provider,
+          reason: 'DynamoDB table deletion without point-in-time recovery - data unrecoverable',
+          evidence: ['point_in_time_recovery=false', 'deletion_protection_enabled=false'],
+          missing: []
+        };
+      }
+
+      return {
+        decision: 'warn',
+        tier: 'recoverable-from-backup',
+        target: change.address,
+        action: 'delete',
+        provider,
+        reason: 'DynamoDB table has PITR enabled - can restore from backup',
+        evidence: ['point_in_time_recovery=true'],
+        missing: ['Backup retention window']
+      };
+    }
+
+    // KMS keys
+    if (/kms_key/.test(resourceType)) {
+      const pendingDays = before.deletion_window_in_days || 30;
+      return {
+        decision: 'warn',
+        tier: 'recoverable-with-effort',
+        target: change.address,
+        action: 'delete',
+        provider,
+        reason: `KMS key scheduled for deletion with ${pendingDays}-day waiting period`,
+        evidence: [`deletion_window_in_days=${pendingDays}`],
+        missing: ['Encrypted resources dependent on this key']
+      };
+    }
+
+    // GCP Cloud SQL
+    if (/google_sql_database_instance/.test(resourceType)) {
+      const backupEnabled = before.settings?.[0]?.backup_configuration?.[0]?.enabled === true;
+      const deletionProtection = before.deletion_protection === true;
+
+      if (deletionProtection) {
+        return {
+          decision: 'allow',
+          tier: 'reversible',
+          target: change.address,
+          action: 'delete',
+          provider,
+          reason: 'Deletion protection enabled - action will fail safely',
+          evidence: ['deletion_protection=true'],
+          missing: []
+        };
+      }
+
+      if (!backupEnabled) {
+        return {
+          decision: 'block',
+          tier: 'unrecoverable',
+          target: change.address,
+          action: 'delete',
+          provider,
+          reason: 'Cloud SQL deletion without backups enabled - data unrecoverable',
+          evidence: ['backup_configuration.enabled=false', 'deletion_protection=false'],
+          missing: []
+        };
+      }
+
+      return {
+        decision: 'warn',
+        tier: 'recoverable-from-backup',
+        target: change.address,
+        action: 'delete',
+        provider,
+        reason: 'Cloud SQL has backups enabled - can restore from backup',
+        evidence: ['backup_configuration.enabled=true'],
+        missing: ['Latest backup timestamp']
+      };
+    }
+
+    // GCP GCS Buckets
+    if (/google_storage_bucket/.test(resourceType)) {
+      const versioning = before.versioning?.[0]?.enabled === true;
+      const forceDestroy = before.force_destroy === true;
+
+      if (!versioning && forceDestroy) {
+        return {
+          decision: 'block',
+          tier: 'unrecoverable',
+          target: change.address,
+          action: 'delete',
+          provider,
+          reason: 'GCS bucket deletion with force_destroy and no versioning - objects unrecoverable',
+          evidence: ['versioning=false', 'force_destroy=true'],
+          missing: []
+        };
+      }
+
+      if (!versioning) {
+        return {
+          decision: 'escalate',
+          tier: 'needs-review',
+          target: change.address,
+          action: 'delete',
+          provider,
+          reason: 'GCS bucket without versioning - check for object recovery options',
+          evidence: ['versioning=false'],
+          missing: ['Object inventory', 'Cross-region replication']
+        };
+      }
+
+      return {
+        decision: 'warn',
+        tier: 'recoverable-with-effort',
+        target: change.address,
+        action: 'delete',
+        provider,
+        reason: 'GCS bucket has versioning - objects may be recoverable',
+        evidence: ['versioning=true'],
+        missing: []
+      };
+    }
+
+    // GCP BigQuery
+    if (/google_bigquery_dataset/.test(resourceType)) {
+      const deleteContents = before.delete_contents_on_destroy === true;
+
+      if (deleteContents) {
+        return {
+          decision: 'block',
+          tier: 'unrecoverable',
+          target: change.address,
+          action: 'delete',
+          provider,
+          reason: 'BigQuery dataset deletion with delete_contents_on_destroy - all tables lost',
+          evidence: ['delete_contents_on_destroy=true'],
+          missing: []
+        };
+      }
+
+      return {
+        decision: 'warn',
+        tier: 'recoverable-with-effort',
+        target: change.address,
+        action: 'delete',
+        provider,
+        reason: 'BigQuery dataset deletion - tables must be empty or moved first',
+        evidence: ['delete_contents_on_destroy=false'],
+        missing: ['Table inventory']
+      };
+    }
+
+    // Azure SQL Database
+    if (/azurerm_mssql_database|azurerm_sql_database/.test(resourceType)) {
+      const retentionDays = before.short_term_retention_policy?.[0]?.retention_days || 0;
+
+      if (retentionDays === 0) {
+        return {
+          decision: 'block',
+          tier: 'unrecoverable',
+          target: change.address,
+          action: 'delete',
+          provider,
+          reason: 'Azure SQL deletion with no retention policy - data unrecoverable',
+          evidence: [`short_term_retention_days=${retentionDays}`],
+          missing: []
+        };
+      }
+
+      return {
+        decision: 'warn',
+        tier: 'recoverable-from-backup',
+        target: change.address,
+        action: 'delete',
+        provider,
+        reason: `Azure SQL has ${retentionDays}-day retention - can restore within window`,
+        evidence: [`short_term_retention_days=${retentionDays}`],
+        missing: ['Long-term retention policy']
+      };
+    }
+
+    // Azure Storage Account
+    if (/azurerm_storage_account/.test(resourceType)) {
+      const blobRetention = before.blob_properties?.[0]?.delete_retention_policy?.[0]?.days || 0;
+      const containerRetention = before.blob_properties?.[0]?.container_delete_retention_policy?.[0]?.days || 0;
+
+      if (blobRetention === 0 && containerRetention === 0) {
+        return {
+          decision: 'block',
+          tier: 'unrecoverable',
+          target: change.address,
+          action: 'delete',
+          provider,
+          reason: 'Azure Storage deletion with no soft delete - data unrecoverable',
+          evidence: ['blob_delete_retention_days=0', 'container_delete_retention_days=0'],
+          missing: []
+        };
+      }
+
+      return {
+        decision: 'warn',
+        tier: 'recoverable-with-effort',
+        target: change.address,
+        action: 'delete',
+        provider,
+        reason: 'Azure Storage has soft delete enabled - data may be recoverable',
+        evidence: [`blob_delete_retention_days=${blobRetention}`, `container_delete_retention_days=${containerRetention}`],
+        missing: ['Blob versioning status']
+      };
+    }
+
+    // Azure CosmosDB
+    if (/azurerm_cosmosdb_account/.test(resourceType)) {
+      const backupType = before.backup?.[0]?.type || 'Periodic';
+      const backupInterval = before.backup?.[0]?.interval_in_minutes || 240;
+
+      return {
+        decision: 'warn',
+        tier: 'recoverable-from-backup',
+        target: change.address,
+        action: 'delete',
+        provider,
+        reason: `CosmosDB has ${backupType} backup (every ${backupInterval} min) - contact Azure support to restore`,
+        evidence: [`backup_type=${backupType}`, `backup_interval=${backupInterval}min`],
+        missing: ['Latest backup timestamp', 'Geo-redundancy status']
+      };
+    }
+
     // Default: unknown resource type
     return {
       decision: 'escalate',
@@ -1632,6 +2063,21 @@ function extractProvider(providerName) {
   return 'terraform';
 }
 
+const decisionIcons = {
+  allow: '<svg class="decision-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>',
+  warn: '<svg class="decision-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>',
+  block: '<svg class="decision-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg>',
+  escalate: '<svg class="decision-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>'
+};
+
+const tierIcons = {
+  reversible: '<svg class="tier-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>',
+  recoverable: '<svg class="tier-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3"/></svg>',
+  backup: '<svg class="tier-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+  unrecoverable: '<svg class="tier-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  review: '<svg class="tier-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+};
+
 function renderResult(report) {
   lastReport = report;
   resultEmpty.style.display = 'none';
@@ -1640,11 +2086,16 @@ function renderResult(report) {
 
   const banner = document.getElementById('decision-banner');
   banner.className = `decision-banner ${report.decision}`;
-  document.getElementById('decision-value').textContent = report.decision;
 
+  const decisionIcon = decisionIcons[report.decision] || '';
+  document.getElementById('decision-value').innerHTML = decisionIcon + report.decision;
+
+  const normalizedTier = normalizeTier(report.tier);
+  const tierClass = getTierClass(normalizedTier);
+  const tierIcon = tierIcons[tierClass] || '';
   const tierPill = document.getElementById('tier-pill');
-  tierPill.textContent = report.tier;
-  tierPill.className = 'tier-pill ' + getTierClass(report.tier);
+  tierPill.innerHTML = tierIcon + normalizedTier;
+  tierPill.className = 'tier-pill ' + tierClass;
 
   document.getElementById('target-resource').textContent = report.target;
   document.getElementById('target-action').textContent = report.action;
@@ -1652,13 +2103,17 @@ function renderResult(report) {
   document.getElementById('reason-text').textContent = report.reason;
 
   const evidenceFound = document.getElementById('evidence-found');
-  evidenceFound.innerHTML = report.evidence.map(e => `<li>${escapeHtml(e)}</li>`).join('') || '<li>None</li>';
+  if (report.evidence.length) {
+    evidenceFound.innerHTML = report.evidence.map(e => `<li><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>${escapeHtml(e)}</li>`).join('');
+  } else {
+    evidenceFound.innerHTML = '<li style="opacity: 0.5; border-left-color: rgba(240, 253, 244, 0.2); background: rgba(240, 253, 244, 0.03);">No evidence collected</li>';
+  }
 
   const evidenceMissing = document.getElementById('evidence-missing');
   const missingSection = document.getElementById('evidence-missing-section');
   if (report.missing.length) {
     missingSection.style.display = 'block';
-    evidenceMissing.innerHTML = report.missing.map(e => `<li>${escapeHtml(e)}</li>`).join('');
+    evidenceMissing.innerHTML = report.missing.map(e => `<li><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>${escapeHtml(e)}</li>`).join('');
   } else {
     missingSection.style.display = 'none';
   }
@@ -1698,11 +2153,22 @@ function renderResult(report) {
 }
 
 function getTierClass(tier) {
-  if (tier === 'reversible') return 'reversible';
-  if (tier === 'recoverable-with-effort') return 'recoverable';
-  if (tier === 'recoverable-from-backup') return 'backup';
-  if (tier === 'unrecoverable') return 'unrecoverable';
+  const t = (tier || '').toLowerCase();
+  if (t === 'reversible' || t.includes('revers')) return 'reversible';
+  if (t === 'recoverable-with-effort' || t.includes('effort')) return 'recoverable';
+  if (t === 'recoverable-from-backup' || t.includes('backup')) return 'backup';
+  if (t === 'unrecoverable' || t.includes('unrecov') || t === 'blocked') return 'unrecoverable';
   return 'review';
+}
+
+function normalizeTier(tier) {
+  const t = (tier || '').toLowerCase();
+  if (t === 'blocked') return 'unrecoverable';
+  if (t.includes('revers')) return 'reversible';
+  if (t.includes('effort')) return 'recoverable-with-effort';
+  if (t.includes('backup')) return 'recoverable-from-backup';
+  if (t.includes('unrecov')) return 'unrecoverable';
+  return tier || 'needs-review';
 }
 
 function escapeHtml(str) {

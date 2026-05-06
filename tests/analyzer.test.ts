@@ -164,7 +164,7 @@ describe('analyzeBlastRadius', () => {
     const report = analyzeBlastRadius(plan, null);
 
     expect(report.changes[0].recoverability.tier).toBe(RecoverabilityTier.REVERSIBLE);
-    expect(report.changes[0].recoverability.label).toBe('blocked');
+    expect(report.changes[0].recoverability.label).toBe('reversible');
     expect(report.changes[0].recoverability.reasoning).toContain('APPLY WILL FAIL');
   });
 });
