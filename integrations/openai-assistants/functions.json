@@ -1,0 +1,56 @@
+[
+  {
+    "name": "recourse_evaluate_terraform",
+    "description": "Evaluate a Terraform plan for destructive consequences BEFORE running terraform apply. Returns risk assessment (allow/warn/escalate/block) and recoverability information. Use this to prevent unrecoverable infrastructure changes.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "plan_json": {
+          "type": "string",
+          "description": "The Terraform plan JSON output (from 'terraform show -json plan.out')"
+        },
+        "state_json": {
+          "type": "string",
+          "description": "Optional: Terraform state JSON for improved accuracy"
+        }
+      },
+      "required": ["plan_json"]
+    }
+  },
+  {
+    "name": "recourse_evaluate_shell",
+    "description": "Evaluate a shell command for destructive consequences BEFORE execution. Use this for commands like 'aws s3 rm', 'kubectl delete', 'rm -rf', 'DROP TABLE', etc. Returns risk assessment and whether to proceed.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "The shell command to evaluate (e.g., 'aws s3 rm s3://bucket --recursive')"
+        }
+      },
+      "required": ["command"]
+    }
+  },
+  {
+    "name": "recourse_evaluate_mcp",
+    "description": "Evaluate an MCP tool call for destructive consequences BEFORE invocation. Use this before calling MCP tools that delete or modify cloud resources.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "server": {
+          "type": "string",
+          "description": "MCP server name (e.g., 'aws', 'kubernetes', 'gcp')"
+        },
+        "tool": {
+          "type": "string",
+          "description": "Tool name (e.g., 's3.delete_bucket', 'rds.delete_instance')"
+        },
+        "arguments": {
+          "type": "object",
+          "description": "Tool arguments as key-value pairs"
+        }
+      },
+      "required": ["server", "tool", "arguments"]
+    }
+  }
+]
