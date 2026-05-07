@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-05-07T02:21:03.701Z",
+  "totalPlans": 19,
+  "totalDivergences": 1,
+  "divergences": [
+    {
+      "planFile": "/Users/jessiehermosillo/recourseOS/recourse-go/tests/differential/corpus/s3/bucket-delete-no-before.json",
+      "resource": "aws_s3_bucket.unknown",
+      "field": "tier",
+      "tsValue": "4 (unrecoverable)",
+      "goValue": "5 (needs-review)",
+      "category": "classifier-difference"
+    }
+  ]
+}

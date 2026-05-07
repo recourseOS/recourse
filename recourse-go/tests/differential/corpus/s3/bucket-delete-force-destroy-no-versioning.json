@@ -1,0 +1,22 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.5.0",
+  "resource_changes": [
+    {
+      "address": "aws_s3_bucket.test",
+      "type": "aws_s3_bucket",
+      "name": "test",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "bucket": "test-bucket",
+          "force_destroy": true,
+          "versioning": []
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    }
+  ]
+}

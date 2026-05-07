@@ -1,0 +1,57 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.5.0",
+  "resource_changes": [
+    {
+      "address": "aws_s3_bucket.data",
+      "type": "aws_s3_bucket",
+      "name": "data",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "bucket": "my-data-bucket",
+          "force_destroy": true,
+          "versioning": []
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_db_instance.prod",
+      "type": "aws_db_instance",
+      "name": "prod",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "identifier": "prod-db",
+          "skip_final_snapshot": true,
+          "backup_retention_period": 0,
+          "deletion_protection": false
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_lambda_function.api",
+      "type": "aws_lambda_function",
+      "name": "api",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["update"],
+        "before": {
+          "function_name": "api-handler",
+          "runtime": "nodejs18.x"
+        },
+        "after": {
+          "function_name": "api-handler",
+          "runtime": "nodejs20.x"
+        },
+        "after_unknown": {}
+      }
+    }
+  ]
+}

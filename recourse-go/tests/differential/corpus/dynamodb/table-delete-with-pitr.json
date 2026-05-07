@@ -1,0 +1,21 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.5.0",
+  "resource_changes": [
+    {
+      "address": "aws_dynamodb_table.orders",
+      "type": "aws_dynamodb_table",
+      "name": "orders",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "name": "orders-table",
+          "point_in_time_recovery": [{"enabled": true}]
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    }
+  ]
+}

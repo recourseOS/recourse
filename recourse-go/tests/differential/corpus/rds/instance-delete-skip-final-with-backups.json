@@ -1,0 +1,23 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.5.0",
+  "resource_changes": [
+    {
+      "address": "aws_db_instance.backup",
+      "type": "aws_db_instance",
+      "name": "backup",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "identifier": "backup-db",
+          "skip_final_snapshot": true,
+          "backup_retention_period": 7,
+          "deletion_protection": false
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    }
+  ]
+}

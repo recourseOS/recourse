@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>RecourseOS - Changelog</title>
+<meta name="description" content="Version history and release notes for RecourseOS." />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="site.css" />
+<style>
+.changelog-entry {
+  margin-bottom: 48px;
+  padding-bottom: 48px;
+  border-bottom: 1px solid rgba(99, 230, 184, 0.15);
+}
+.changelog-entry:last-child {
+  border-bottom: none;
+}
+.version-header {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.version-number {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--green);
+}
+.version-date {
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.version-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.tag-major { background: rgba(99, 230, 184, 0.2); color: var(--green); }
+.tag-feature { background: rgba(99, 180, 230, 0.2); color: #63b4e6; }
+.tag-fix { background: rgba(230, 180, 99, 0.2); color: #e6b463; }
+.tag-integration { background: rgba(180, 99, 230, 0.2); color: #b463e6; }
+.change-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.change-list li {
+  position: relative;
+  padding-left: 24px;
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+.change-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  opacity: 0.6;
+}
+.change-category {
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 20px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.change-category:first-child {
+  margin-top: 0;
+}
+</style>
+</head>
+<body>
+<div class="top-band">
+<nav class="container site-nav">
+  <a href="/" class="brand" aria-label="RecourseOS home">
+    <svg class="brand-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M50 5 L88.97 27.5 V72.5 L50 95 L11.03 72.5 V27.5 Z" fill="#06110e"/>
+      <path d="M50 9.8 L84.8 29.9 V70.1 L50 90.2 L15.2 70.1 V29.9 Z" stroke="#effbf3" stroke-width="5.6" stroke-linejoin="round"/>
+      <path d="M34 70 V30 H57.5 C67.2 30 74 36 74 44.6 C74 53.2 67.2 59.2 57.5 59.2 H34" stroke="#effbf3" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M55.5 59.5 L74 70.5" stroke="#effbf3" stroke-width="7" stroke-linecap="round"/>
+      <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round"/>
+      <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>
+      <span class="brand-name">Recourse<span class="os">OS</span></span>
+      <span class="brand-kicker">Consequence layer</span>
+    </span>
+  </a>
+  <div class="links">
+    <a href="/">home</a>
+    <a href="/docs.html">docs</a>
+    <a href="/console.html">console</a>
+    <a href="/about.html">about</a>
+    <a href="https://github.com/recourseOS/recourse" class="nav-cta">github</a>
+  </div>
+</nav>
+<header class="container doc-header">
+  <div class="eyebrow">releases</div>
+  <h1>Changelog</h1>
+  <p class="lede">Version history and release notes for RecourseOS.</p>
+</header>
+</div>
+<main class="container doc-shell">
+  <aside class="toc">
+    <div class="toc-title">Versions</div>
+    <a href="#v0.1.40">v0.1.40</a>
+    <a href="#v0.1.39">v0.1.39</a>
+    <a href="#v1.0.0">v1.0.0 (Action)</a>
+    <a href="#v0.1.38">v0.1.38</a>
+    <a href="#v0.1.37">v0.1.37</a>
+    <a href="#v0.1.36">v0.1.36</a>
+    <a href="#v0.1.34">v0.1.34</a>
+    <a href="#v0.1.30">v0.1.30</a>
+  </aside>
+  <article>
+
+<div class="changelog-entry" id="v0.1.40">
+  <div class="version-header">
+    <span class="version-number">v0.1.40</span>
+    <span class="version-date">May 2026</span>
+    <span class="version-tag tag-major">Major</span>
+  </div>
+  <div class="change-category">Go SDK</div>
+  <ul class="change-list">
+    <li><strong>Second independent implementation</strong> &mdash; Complete Go implementation of the consequence evaluation protocol</li>
+    <li><strong>Cross-implementation attestation</strong> &mdash; Ed25519 signatures verified between Go and TypeScript</li>
+    <li><strong>Differential testing</strong> &mdash; 18/19 test cases match between implementations</li>
+    <li><strong>Cross-action patterns in Go</strong> &mdash; All three patterns ported: backup+protected, replica+primary, protection-disabled</li>
+  </ul>
+  <div class="change-category">Documentation</div>
+  <ul class="change-list">
+    <li>New <a href="/go-sdk.html">Go SDK documentation</a> with installation, usage, and API reference</li>
+    <li>Updated attestation protocol status from "draft" to "implemented"</li>
+    <li>Added SDKs section to documentation hub</li>
+    <li>Added changelog page</li>
+  </ul>
+</div>
+
+<div class="changelog-entry" id="v0.1.39">
+  <div class="version-header">
+    <span class="version-number">v0.1.39</span>
+    <span class="version-date">May 2026</span>
+    <span class="version-tag tag-fix">Fix</span>
+  </div>
+  <ul class="change-list">
+    <li>Fixed console layout glitch affecting fixture display</li>
+    <li>Balanced demo fixtures for better visual presentation</li>
+    <li>MCP Registry version updated</li>
+  </ul>
+</div>
+
+<div class="changelog-entry" id="v1.0.0">
+  <div class="version-header">
+    <span class="version-number">v1.0.0</span>
+    <span class="version-date">May 2026</span>
+    <span class="version-tag tag-integration">Integration</span>
+  </div>
+  <div class="change-category">GitHub Action</div>
+  <ul class="change-list">
+    <li><strong>Published to GitHub Marketplace</strong> &mdash; <code>recourseOS/recourse/action@v1</code></li>
+    <li>Evaluate Terraform plans in CI/CD pipelines</li>
+    <li>Configurable failure thresholds (<code>fail-on: block</code>, <code>escalate</code>, <code>warn</code>)</li>
+    <li>JSON output for downstream processing</li>
+  </ul>
+  <div class="change-category">Python Integrations</div>
+  <ul class="change-list">
+    <li><strong>LangChain Tool</strong> &mdash; Published to <a href="https://pypi.org/project/langchain-recourse/">PyPI</a></li>
+    <li><strong>LlamaIndex Tool</strong> &mdash; Published to <a href="https://pypi.org/project/llama-recourse/">PyPI</a></li>
+  </ul>
+</div>
+
+<div class="changelog-entry" id="v0.1.38">
+  <div class="version-header">
+    <span class="version-number">v0.1.38</span>
+    <span class="version-date">May 2026</span>
+    <span class="version-tag tag-feature">Feature</span>
+  </div>
+  <ul class="change-list">
+    <li><strong>Console overhaul</strong> &mdash; Redesigned interactive console with better UX</li>
+    <li>Fixed invalid 'blocked' recoverability label (should be 'block')</li>
+    <li>Dark theme polish for landing page</li>
+    <li>Animated architecture diagram</li>
+    <li>Logo strip with cloud provider icons</li>
+  </ul>
+</div>
+
+<div class="changelog-entry" id="v0.1.37">
+  <div class="version-header">
+    <span class="version-number">v0.1.37</span>
+    <span class="version-date">May 2026</span>
+    <span class="version-tag tag-feature">Feature</span>
+  </div>
+  <ul class="change-list">
+    <li><strong>20+ new tests</strong> &mdash; Enhanced test coverage across handlers</li>
+    <li>Homepage polish and visual improvements</li>
+    <li>Visual regression tests with Playwright</li>
+    <li>Package.json cleanup</li>
+  </ul>
+</div>
+
+<div class="changelog-entry" id="v0.1.36">
+  <div class="version-header">
+    <span class="version-number">v0.1.36</span>
+    <span class="version-date">May 2026</span>
+    <span class="version-tag tag-major">Major</span>
+  </div>
+  <div class="change-category">Cross-Action Analysis</div>
+  <ul class="change-list">
+    <li><strong>Dangerous pattern detection</strong> &mdash; Detects combinations where individual actions are safe but together are unrecoverable</li>
+    <li><code>backup_and_protected_both_deleted</code> &mdash; Database and its backup deleted together</li>
+    <li><code>replica_and_primary_both_deleted</code> &mdash; Primary and replica deleted in same plan</li>
+    <li><code>protection_disabled_then_deleted</code> &mdash; Protection removed and resource deleted together</li>
+    <li>Confidence levels: definite, probable, possible</li>
+    <li>Tier upgrade when patterns detected</li>
+  </ul>
+</div>
+
+<div class="changelog-entry" id="v0.1.34">
+  <div class="version-header">
+    <span class="version-number">v0.1.34</span>
+    <span class="version-date">May 2026</span>
+    <span class="version-tag tag-feature">Feature</span>
+  </div>
+  <ul class="change-list">
+    <li><strong>Evidence requirements</strong> &mdash; Added <code>evidenceRequirements</code> to GCP, Azure, and AWS handlers</li>
+    <li>Expanded attestation protocol specification</li>
+    <li>Console fixes for target/action/provider extraction</li>
+  </ul>
+</div>
+
+<div class="changelog-entry" id="v0.1.30">
+  <div class="version-header">
+    <span class="version-number">v0.1.30</span>
+    <span class="version-date">May 2026</span>
+    <span class="version-tag tag-feature">Feature</span>
+  </div>
+  <ul class="change-list">
+    <li><strong>Console enhancements</strong> &mdash; Visual polish, more fixtures, attestation display</li>
+    <li>Fixed MCP input validation to accept both 'tool' and 'name' fields</li>
+    <li>Landing page hero copy improvements</li>
+    <li>About page with LinkedIn link</li>
+  </ul>
+</div>
+
+  </article>
+</main>
+
+<footer class="container">
+  <span>&copy; 2026 RecourseOS</span>
+  <span>
+    <a href="/changelog.html">changelog</a>
+    <a href="/brand.html">brand</a>
+    <a href="https://github.com/recourseOS/recourse">github</a>
+    <a href="https://www.npmjs.com/package/recourse-cli">npm</a>
+  </span>
+</footer>
+</body>
+</html>

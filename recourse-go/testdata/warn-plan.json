@@ -1,0 +1,35 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.5.0",
+  "resource_changes": [
+    {
+      "address": "aws_lambda_function.api",
+      "type": "aws_lambda_function",
+      "name": "api",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "function_name": "api-handler",
+          "runtime": "nodejs18.x"
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_iam_role.service",
+      "type": "aws_iam_role",
+      "name": "service",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "name": "service-role"
+        },
+        "after": null,
+        "after_unknown": {}
+      }
+    }
+  ]
+}

@@ -37,13 +37,13 @@
   </div>
 </nav>
 <header class="container doc-header">
-  <div class="eyebrow">design draft &middot; may 2026</div>
+  <div class="eyebrow">implemented &middot; may 2026</div>
   <h1>Attestation Protocol</h1>
   <p class="lede">Cryptographic proof that consequence evaluation happened. Non-repudiation for agent actions.</p>
   <div style="background: rgba(99, 230, 184, 0.15); border: 1px solid rgba(99, 230, 184, 0.3); padding: 16px 20px; border-radius: 6px; font-size: 14px; margin-top: 16px;">
-    <strong>Status: Partial Draft</strong><br>
-    <strong>Specified:</strong> §4 Canonicalization, §5 Key Management, §6 Transport, §7 Agent-Side Opt-In<br>
-    <strong>Pending:</strong> §8 Verification Procedure, §9 Failure Modes, §10 Wire Format
+    <strong>Status: Implemented</strong><br>
+    <strong>Implementations:</strong> TypeScript (primary), Go SDK (verified interoperable)<br>
+    <strong>Features:</strong> Ed25519 signing, RFC 8785 canonicalization, cross-implementation verification
   </div>
 </header>
 </div>
@@ -678,6 +678,7 @@ CI system: "Attestation says block. Denied."</code></pre>
 <footer class="container">
   <span>&copy; 2026 RecourseOS</span>
   <span>
+    <a href="/changelog.html">changelog</a>
     <a href="/brand.html">brand</a>
     <a href="https://github.com/recourseOS/recourse">github</a>
     <a href="https://www.npmjs.com/package/recourse-cli">npm</a>

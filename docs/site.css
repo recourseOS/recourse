@@ -1313,6 +1313,31 @@ select:focus, textarea:focus, button:focus-visible {
   transform: translateY(-1px);
 }
 
+.integration-item.beta {
+  color: var(--ink);
+  border-color: rgba(99, 180, 230, 0.5);
+  background: rgba(99, 180, 230, 0.08);
+  cursor: default;
+}
+
+.integration-item.beta svg {
+  opacity: 0.85;
+  color: #63b4e6;
+}
+
+.integration-item.beta::after {
+  content: "beta";
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  background: rgba(99, 180, 230, 0.2);
+  color: #63b4e6;
+  border-radius: 3px;
+}
+
 .integration-item.soon {
   opacity: 0.5;
   cursor: default;

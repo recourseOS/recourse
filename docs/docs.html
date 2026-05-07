@@ -115,6 +115,31 @@
   </section>
 
   <section class="docs-section">
+    <div class="docs-section-title">SDKs</div>
+    <p class="docs-section-desc">Language-specific implementations and libraries.</p>
+    <div class="docs-grid">
+      <a class="card" href="/go-sdk.html">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <div class="card-kicker">go</div>
+        <div class="card-title">Go SDK</div>
+        <div class="card-body">Second independent implementation. Proves protocol stability through cross-implementation verification.</div>
+      </a>
+      <a class="card" href="https://www.npmjs.com/package/recourse-cli">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h10v10H7z"/><path d="M7 12h5v5"/></svg>
+        <div class="card-kicker">typescript</div>
+        <div class="card-title">TypeScript CLI</div>
+        <div class="card-body">Primary implementation. MCP server, CLI tool, and npm package.</div>
+      </a>
+      <a class="card" href="https://pypi.org/project/langchain-recourse/">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l-2 4h4l-2-4z"/><circle cx="12" cy="14" r="6"/><path d="M12 10v8M8 14h8"/></svg>
+        <div class="card-kicker">python</div>
+        <div class="card-title">LangChain Tool</div>
+        <div class="card-body">Python integration for LangChain agents. Published on PyPI.</div>
+      </a>
+    </div>
+  </section>
+
+  <section class="docs-section">
     <div class="docs-section-title">Reference</div>
     <p class="docs-section-desc">Supported resources, test fixtures, and verification.</p>
     <div class="docs-grid">
@@ -170,17 +195,23 @@
       </a>
       <a class="card" href="/attestation-protocol-design.html">
         <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><path d="M12 15v3"/></svg>
-        <div class="card-kicker">design draft</div>
+        <div class="card-kicker">implemented</div>
         <div class="card-title">Attestation Protocol</div>
-        <div class="card-body">Cryptographic proof that consequence evaluation happened. Non-repudiation for agent actions.</div>
+        <div class="card-body">Cryptographic proof that consequence evaluation happened. Ed25519 signing with cross-implementation verification.</div>
       </a>
     </div>
   </section>
 
   <section class="docs-section">
-    <div class="docs-section-title">Brand</div>
-    <p class="docs-section-desc">Logo, colors, and assets.</p>
+    <div class="docs-section-title">Project</div>
+    <p class="docs-section-desc">Releases, brand assets, and project info.</p>
     <div class="docs-grid">
+      <a class="card" href="/changelog.html">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
+        <div class="card-kicker">releases</div>
+        <div class="card-title">Changelog</div>
+        <div class="card-body">Version history and release notes. What shipped and when.</div>
+      </a>
       <a class="card" href="/brand.html">
         <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17" cy="13" r="2"/><circle cx="6" cy="12" r="3"/><circle cx="12" cy="19" r="2"/><path d="M9 12h5M13.5 9v2M12 17v-4"/></svg>
         <div class="card-kicker">assets</div>
@@ -195,6 +226,7 @@
 <footer class="container">
   <span>&copy; 2026 RecourseOS</span>
   <span>
+    <a href="/changelog.html">changelog</a>
     <a href="/brand.html">brand</a>
     <a href="https://github.com/recourseOS/recourse">github</a>
     <a href="https://www.npmjs.com/package/recourse-cli">npm</a>

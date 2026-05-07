@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>RecourseOS - Go SDK</title>
+<meta name="description" content="Second independent implementation of RecourseOS in Go. Proves protocol stability through cross-implementation verification." />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="site.css" />
+</head>
+<body>
+<div class="top-band">
+<nav class="container site-nav">
+  <a href="/" class="brand" aria-label="RecourseOS home">
+    <svg class="brand-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M50 5 L88.97 27.5 V72.5 L50 95 L11.03 72.5 V27.5 Z" fill="#06110e"/>
+      <path d="M50 9.8 L84.8 29.9 V70.1 L50 90.2 L15.2 70.1 V29.9 Z" stroke="#effbf3" stroke-width="5.6" stroke-linejoin="round"/>
+      <path d="M34 70 V30 H57.5 C67.2 30 74 36 74 44.6 C74 53.2 67.2 59.2 57.5 59.2 H34" stroke="#effbf3" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M55.5 59.5 L74 70.5" stroke="#effbf3" stroke-width="7" stroke-linecap="round"/>
+      <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round"/>
+      <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>
+      <span class="brand-name">Recourse<span class="os">OS</span></span>
+      <span class="brand-kicker">Consequence layer</span>
+    </span>
+  </a>
+  <div class="links">
+    <a href="/">home</a>
+    <a href="/docs.html">docs</a>
+    <a href="/console.html">console</a>
+    <a href="/about.html">about</a>
+    <a href="https://github.com/recourseOS/recourse" class="nav-cta">github</a>
+  </div>
+</nav>
+<header class="container doc-header">
+  <div class="eyebrow">sdk</div>
+  <h1>Go SDK</h1>
+  <p class="lede">Second independent implementation of RecourseOS. Proves protocol stability through cross-implementation verification.</p>
+</header>
+</div>
+<main class="container doc-shell">
+  <aside class="toc"><div class="toc-title">On this page</div><a href="#why-two-implementations">Why Two Implementations</a><a href="#installation">Installation</a><a href="#cli-usage">CLI Usage</a><a href="#library-usage">Library Usage</a><a href="#attestation">Attestation</a><a href="#cross-implementation">Cross-Implementation Verification</a><a href="#api-reference">API Reference</a></aside>
+  <article>
+    <h1 id="go-sdk">Go SDK</h1>
+<p>The Go SDK (<code>recourse-go</code>) is a complete, independent implementation of the RecourseOS consequence evaluation protocol. It produces identical verdicts to the TypeScript implementation for all supported resource types.</p>
+
+<h2 id="why-two-implementations">Why Two Implementations</h2>
+<p>Having two independent implementations provides critical benefits:</p>
+<ul>
+<li><strong>Protocol credibility</strong> &mdash; If two implementations written in different languages produce the same output for the same input, the protocol is well-specified enough to be trusted.</li>
+<li><strong>Specification validation</strong> &mdash; Divergences between implementations surface ambiguities in the spec that need resolution.</li>
+<li><strong>Ecosystem flexibility</strong> &mdash; Go services can evaluate consequences without spawning Node.js processes.</li>
+<li><strong>Attestation interoperability</strong> &mdash; Attestations signed by Go can be verified by TypeScript and vice versa.</li>
+</ul>
+<p>The Go implementation passes 18/19 differential tests against TypeScript. The single divergence is a documented spec ambiguity (missing <code>before</code> data handling) that will be resolved in a future protocol version.</p>
+
+<h2 id="installation">Installation</h2>
+<p>Install from source:</p>
+<pre><code>git clone https://github.com/recourseOS/recourse.git
+cd recourse/recourse-go
+go build -o recourse-go ./cmd/recourse</code></pre>
+<p>Or use as a library:</p>
+<pre><code>go get github.com/recourseOS/recourse-go</code></pre>
+
+<h2 id="cli-usage">CLI Usage</h2>
+<p>Evaluate a Terraform plan:</p>
+<pre><code>terraform show -json plan.out &gt; plan.json
+./recourse-go plan plan.json</code></pre>
+<p>Output formats:</p>
+<pre><code># Human-readable (default)
+./recourse-go plan plan.json --format human
+
+# JSON for programmatic use
+./recourse-go plan plan.json --format json</code></pre>
+<p>Environment-specific policy:</p>
+<pre><code># Production policy (stricter thresholds)
+./recourse-go plan plan.json --env production
+
+# Development (default, more permissive)
+./recourse-go plan plan.json --env development</code></pre>
+<p>List supported resources:</p>
+<pre><code>./recourse-go resources</code></pre>
+
+<h2 id="library-usage">Library Usage</h2>
+<p>Use the Go packages directly in your application:</p>
+<pre><code>package main
+
+import (
+    "fmt"
+    "github.com/recourseOS/recourse-go/pkg/evaluator"
+    "github.com/recourseOS/recourse-go/pkg/parser"
+    "github.com/recourseOS/recourse-go/pkg/policy"
+)
+
+func main() {
+    // Parse a Terraform plan
+    plan, err := parser.ParsePlanFile("plan.json")
+    if err != nil {
+        panic(err)
+    }
+
+    // Evaluate consequences
+    eval := evaluator.New()
+    report := eval.EvaluatePlan(plan, plan.PriorState)
+
+    // Apply policy
+    pol := policy.ProductionPolicy()
+    verdict := pol.Evaluate(report)
+
+    fmt.Printf("Risk: %s\n", verdict.RiskAssessment)
+    fmt.Printf("Tier: %s\n", report.OverallTier)
+}</code></pre>
+
+<h3>Cross-Action Pattern Detection</h3>
+<p>The evaluator automatically detects dangerous action combinations:</p>
+<pre><code>report := eval.EvaluatePlan(plan, state)
+
+for _, risk := range report.CrossActionRisks {
+    fmt.Printf("Pattern: %s\n", risk.PatternName)
+    fmt.Printf("Explanation: %s\n", risk.Explanation)
+    fmt.Printf("Affected: %v\n", risk.AffectedResources)
+}</code></pre>
+<p>Detected patterns:</p>
+<ul>
+<li><code>backup_and_protected_both_deleted</code> &mdash; Database and its backup/snapshot deleted together</li>
+<li><code>replica_and_primary_both_deleted</code> &mdash; Primary and replica deleted together</li>
+<li><code>protection_disabled_then_deleted</code> &mdash; Protection removed and resource deleted in same plan</li>
+</ul>
+
+<h2 id="attestation">Attestation</h2>
+<p>The Go SDK includes full cryptographic attestation support using Ed25519 signatures.</p>
+
+<h3>Signing Attestations</h3>
+<pre><code>import "github.com/recourseOS/recourse-go/pkg/attestation"
+
+// Create a signer with instance base URL
+signer, err := attestation.NewSigner(
+    "recourse-go/v1",           // evaluator identifier
+    "https://recourse.example", // instance base URL
+)
+
+// Sign an evaluation
+attest, err := signer.Sign(input, output)
+
+// attestation includes:
+// - attestation_uri: unique identifier
+// - signature: Ed25519 base64url
+// - key_id: derived from public key
+// - timestamp: RFC3339</code></pre>
+
+<h3>Verifying Attestations</h3>
+<pre><code>// Verify with a known public key
+err := attestation.VerifyWithPublicKey(attest, publicKeyBytes)
+if err != nil {
+    // Invalid signature or tampered content
+}
+
+// Or use a verifier with multiple keys
+verifier := attestation.NewVerifier()
+verifier.AddPublicKey(keyID, publicKeyBytes)
+err := verifier.Verify(attest)</code></pre>
+
+<h3>Attestation Structure</h3>
+<pre><code>{
+  "input": { ... },           // Original evaluation input
+  "output": { ... },          // Consequence report
+  "evaluator": "recourse-go/v1",
+  "timestamp": "2026-05-06T12:00:00Z",
+  "key_id": "107f1e4a05176c74",
+  "attestation_uri": "https://example.com/.well-known/attestations/abc123...json",
+  "signature": "base64url-encoded-ed25519-signature"
+}</code></pre>
+
+<h2 id="cross-implementation">Cross-Implementation Verification</h2>
+<p>Attestations are fully interoperable between Go and TypeScript:</p>
+<ul>
+<li><strong>Go signs, TypeScript verifies</strong> &mdash; Tested and passing</li>
+<li><strong>TypeScript signs, Go verifies</strong> &mdash; Tested and passing</li>
+<li><strong>Tampered attestations rejected</strong> &mdash; Both implementations correctly reject modified content</li>
+</ul>
+<p>This interoperability proves the attestation protocol is implementation-independent. An agent can receive an attestation from any compliant evaluator and verify it with any compliant verifier.</p>
+
+<h3>Running Cross-Implementation Tests</h3>
+<pre><code>cd recourse-go
+npx tsx tests/cross-impl/run-test.ts</code></pre>
+<p>Expected output:</p>
+<pre><code>Cross-Implementation Attestation Verification Test
+==================================================
+
+--- Test 1: Go signs, TypeScript verifies ---
+Go signed attestation:
+  Key ID: 107f1e4a05176c74
+  URI: https://test.recourse.dev/.well-known/attestations/...
+TypeScript verification: PASS
+
+--- Test 2: TypeScript signs, Go verifies ---
+TypeScript signed attestation:
+  Key ID: 92965f6e9e0b7695
+  URI: https://test.recourse.dev/.well-known/attestations/...
+Go verification: PASS
+
+--- Test 3: Tampered attestation rejected ---
+Tampered verification: PASS (correctly rejected)
+
+All cross-implementation tests passed!</code></pre>
+
+<h2 id="api-reference">API Reference</h2>
+
+<h3>Package: types</h3>
+<p>Core types for consequence evaluation.</p>
+<table>
+<thead><tr><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>RecoverabilityTier</code></td><td>1=Reversible, 2=RecoverableWithEffort, 3=RecoverableFromBackup, 4=Unrecoverable, 5=NeedsReview</td></tr>
+<tr><td><code>RiskAssessment</code></td><td>allow, warn, escalate, block</td></tr>
+<tr><td><code>TerraformPlan</code></td><td>Parsed Terraform plan JSON</td></tr>
+<tr><td><code>ConsequenceReport</code></td><td>Full evaluation output with resource results and cross-action risks</td></tr>
+<tr><td><code>CrossActionRisk</code></td><td>Detected dangerous pattern with affected resources</td></tr>
+</tbody>
+</table>
+
+<h3>Package: evaluator</h3>
+<p>Main evaluation logic.</p>
+<table>
+<thead><tr><th>Function</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>New()</code></td><td>Create evaluator with default handler registry</td></tr>
+<tr><td><code>EvaluatePlan(plan, state)</code></td><td>Evaluate a Terraform plan, returns ConsequenceReport</td></tr>
+</tbody>
+</table>
+
+<h3>Package: attestation</h3>
+<p>Cryptographic signing and verification.</p>
+<table>
+<thead><tr><th>Function</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>NewSigner(evaluator, baseURL)</code></td><td>Create signer with fresh Ed25519 keypair</td></tr>
+<tr><td><code>NewSignerFromKey(evaluator, baseURL, key)</code></td><td>Create signer from existing private key</td></tr>
+<tr><td><code>Signer.Sign(input, output)</code></td><td>Sign an evaluation, returns Attestation</td></tr>
+<tr><td><code>NewVerifier()</code></td><td>Create verifier for checking signatures</td></tr>
+<tr><td><code>Verifier.AddPublicKey(keyID, key)</code></td><td>Register a public key for verification</td></tr>
+<tr><td><code>Verifier.Verify(attestation)</code></td><td>Verify an attestation signature</td></tr>
+<tr><td><code>VerifyWithPublicKey(attestation, key)</code></td><td>One-shot verification without pre-registration</td></tr>
+<tr><td><code>Canonicalize(v)</code></td><td>RFC 8785 JSON Canonicalization Scheme</td></tr>
+</tbody>
+</table>
+
+<h3>Package: parser</h3>
+<p>Terraform plan parsing.</p>
+<table>
+<thead><tr><th>Function</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>ParsePlanFile(path)</code></td><td>Parse Terraform plan JSON from file</td></tr>
+<tr><td><code>ParsePlan(data)</code></td><td>Parse Terraform plan JSON from bytes</td></tr>
+</tbody>
+</table>
+
+<h3>Package: policy</h3>
+<p>Policy evaluation and thresholds.</p>
+<table>
+<thead><tr><th>Function</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>DefaultPolicy()</code></td><td>Development-friendly policy</td></tr>
+<tr><td><code>ProductionPolicy()</code></td><td>Stricter production thresholds</td></tr>
+<tr><td><code>Policy.Evaluate(report)</code></td><td>Apply policy to report, returns Verdict</td></tr>
+</tbody>
+</table>
+
+  </article>
+</main>
+
+<footer class="container">
+  <span>&copy; 2026 RecourseOS</span>
+  <span>
+    <a href="/changelog.html">changelog</a>
+    <a href="/brand.html">brand</a>
+    <a href="https://github.com/recourseOS/recourse">github</a>
+    <a href="https://www.npmjs.com/package/recourse-cli">npm</a>
+  </span>
+</footer>
+</body>
+</html>
