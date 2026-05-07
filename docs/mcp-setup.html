@@ -60,8 +60,7 @@
 <p>Then tell the agent to check before destructive commands:</p>
 <pre><code>Use RecourseOS to check before running: rm -rf /tmp/test</code></pre>
 <h2 id="agent-setup-guides">Agent Setup Guides</h2>
-<details>
-<summary><strong>Claude Code (CLI)</strong></summary>
+<p>&lt;details&gt; &lt;summary&gt;&lt;strong&gt;Claude Code (CLI)&lt;/strong&gt;&lt;/summary&gt;</p>
 <h3 id="config">Config</h3>
 <pre><code>claude mcp add recourseos --transport stdio -- npx -y recourse-cli@latest mcp serve</code></pre>
 <p>Or add to your project's <code>.mcp.json</code>:</p>
@@ -77,9 +76,8 @@
 <p>Claude Code supports hooks. You can configure a pre-execution hook to check RecourseOS before shell commands (coming soon).</p>
 <h3 id="verify">Verify</h3>
 <pre><code>claude mcp list</code></pre>
-</details>
-<details>
-<summary><strong>Claude Desktop</strong></summary>
+<p>&lt;/details&gt;</p>
+<p>&lt;details&gt; &lt;summary&gt;&lt;strong&gt;Claude Desktop&lt;/strong&gt;&lt;/summary&gt;</p>
 <h3 id="config-file-location">Config file location</h3>
 <ul><li><strong>macOS</strong>: <code>~/Library/Application Support/Claude/claude_desktop_config.json</code></li><li><strong>Windows</strong>: <code>%APPDATA%\Claude\claude_desktop_config.json</code></li></ul>
 <h3 id="add-recourseos">Add RecourseOS</h3>
@@ -96,9 +94,8 @@
 <h3 id="usage">Usage</h3>
 <p>Tell Claude to check before destructive commands:</p>
 <pre><code>Use RecourseOS to check before running: rm -rf /tmp/test</code></pre>
-</details>
-<details>
-<summary><strong>Cline (VS Code)</strong></summary>
+<p>&lt;/details&gt;</p>
+<p>&lt;details&gt; &lt;summary&gt;&lt;strong&gt;Cline (VS Code)&lt;/strong&gt;&lt;/summary&gt;</p>
 <h3 id="config-file-location">Config file location</h3>
 <ul><li><strong>macOS/Linux</strong>: <code>~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json</code></li><li><strong>Windows</strong>: <code>%APPDATA%\Code\User\globalStorage\saoudrizwan.claude-dev\settings\cline_mcp_settings.json</code></li></ul>
 <h3 id="add-recourseos">Add RecourseOS</h3>
@@ -115,9 +112,8 @@
 <pre><code>Use RecourseOS to check before running: rm -rf /tmp/test</code></pre>
 <p>Or start your session with:</p>
 <pre><code>For this session, check recourse_evaluate_shell before any destructive commands.</code></pre>
-</details>
-<details>
-<summary><strong>Cursor</strong></summary>
+<p>&lt;/details&gt;</p>
+<p>&lt;details&gt; &lt;summary&gt;&lt;strong&gt;Cursor&lt;/strong&gt;&lt;/summary&gt;</p>
 <h3 id="config-file-location">Config file location</h3>
 <ul><li><strong>Global</strong>: <code>~/.cursor/mcp.json</code></li><li><strong>Project-scoped</strong>: <code>.cursor/mcp.json</code> (in project root)</li></ul>
 <h3 id="add-recourseos">Add RecourseOS</h3>
@@ -134,9 +130,8 @@
 <h3 id="agent-instructions">Agent instructions</h3>
 <p>Add to your project's <code>.cursorrules</code>:</p>
 <pre><code>Before executing shell commands that delete or modify files, call recourse_evaluate_shell. Follow the riskAssessment field.</code></pre>
-</details>
-<details>
-<summary><strong>Windsurf</strong></summary>
+<p>&lt;/details&gt;</p>
+<p>&lt;details&gt; &lt;summary&gt;&lt;strong&gt;Windsurf&lt;/strong&gt;&lt;/summary&gt;</p>
 <h3 id="config-file-location">Config file location</h3>
 <p><code>~/.codeium/windsurf/mcp_config.json</code></p>
 <h3 id="add-recourseos">Add RecourseOS</h3>
@@ -150,9 +145,8 @@
 }</code></pre>
 <h3 id="access-settings">Access settings</h3>
 <p>Open settings via &quot;Windsurf - Settings&quot; button (bottom right), or press <code>Cmd+Shift+P</code> (Mac) / <code>Ctrl+Shift+P</code> (Windows/Linux) and search &quot;Open Windsurf Settings.&quot; Navigate to Advanced Settings &gt; Cascade.</p>
-</details>
-<details>
-<summary><strong>Continue (VS Code / JetBrains)</strong></summary>
+<p>&lt;/details&gt;</p>
+<p>&lt;details&gt; &lt;summary&gt;&lt;strong&gt;Continue (VS Code / JetBrains)&lt;/strong&gt;&lt;/summary&gt;</p>
 <h3 id="config-file-location">Config file location</h3>
 <p><code>~/.continue/config.json</code> or <code>~/.continue/config.yaml</code></p>
 <h3 id="add-recourseos">Add RecourseOS</h3>
@@ -166,9 +160,8 @@
     }
   ]
 }</code></pre>
-</details>
-<details>
-<summary><strong>Zed</strong></summary>
+<p>&lt;/details&gt;</p>
+<p>&lt;details&gt; &lt;summary&gt;&lt;strong&gt;Zed&lt;/strong&gt;&lt;/summary&gt;</p>
 <h3 id="config-file-location">Config file location</h3>
 <p><code>~/.config/zed/settings.json</code></p>
 <h3 id="add-recourseos">Add RecourseOS</h3>
@@ -183,9 +176,8 @@
     }
   }
 }</code></pre>
-</details>
-<details>
-<summary><strong>JetBrains AI Assistant</strong></summary>
+<p>&lt;/details&gt;</p>
+<p>&lt;details&gt; &lt;summary&gt;&lt;strong&gt;JetBrains AI Assistant&lt;/strong&gt;&lt;/summary&gt;</p>
 <h3 id="config-location">Config location</h3>
 <p>Settings &gt; Tools &gt; AI Assistant &gt; Model Context Protocol (MCP)</p>
 <h3 id="add-recourseos">Add RecourseOS</h3>
@@ -198,9 +190,8 @@
     }
   }
 }</code></pre>
-</details>
-<details>
-<summary><strong>Other MCP Clients</strong></summary>
+<p>&lt;/details&gt;</p>
+<p>&lt;details&gt; &lt;summary&gt;&lt;strong&gt;Other MCP Clients&lt;/strong&gt;&lt;/summary&gt;</p>
 <h3 id="standard-config-format">Standard config format</h3>
 <p>Most MCP clients accept this shape:</p>
 <pre><code>{
@@ -227,7 +218,7 @@ If riskAssessment is block, stop.
 If riskAssessment is escalate, ask me for review.
 If riskAssessment is warn, summarize the recovery requirement before continuing.</code></pre>
 <p>Or instruct the agent to read <code>recourse://instructions</code> for the full protocol.</p>
-</details>
+<p>&lt;/details&gt;</p>
 <h2 id="shell-wrapper-no-agent-config-needed">Shell Wrapper (No Agent Config Needed)</h2>
 <p>Wrap dangerous shell commands so they automatically check RecourseOS before executing. Works in your terminal, but <strong>not</strong> inside agents like Cline that spawn their own shell.</p>
 <p>Add to your shell profile (<code>~/.bashrc</code>, <code>~/.zshrc</code>):</p>

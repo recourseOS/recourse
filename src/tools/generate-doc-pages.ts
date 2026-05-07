@@ -114,6 +114,7 @@ export function renderDocPage(page: DocPage, markdown: string): string {
 <footer class="container">
   <span>&copy; 2026 RecourseOS</span>
   <span>
+    <a href="/changelog.html">changelog</a>
     <a href="/brand.html">brand</a>
     <a href="https://github.com/recourseOS/recourse">github</a>
     <a href="https://www.npmjs.com/package/recourse-cli">npm</a>
