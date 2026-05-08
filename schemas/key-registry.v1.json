@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://recourseos.dev/schemas/key-registry/v1",
+  "title": "Recourse Key Registry",
+  "description": "Public key registry for verifying Recourse attestations",
+  "type": "object",
+  "required": ["instance_id", "keys"],
+  "properties": {
+    "instance_id": {
+      "type": "string",
+      "description": "Identifier for this RecourseOS instance",
+      "examples": ["recourse-prod", "recourse-staging"]
+    },
+    "keys": {
+      "type": "array",
+      "description": "List of signing keys",
+      "items": { "$ref": "#/$defs/keyMetadata" }
+    }
+  },
+  "$defs": {
+    "keyMetadata": {
+      "type": "object",
+      "required": ["key_id", "public_key", "algorithm", "state", "created_at"],
+      "properties": {
+        "key_id": {
+          "type": "string",
+          "description": "Unique identifier for the key",
+          "examples": ["recourse-prod-1"]
+        },
+        "public_key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{43}$",
+          "description": "Base64url-encoded 32-byte Ed25519 public key"
+        },
+        "algorithm": {
+          "type": "string",
+          "const": "Ed25519",
+          "description": "Signing algorithm (always Ed25519)"
+        },
+        "state": {
+          "type": "string",
+          "enum": ["pending", "active", "rotated", "compromised"],
+          "description": "Key lifecycle state"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the key was created"
+        },
+        "activated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the key was activated (required if state != pending)"
+        },
+        "rotated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the key was rotated (present if state == rotated)"
+        },
+        "compromised_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the key was marked compromised (present if state == compromised)"
+        }
+      }
+    }
+  }
+}

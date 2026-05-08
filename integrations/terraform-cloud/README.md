@@ -82,18 +82,31 @@ app.listen(3000);
 | `RECOURSE_SLACK_WEBHOOK` | Optional: Send alerts to Slack |
 | `RECOURSE_DISCORD_WEBHOOK` | Optional: Send alerts to Discord |
 
+## Local Testing
+
+```bash
+# Terminal 1: Start RecourseOS server
+recourse serve
+
+# Terminal 2: Run test
+cd integrations/terraform-cloud
+npx tsx test.ts
+```
+
 ## Example Output
 
 When a run is evaluated, you'll see in TFC:
 
 ```
-⛔ BLOCKED: 1 unrecoverable change(s) detected
+⛔ BLOCK: Recoverability is unrecoverable; policy blocks unrecoverable or worse
 
+⛔ aws_s3_bucket.logs: unrecoverable
 ⛔ aws_db_instance.prod: unrecoverable
-   skip_final_snapshot=true, no backup retention
 
-Details: https://recourseos.dev/docs
+📜 Attestation: https://recourse.example.com/.well-known/attestations/861a2070.json
 ```
+
+The attestation URL links to a cryptographically signed proof of the evaluation.
 
 ## Cloudflare Workers Deployment
 

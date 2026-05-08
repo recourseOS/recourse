@@ -1,0 +1,18 @@
+{
+  "name": "@recourse/terraform-cloud",
+  "version": "0.1.0",
+  "description": "RecourseOS Run Task integration for Terraform Cloud",
+  "type": "module",
+  "main": "dist/handler.js",
+  "scripts": {
+    "build": "esbuild handler.ts --bundle --platform=node --target=node18 --outdir=dist --format=esm --external:crypto",
+    "build:worker": "esbuild handler.ts --bundle --platform=browser --target=es2022 --outdir=dist --format=esm",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "test": "node test.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.0",
+    "wrangler": "^3.0.0"
+  }
+}

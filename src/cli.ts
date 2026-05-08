@@ -167,6 +167,38 @@ mcp
     runMcpServer(process.stdin, process.stdout, { verbose: options.verbose });
   });
 
+mcp
+  .command('gateway')
+  .description('Start RecourseOS as an MCP gateway (proxies tool calls through evaluation)')
+  .option('-c, --config <file>', 'Path to gateway config JSON')
+  .option('-v, --verbose', 'Log evaluations to stderr')
+  .option('--allow <levels>', 'Comma-separated risk levels to allow (default: allow,warn)', 'allow,warn')
+  .option('--upstream <json>', 'JSON array of upstream servers [{name, command, args}]')
+  .action(async (options: { config?: string; verbose?: boolean; allow?: string; upstream?: string }) => {
+    const { startGateway, loadGatewayConfig } = await import('./mcp/gateway.js');
+
+    let config = loadGatewayConfig(options.config);
+
+    if (options.upstream) {
+      try {
+        config.upstreams = JSON.parse(options.upstream);
+      } catch {
+        console.error('Invalid --upstream JSON');
+        process.exit(1);
+      }
+    }
+
+    if (options.allow) {
+      config.allowedRiskLevels = options.allow.split(',') as any;
+    }
+
+    if (options.verbose !== undefined) {
+      config.verbose = options.verbose;
+    }
+
+    await startGateway(config);
+  });
+
 program
   .command('serve')
   .description('Start the RecourseOS playground for testing evaluations')
@@ -957,6 +989,108 @@ program
     }
 
     console.log('# To bypass RecourseOS, use: command rm ...');
+  });
+
+// IAM Session Broker
+const iam = program
+  .command('iam')
+  .description('IAM session broker for scoped cloud credentials');
+
+iam
+  .command('broker')
+  .description('Start the IAM session broker server')
+  .option('-p, --port <port>', 'Port to listen on', '3002')
+  .option('--role-arn <arn>', 'AWS role ARN for broker (env: RECOURSE_BROKER_ROLE_ARN)')
+  .option('--allow <levels>', 'Risk levels that allow credential issuance', 'allow,warn')
+  .option('--duration <seconds>', 'Default session duration in seconds', '900')
+  .option('--max-duration <seconds>', 'Maximum session duration in seconds', '3600')
+  .action(async (options: {
+    port: string;
+    roleArn?: string;
+    allow: string;
+    duration: string;
+    maxDuration: string;
+  }) => {
+    if (options.roleArn) {
+      process.env.RECOURSE_BROKER_ROLE_ARN = options.roleArn;
+    }
+    if (!process.env.RECOURSE_BROKER_ROLE_ARN) {
+      console.error('Error: RECOURSE_BROKER_ROLE_ARN required (via --role-arn or environment)');
+      process.exit(1);
+    }
+
+    process.env.RECOURSE_ALLOWED_LEVELS = options.allow;
+    process.env.RECOURSE_SESSION_DURATION = options.duration;
+    process.env.RECOURSE_MAX_SESSION_DURATION = options.maxDuration;
+    process.env.PORT = options.port;
+
+    const { runBrokerServer } = await import('./iam/broker-server.js');
+    await runBrokerServer();
+  });
+
+iam
+  .command('request')
+  .description('Request scoped credentials from a broker')
+  .requiredOption('--broker <url>', 'Session broker URL')
+  .requiredOption('--intent <json>', 'Intent JSON: {"type":"shell","command":"..."} or {"type":"mcp","tool":"...","arguments":{}}')
+  .option('--actor <id>', 'Actor identity')
+  .option('--environment <name>', 'Environment name')
+  .option('--duration <seconds>', 'Requested session duration')
+  .option('--output <format>', 'Output format: json or env', 'json')
+  .action(async (options: {
+    broker: string;
+    intent: string;
+    actor?: string;
+    environment?: string;
+    duration?: string;
+    output: string;
+  }) => {
+    try {
+      const intent = JSON.parse(options.intent);
+
+      const request = {
+        intent,
+        cloud: 'aws' as const,
+        actor: options.actor,
+        environment: options.environment,
+        durationSeconds: options.duration ? parseInt(options.duration) : undefined,
+      };
+
+      const response = await fetch(`${options.broker}/session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+      });
+
+      const result = await response.json() as {
+        granted: boolean;
+        riskAssessment: string;
+        credentials?: {
+          accessKeyId: string;
+          secretAccessKey: string;
+          sessionToken: string;
+          expiration: string;
+        };
+      };
+
+      if (options.output === 'env' && result.granted && result.credentials) {
+        // Output as environment variables for eval
+        console.log(`export AWS_ACCESS_KEY_ID="${result.credentials.accessKeyId}"`);
+        console.log(`export AWS_SECRET_ACCESS_KEY="${result.credentials.secretAccessKey}"`);
+        console.log(`export AWS_SESSION_TOKEN="${result.credentials.sessionToken}"`);
+        console.log(`# Session expires: ${result.credentials.expiration}`);
+        console.log(`# Risk: ${result.riskAssessment}`);
+      } else {
+        console.log(JSON.stringify(result, null, 2));
+      }
+
+      if (!result.granted) {
+        process.exit(1);
+      }
+    } catch (error: any) {
+      console.error('Error:', error.message);
+      process.exit(1);
+    }
   });
 
 export { program };

@@ -1,0 +1,8 @@
+name = "recourse-tfc"
+main = "handler.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+# Optional: Add notification webhooks
+# RECOURSE_SLACK_WEBHOOK = ""
+# RECOURSE_DISCORD_WEBHOOK = ""

@@ -1,0 +1,20 @@
+{
+  "name": "@recourse/k8s-admission-controller",
+  "version": "0.1.0",
+  "description": "RecourseOS Kubernetes Validating Admission Webhook",
+  "type": "module",
+  "main": "dist/webhook.js",
+  "scripts": {
+    "build": "esbuild webhook.ts --bundle --platform=node --target=node18 --outdir=dist --format=esm",
+    "start": "node dist/webhook.js",
+    "dev": "tsx webhook.ts",
+    "docker:build": "docker build -t ghcr.io/recourseos/admission-webhook:latest .",
+    "docker:push": "docker push ghcr.io/recourseos/admission-webhook:latest"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.20.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}

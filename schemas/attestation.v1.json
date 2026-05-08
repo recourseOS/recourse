@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://recourseos.dev/schemas/attestation/v1",
+  "title": "Recourse Attestation",
+  "description": "Cryptographic proof of consequence evaluation before agent action",
+  "type": "object",
+  "required": ["input", "output", "evaluator", "timestamp", "key_id", "attestation_uri", "signature"],
+  "additionalProperties": false,
+  "properties": {
+    "input": {
+      "type": "object",
+      "description": "The evaluation request (shell command, terraform plan, or MCP tool call)"
+    },
+    "output": {
+      "type": "object",
+      "description": "The evaluation result",
+      "required": ["riskAssessment"],
+      "properties": {
+        "riskAssessment": {
+          "type": "string",
+          "enum": ["allow", "warn", "escalate", "block"],
+          "description": "Final risk verdict"
+        },
+        "assessmentReason": {
+          "type": "string",
+          "description": "Human-readable explanation of the risk assessment"
+        },
+        "mutations": {
+          "type": "array",
+          "description": "List of detected state mutations",
+          "items": { "$ref": "#/$defs/mutation" }
+        },
+        "summary": { "$ref": "#/$defs/summary" },
+        "version": {
+          "type": "string",
+          "description": "Output schema version"
+        }
+      }
+    },
+    "evaluator": {
+      "type": "string",
+      "pattern": "^recourse:[a-z-]+:[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Evaluator identifier in format recourse:<type>:<semver>",
+      "examples": ["recourse:blast-radius:1.0.0"]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when evaluation was performed"
+    },
+    "key_id": {
+      "type": "string",
+      "description": "Identifier of the Ed25519 signing key",
+      "examples": ["recourse-prod-1", "recourse-local-1"]
+    },
+    "attestation_uri": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://.+/\\.well-known/attestations/[a-f0-9]{32}\\.json$",
+      "description": "Canonical URL where this attestation can be retrieved"
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "description": "Base64url-encoded Ed25519 signature (no padding)"
+    }
+  },
+  "$defs": {
+    "mutation": {
+      "type": "object",
+      "description": "A detected state mutation",
+      "required": ["intent", "recoverability"],
+      "properties": {
+        "intent": {
+          "type": "object",
+          "required": ["action"],
+          "properties": {
+            "source": {
+              "type": "string",
+              "enum": ["terraform", "shell", "mcp"],
+              "description": "Source type of the mutation"
+            },
+            "action": {
+              "type": "string",
+              "enum": ["create", "update", "delete", "replace", "unknown"],
+              "description": "Type of mutation"
+            },
+            "target": {
+              "oneOf": [
+                { "type": "string" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "service": { "type": "string" },
+                    "type": { "type": "string" },
+                    "id": { "type": "string" }
+                  }
+                }
+              ],
+              "description": "Target resource identifier"
+            },
+            "raw": {
+              "type": "string",
+              "description": "Original command or resource address"
+            }
+          }
+        },
+        "recoverability": {
+          "type": "object",
+          "required": ["tier", "label"],
+          "properties": {
+            "tier": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5,
+              "description": "Recoverability tier (1=reversible, 5=needs-review)"
+            },
+            "label": {
+              "type": "string",
+              "enum": ["reversible", "recoverable-with-effort", "recoverable-from-backup", "unrecoverable", "needs-review"],
+              "description": "Human-readable recoverability label"
+            },
+            "reasoning": {
+              "type": "string",
+              "description": "Explanation for the recoverability assessment"
+            },
+            "source": {
+              "type": "string",
+              "enum": ["handler", "classifier"],
+              "description": "Whether assessment came from deterministic handler or classifier"
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Confidence score (1.0 for handlers, lower for classifier)"
+            }
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidence" }
+        },
+        "dependencyImpact": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Resources that depend on this one"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "totalMutations": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of mutations detected"
+        },
+        "worstRecoverability": {
+          "type": "object",
+          "properties": {
+            "tier": { "type": "integer" },
+            "label": { "type": "string" }
+          }
+        },
+        "needsReview": {
+          "type": "boolean",
+          "description": "Whether human review is required"
+        },
+        "hasUnrecoverable": {
+          "type": "boolean",
+          "description": "Whether any unrecoverable mutations were detected"
+        },
+        "dependencyImpactCount": {
+          "type": "integer",
+          "description": "Total cascade impact count"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["key", "present"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Evidence identifier"
+        },
+        "value": {
+          "description": "Evidence value (any type)"
+        },
+        "present": {
+          "type": "boolean",
+          "description": "Whether the evidence was found"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the evidence"
+        }
+      }
+    }
+  }
+}
