@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>RecourseOS - Consequence layer for AI agents</title>
-<meta name="description" content="MCP server that checks recoverability before destructive actions. Evaluates Terraform plans, shell commands, and tool calls. Returns allow, warn, escalate, or block." />
-<meta property="og:title" content="RecourseOS - Consequence layer for AI agents" />
-<meta property="og:description" content="Check recoverability before destructive actions. MCP server for Terraform, shell, and tool call evaluation." />
+<title>RecourseOS - Consequence verification for autonomous systems</title>
+<meta name="description" content="RecourseOS evaluates blast radius, verifies recoverability, and issues cryptographic attestations before AI agents execute destructive infrastructure actions." />
+<meta property="og:title" content="RecourseOS - Consequence verification for autonomous systems" />
+<meta property="og:description" content="Evaluate consequences, verify recoverability, and issue signed attestations before autonomous systems mutate infrastructure." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://recourseos.com" />
 <meta property="og:image" content="https://recourseos.com/brand/logo-social-1200.png" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="RecourseOS - Consequence layer for AI agents" />
-<meta name="twitter:description" content="Check recoverability before destructive actions. MCP server for AI agent infrastructure safety." />
+<meta name="twitter:title" content="RecourseOS - Consequence verification for autonomous systems" />
+<meta name="twitter:description" content="Evaluate consequences, verify recoverability, and issue signed attestations before autonomous systems mutate infrastructure." />
 <meta name="twitter:image" content="https://recourseos.com/brand/logo-social-1200.png" />
 <link rel="icon" href="favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -39,7 +39,7 @@
     </svg>
     <span>
       <span class="brand-name">Recourse<span class="os">OS</span></span>
-      <span class="brand-kicker">Consequence layer</span>
+      <span class="brand-kicker">Consequence verification</span>
     </span>
   </a>
   <div class="links">
@@ -52,10 +52,10 @@
 </nav>
 
 <header class="hero hero-simple container">
-  <div class="eyebrow">Infrastructure consequence engine</div>
-  <h1>The difference between <span class="accent">"I deleted your database"</span> and <span class="accent">"I checked first."</span></h1>
+  <div class="eyebrow">Consequence verification for autonomous systems</div>
+  <h1>Before any agent <span class="accent">deletes, modifies, or destroys</span> — RecourseOS returns a verdict.</h1>
   <p class="lede">
-    RecourseOS is a preflight check for AI agents. Before an agent runs a destructive Terraform plan or shell command, it calls RecourseOS to see what's recoverable. Works as a native MCP server, CLI, or CI gate.
+    RecourseOS analyzes blast radius, evaluates recoverability against live infrastructure state, gathers evidence, and issues cryptographically signed attestations. 175+ resource types. Native MCP server, CLI, and CI integration.
   </p>
   <div class="hero-actions">
     <a class="button primary" href="/mcp-setup.html">Add to your agent</a>
@@ -72,7 +72,7 @@
 
 <div class="logo-strip">
   <div class="container">
-    <div class="strip-label">Built for the tools agents already use</div>
+    <div class="strip-label">Evaluates actions across your infrastructure stack</div>
     <div class="integration-logos" aria-label="Supported input and provider surfaces">
       <span class="logo-item" title="Terraform">
         <!-- Official Terraform logo from Simple Icons -->
@@ -127,31 +127,31 @@
     <div class="container split">
       <div>
         <div class="section-label">The problem</div>
-        <h2>Agents cause damage because they can't see consequences.</h2>
+        <h2>Autonomous systems lack consequence awareness.</h2>
         <p class="section-copy">
-          An agent reads "will be destroyed" and doesn't know if that means recoverable or gone forever. It runs the command. The database disappears. No backup. RecourseOS is the call agents make first — before they cause the damage they're getting blamed for.
+          An agent sees "will be destroyed" but can't distinguish recoverable from permanent. It executes. The database is gone. No backup existed. RecourseOS provides the missing layer — consequence verification that agents query before execution, not after incident.
         </p>
       </div>
       <div class="card-grid">
         <div class="card">
-          <div class="card-kicker">blind spot</div>
-          <div class="card-title">Diffs don't explain impact</div>
-          <div class="card-body">A plan says "delete." It doesn't say whether backups exist, versioning is on, or deletion protection is set.</div>
+          <div class="card-kicker">visibility</div>
+          <div class="card-title">Plans don't reveal recoverability</div>
+          <div class="card-body">A diff says "delete." It doesn't verify backup existence, versioning status, or deletion protection state.</div>
         </div>
         <div class="card">
-          <div class="card-kicker">decision</div>
-          <div class="card-title">Agents need enum-level clarity</div>
-          <div class="card-body">Not prose, not diffs. A machine-readable verdict: run, warn, review, or block.</div>
+          <div class="card-kicker">verdict</div>
+          <div class="card-title">Machine-readable decisions</div>
+          <div class="card-body">Not prose explanations. Enum-level clarity: allow, warn, escalate, or block — with cryptographic proof.</div>
         </div>
         <div class="card">
           <div class="card-kicker">evidence</div>
-          <div class="card-title">Reasoning the agent can relay</div>
-          <div class="card-body">"Blocked because skip_final_snapshot=true" is something an agent can explain to a human.</div>
+          <div class="card-title">Auditable reasoning chain</div>
+          <div class="card-body">"Blocked: skip_final_snapshot=true, no point-in-time recovery" — traceable logic for compliance and review.</div>
         </div>
         <div class="card">
-          <div class="card-kicker">scope</div>
-          <div class="card-title">Any action surface</div>
-          <div class="card-body">Terraform, shell, MCP tool calls — same evaluator, same contract, same consequence model.</div>
+          <div class="card-kicker">coverage</div>
+          <div class="card-title">Unified evaluation surface</div>
+          <div class="card-body">Terraform plans, shell commands, MCP tool calls — single evaluator, consistent consequence model.</div>
         </div>
       </div>
     </div>
@@ -161,9 +161,9 @@
     <div class="container split">
       <div>
         <div class="section-label">Platform</div>
-        <h2>One API. Every action an agent might take.</h2>
+        <h2>Unified consequence evaluation across all action surfaces.</h2>
         <p class="section-copy">
-          Agents don't just edit Terraform. They run shell commands, invoke MCP tools, call provider APIs. RecourseOS normalizes all of it into a single consequence contract agents can reason about.
+          Terraform plans, shell commands, MCP tool calls, provider APIs — RecourseOS normalizes every mutation into a single consequence contract with consistent verdicts and attestations.
         </p>
       </div>
       <div class="card-grid">
@@ -199,9 +199,9 @@
   <section class="section reveal" id="architecture">
     <div class="container">
       <div class="section-label">Architecture</div>
-      <h2 style="max-width: 20ch; margin-bottom: 18px;">One evaluator. Any agent. Same consequence contract.</h2>
+      <h2 style="max-width: 20ch; margin-bottom: 18px;">Single evaluation engine. Universal consequence contract.</h2>
       <p class="section-copy" style="margin-bottom: 42px;">
-        Pass any proposed action — Terraform, shell, MCP tool call. Get back a structured consequence report every agent consumes the same way.
+        Every mutation — Terraform plan, shell command, MCP tool call — normalizes to a MutationIntent, flows through deterministic rules plus semantic classification, and produces a signed ConsequenceReport. One contract, every surface.
       </p>
       <div class="architecture-diagram">
         <div class="arch-row arch-inputs">
@@ -327,35 +327,35 @@
   <section class="section reveal" id="how-agents-use-it">
     <div class="container">
       <div class="section-label">How agents use it</div>
-      <h2 style="max-width: 28ch; margin-bottom: 18px;">The preflight check pattern.</h2>
+      <h2 style="max-width: 28ch; margin-bottom: 18px;">Mandatory preflight verification.</h2>
       <p class="section-copy" style="margin-bottom: 42px;">
-        Before executing any destructive action, the agent calls RecourseOS. The response tells it exactly what to do next.
+        Agents call RecourseOS before executing any state mutation. The response dictates execution, escalation, or refusal — no interpretation required.
       </p>
       <div class="flow-steps">
         <div class="flow-step">
           <div class="step-number">1</div>
           <div class="step-content">
-            <div class="step-title">Agent receives destructive task</div>
-            <div class="step-body">"Delete the old staging database" or <code>terraform apply</code> with deletions</div>
+            <div class="step-title">Agent receives mutation request</div>
+            <div class="step-body">User task includes destructive operation: database deletion, <code>terraform apply</code>, <code>rm -rf</code></div>
           </div>
         </div>
         <div class="flow-step">
           <div class="step-number">2</div>
           <div class="step-content">
-            <div class="step-title">Agent calls RecourseOS first</div>
-            <div class="step-body"><code>recourse_evaluate_terraform</code> or <code>recourse_evaluate_shell</code> — before executing anything</div>
+            <div class="step-title">Agent queries RecourseOS</div>
+            <div class="step-body"><code>recourse_evaluate_terraform</code>, <code>recourse_evaluate_shell</code>, or <code>recourse_evaluate_mcp_call</code></div>
           </div>
         </div>
         <div class="flow-step">
           <div class="step-number">3</div>
           <div class="step-content">
-            <div class="step-title">Agent routes on decision</div>
+            <div class="step-title">Agent routes on verdict</div>
             <div class="step-body">
               <div class="decision-grid">
-                <div class="decision-item allow"><strong>allow</strong><span>Execute the action</span></div>
-                <div class="decision-item warn"><strong>warn</strong><span>Surface recovery requirements, then execute</span></div>
-                <div class="decision-item escalate"><strong>escalate</strong><span>Ask human for review with missing evidence</span></div>
-                <div class="decision-item block"><strong>block</strong><span>Refuse to execute, explain why</span></div>
+                <div class="decision-item allow"><strong>allow</strong><span>Execute immediately</span></div>
+                <div class="decision-item warn"><strong>warn</strong><span>Execute with recovery context</span></div>
+                <div class="decision-item escalate"><strong>escalate</strong><span>Request human review</span></div>
+                <div class="decision-item block"><strong>block</strong><span>Refuse execution</span></div>
               </div>
             </div>
           </div>
@@ -363,8 +363,8 @@
         <div class="flow-step">
           <div class="step-number">4</div>
           <div class="step-content">
-            <div class="step-title">Agent explains with evidence</div>
-            <div class="step-body">"Blocked because skip_final_snapshot=true and backup_retention_period=0 — database would be unrecoverable."</div>
+            <div class="step-title">Agent reports with attestation</div>
+            <div class="step-body">"Blocked: skip_final_snapshot=true, backup_retention_period=0. Signed attestation: recourse://att/..."</div>
           </div>
         </div>
       </div>
@@ -375,26 +375,26 @@
     <div class="container split">
       <div>
         <div class="section-label">Why this matters</div>
-        <h2>The difference between "I deleted your database" and "I checked first."</h2>
+        <h2>The difference between incident response and incident prevention.</h2>
         <p class="section-copy">
-          Agents that call RecourseOS before acting can say: "I was about to delete this, but Recourse told me it's unrecoverable — skip_final_snapshot is true, no backups exist. Blocking until you approve." That's a different conversation than "I deleted your production database."
+          Without preflight verification: "The database is gone. We're investigating." With RecourseOS: "Blocked execution — resource is unrecoverable. skip_final_snapshot=true, backup_retention_period=0. Awaiting human approval." Different conversations. Different outcomes.
         </p>
       </div>
       <div class="terminal">
         <div class="terminal-bar">
           <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
-          <span class="terminal-title">what an agent sees vs what it needs</span>
+          <span class="terminal-title">from diff to consequence verdict</span>
         </div>
         <div class="terminal-body">
-          <div class="terminal-heading">What the agent sees</div>
+          <div class="terminal-heading">Terraform output (insufficient)</div>
           <div><span class="red-text">-</span> aws_db_instance.main will be destroyed</div>
-          <div class="terminal-heading">What the agent needs</div>
+          <div class="terminal-heading">RecourseOS verdict (actionable)</div>
           <div>aws_db_instance.main</div>
           <div class="terminal-indent">recoverability: <span class="red-text">unrecoverable</span></div>
           <div class="terminal-indent">evidence: skip_final_snapshot=true, backup_retention_period=0</div>
           <div class="terminal-indent">riskAssessment: <span class="red-text">block</span></div>
-          <div class="terminal-heading">Agent can now say</div>
-          <div>"I checked with Recourse — this deletes the database with no backup. Blocking."</div>
+          <div class="terminal-heading">Agent response</div>
+          <div>"Execution blocked. Resource destruction unrecoverable — awaiting human approval."</div>
         </div>
       </div>
     </div>
@@ -404,16 +404,16 @@
     <div class="container split">
       <div>
         <div class="section-label">Coverage</div>
-        <h2>Rules where safety is knowable. Review where it is not.</h2>
+        <h2>Deterministic rules for known resources. Conservative escalation for unknowns.</h2>
         <p class="section-copy">
-          Provider-specific handlers cover common AWS, GCP, Azure, and Azure AD resources. Unknown resources use semantic safety signals and stay conservative when evidence is thin.
+          175+ resource types with provider-specific handlers across AWS, GCP, and Azure. Unknown resources undergo semantic classification — weak evidence escalates to human review, never to automatic approval.
         </p>
       </div>
       <div class="card-grid">
-        <div class="card"><div class="card-kicker">AWS</div><div class="card-title">Data, identity, network</div><div class="card-body">RDS, DynamoDB, S3, EBS, IAM, KMS, Secrets Manager, VPC, Route53, Lambda, queues, and more.</div></div>
-        <div class="card"><div class="card-kicker">GCP</div><div class="card-title">Storage, SQL, IAM</div><div class="card-body">GCS versioning, Cloud SQL protection and backups, Secret Manager, BigQuery, IAM bindings, and long-tail review paths.</div></div>
-        <div class="card"><div class="card-kicker">Azure</div><div class="card-title">Storage, database, identity</div><div class="card-body">Storage soft delete, SQL family protection signals, Cosmos DB, Key Vault, role assignments, and Azure AD resources.</div></div>
-        <div class="card"><div class="card-kicker">Unknown</div><div class="card-title">Semantic classifier</div><div class="card-body">Deletion protection, backup windows, versioning, retention, and force-destroy signals are evaluated without hardcoding every resource.</div></div>
+        <div class="card"><div class="card-kicker">AWS</div><div class="card-title">70+ resource handlers</div><div class="card-body">RDS, DynamoDB, S3, EBS, IAM, KMS, Secrets Manager, VPC, Route53, Lambda, SQS, SNS, ECS, EKS, and more.</div></div>
+        <div class="card"><div class="card-kicker">GCP</div><div class="card-title">Storage, SQL, IAM</div><div class="card-body">GCS versioning, Cloud SQL protection, Secret Manager, BigQuery, IAM bindings. Semantic fallback for long-tail resources.</div></div>
+        <div class="card"><div class="card-kicker">Azure</div><div class="card-title">Storage, database, identity</div><div class="card-body">Storage soft delete, SQL family protection, Cosmos DB, Key Vault, role assignments, Azure AD principals.</div></div>
+        <div class="card"><div class="card-kicker">Unknown</div><div class="card-title">Semantic classification</div><div class="card-body">Deletion protection, backup windows, versioning, retention signals analyzed for unrecognized resources. Conservative by design.</div></div>
       </div>
     </div>
   </section>
@@ -422,9 +422,9 @@
     <div class="container split">
       <div>
         <div class="section-label">The contract</div>
-        <h2>A schema agents can reason about reliably.</h2>
+        <h2>Machine-readable verdicts. Cryptographic attestations.</h2>
         <p class="section-copy">
-          No prose, no diffs to parse. Enum decisions, typed tiers, structured evidence. The consequence report is the product — agents consume it directly.
+          Enum decisions, typed recoverability tiers, structured evidence arrays, Ed25519-signed attestations. No prose interpretation. The ConsequenceReport is the canonical output — consumed by agents, stored for audit, verified by policy engines.
         </p>
       </div>
       <div class="card-grid">
@@ -456,17 +456,17 @@
     <div class="container split">
       <div>
         <div class="section-label">For agent builders</div>
-        <h2>Integration docs and schema references.</h2>
+        <h2>Complete integration specifications.</h2>
         <p class="section-copy">
-          Everything you need to wire RecourseOS into an agent: MCP setup, consequence report schema, example prompts, resource coverage.
+          MCP server configuration, ConsequenceReport schema, system prompt patterns, handler coverage documentation. Ship consequence-aware agents in production.
         </p>
         <a href="/docs.html" class="button primary" style="margin-top: 24px;">View all docs</a>
       </div>
       <div class="card-grid">
-        <a class="card" href="/mcp-setup.html"><div class="card-kicker">start here</div><div class="card-title">MCP setup</div><div class="card-body">Add Recourse to your agent's tool list in one config block.</div></a>
-        <a class="card" href="/agent-interface.html"><div class="card-kicker">schema</div><div class="card-title">Agent interface</div><div class="card-body">Consequence report format, example agent prompts, and reasoning patterns.</div></a>
-        <a class="card" href="/go-sdk.html"><div class="card-kicker">go</div><div class="card-title">Go SDK</div><div class="card-body">Second implementation proving protocol stability. Cross-implementation attestation verification.</div></a>
-        <a class="card" href="/resource-coverage.html"><div class="card-kicker">coverage</div><div class="card-title">Resource coverage</div><div class="card-body">Which AWS, GCP, Azure resources have deterministic rules vs semantic fallback.</div></a>
+        <a class="card" href="/mcp-setup.html"><div class="card-kicker">start here</div><div class="card-title">MCP configuration</div><div class="card-body">Single config block. Works with Claude Code, Cline, Cursor, any MCP-compatible agent.</div></a>
+        <a class="card" href="/agent-interface.html"><div class="card-kicker">schema</div><div class="card-title">ConsequenceReport spec</div><div class="card-body">Complete schema reference, system prompt integration, decision routing patterns.</div></a>
+        <a class="card" href="/go-sdk.html"><div class="card-kicker">go</div><div class="card-title">Go SDK</div><div class="card-body">Second implementation. Cross-implementation attestation verification. Protocol stability proof.</div></a>
+        <a class="card" href="/resource-coverage.html"><div class="card-kicker">coverage</div><div class="card-title">Handler coverage</div><div class="card-body">Full resource type matrix. Deterministic handlers vs semantic classification breakdown.</div></a>
       </div>
     </div>
   </section>
@@ -474,9 +474,9 @@
   <section class="section dark reveal" id="integrations">
     <div class="container">
       <div class="section-label">Integrations</div>
-      <h2 style="max-width: 28ch;">Plug into your existing workflow.</h2>
+      <h2 style="max-width: 28ch;">Deploy where your agents execute.</h2>
       <p class="section-copy" style="margin-bottom: 48px;">
-        Native MCP server for agents. GitHub Action for CI/CD. Notifications, policy engines, and more.
+        Native MCP server for agent frameworks. GitHub Action for CI/CD pipelines. Published SDKs for LangChain and LlamaIndex. Notification channels for escalation workflows.
       </p>
       <div class="integration-grid">
         <div class="integration-category">
