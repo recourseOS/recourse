@@ -13,6 +13,12 @@ import { secretsManagerHandler } from '../src/resources/aws/secrets-manager.js';
 import { snsHandler } from '../src/resources/aws/sns.js';
 import { sqsHandler } from '../src/resources/aws/sqs.js';
 import { elasticacheHandler } from '../src/resources/aws/elasticache.js';
+import { cloudwatchHandler } from '../src/resources/aws/cloudwatch.js';
+import { efsHandler } from '../src/resources/aws/efs.js';
+import { elbHandler } from '../src/resources/aws/elb.js';
+import { neptuneHandler } from '../src/resources/aws/neptune.js';
+import { route53Handler } from '../src/resources/aws/route53.js';
+import { securityGroupHandler } from '../src/resources/aws/security-groups.js';
 import type { ResourceChange, TerraformState } from '../src/resources/types.js';
 
 // Helper to create a resource change
@@ -1395,6 +1401,532 @@ describe('Recoverability Tiers', () => {
         const result = elasticacheHandler.getRecoverability(change, null);
 
         expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+      });
+    });
+  });
+
+  describe('CloudWatch Handler', () => {
+    describe('aws_cloudwatch_log_group', () => {
+      it('returns UNRECOVERABLE for log group deletion', () => {
+        const change = createChange(
+          'aws_cloudwatch_log_group.app',
+          'aws_cloudwatch_log_group',
+          ['delete'],
+          { name: '/aws/lambda/my-function', retention_in_days: 30 }
+        );
+        const result = cloudwatchHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+        expect(result.reasoning).toContain('log');
+      });
+
+      it('returns REVERSIBLE for log group updates', () => {
+        const change = createChange(
+          'aws_cloudwatch_log_group.app',
+          'aws_cloudwatch_log_group',
+          ['update'],
+          { name: '/aws/lambda/my-function', retention_in_days: 30 },
+          { name: '/aws/lambda/my-function', retention_in_days: 90 }
+        );
+        const result = cloudwatchHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_cloudwatch_log_stream', () => {
+      it('returns UNRECOVERABLE for log stream deletion', () => {
+        const change = createChange(
+          'aws_cloudwatch_log_stream.main',
+          'aws_cloudwatch_log_stream',
+          ['delete'],
+          { name: '2024/01/01/[$LATEST]abcdef', log_group_name: '/aws/lambda/my-function' }
+        );
+        const result = cloudwatchHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+      });
+    });
+
+    describe('aws_cloudwatch_metric_alarm', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for alarm deletion', () => {
+        const change = createChange(
+          'aws_cloudwatch_metric_alarm.high_cpu',
+          'aws_cloudwatch_metric_alarm',
+          ['delete'],
+          { alarm_name: 'high-cpu', metric_name: 'CPUUtilization', namespace: 'AWS/EC2' }
+        );
+        const result = cloudwatchHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+        expect(result.reasoning).toContain('monitoring');
+      });
+
+      it('returns REVERSIBLE for alarm updates', () => {
+        const change = createChange(
+          'aws_cloudwatch_metric_alarm.high_cpu',
+          'aws_cloudwatch_metric_alarm',
+          ['update'],
+          { alarm_name: 'high-cpu', threshold: 80 },
+          { alarm_name: 'high-cpu', threshold: 90 }
+        );
+        const result = cloudwatchHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_cloudwatch_dashboard', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for dashboard deletion', () => {
+        const change = createChange(
+          'aws_cloudwatch_dashboard.main',
+          'aws_cloudwatch_dashboard',
+          ['delete'],
+          { dashboard_name: 'prod-overview' }
+        );
+        const result = cloudwatchHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+      });
+    });
+  });
+
+  describe('EFS Handler', () => {
+    describe('aws_efs_file_system', () => {
+      it('returns UNRECOVERABLE for file system deletion without backup', () => {
+        const change = createChange(
+          'aws_efs_file_system.data',
+          'aws_efs_file_system',
+          ['delete'],
+          { id: 'fs-12345678', creation_token: 'my-efs' }
+        );
+        const result = efsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+        expect(result.reasoning).toContain('permanently');
+      });
+
+      it('returns RECOVERABLE_FROM_BACKUP for file system with backup policy', () => {
+        const change = createChange(
+          'aws_efs_file_system.data',
+          'aws_efs_file_system',
+          ['delete'],
+          { id: 'fs-12345678', creation_token: 'my-efs' }
+        );
+        const state = createState([
+          { address: 'aws_efs_file_system.data', type: 'aws_efs_file_system', values: { id: 'fs-12345678' } },
+          { address: 'aws_efs_backup_policy.data', type: 'aws_efs_backup_policy', values: { file_system_id: 'fs-12345678', backup_policy: { status: 'ENABLED' } } },
+        ]);
+        const result = efsHandler.getRecoverability(change, state);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
+      });
+
+      it('returns REVERSIBLE for file system updates', () => {
+        const change = createChange(
+          'aws_efs_file_system.data',
+          'aws_efs_file_system',
+          ['update'],
+          { id: 'fs-12345678', tags: { Name: 'old' } },
+          { id: 'fs-12345678', tags: { Name: 'new' } }
+        );
+        const result = efsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_efs_mount_target', () => {
+      it('returns REVERSIBLE for mount target deletion', () => {
+        const change = createChange(
+          'aws_efs_mount_target.main',
+          'aws_efs_mount_target',
+          ['delete'],
+          { id: 'fsmt-12345678', file_system_id: 'fs-12345678', subnet_id: 'subnet-123' }
+        );
+        const result = efsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_efs_access_point', () => {
+      it('returns REVERSIBLE for access point deletion', () => {
+        const change = createChange(
+          'aws_efs_access_point.app',
+          'aws_efs_access_point',
+          ['delete'],
+          { id: 'fsap-12345678', file_system_id: 'fs-12345678' }
+        );
+        const result = efsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_efs_replication_configuration', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for replication config deletion', () => {
+        const change = createChange(
+          'aws_efs_replication_configuration.main',
+          'aws_efs_replication_configuration',
+          ['delete'],
+          { source_file_system_id: 'fs-12345678' }
+        );
+        const result = efsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+      });
+    });
+  });
+
+  describe('ELB Handler', () => {
+    describe('aws_lb', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for ALB deletion', () => {
+        const change = createChange(
+          'aws_lb.main',
+          'aws_lb',
+          ['delete'],
+          { name: 'prod-alb', load_balancer_type: 'application', dns_name: 'prod-alb-123.us-east-1.elb.amazonaws.com' }
+        );
+        const result = elbHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+        expect(result.reasoning).toContain('DNS');
+      });
+
+      it('returns RECOVERABLE_WITH_EFFORT for NLB deletion', () => {
+        const change = createChange(
+          'aws_lb.network',
+          'aws_lb',
+          ['delete'],
+          { name: 'prod-nlb', load_balancer_type: 'network' }
+        );
+        const result = elbHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+      });
+
+      it('returns REVERSIBLE for LB updates', () => {
+        const change = createChange(
+          'aws_lb.main',
+          'aws_lb',
+          ['update'],
+          { name: 'prod-alb', idle_timeout: 60 },
+          { name: 'prod-alb', idle_timeout: 120 }
+        );
+        const result = elbHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_alb (alias)', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for ALB deletion', () => {
+        const change = createChange(
+          'aws_alb.main',
+          'aws_alb',
+          ['delete'],
+          { name: 'prod-alb' }
+        );
+        const result = elbHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+      });
+    });
+
+    describe('aws_lb_target_group', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for target group deletion', () => {
+        const change = createChange(
+          'aws_lb_target_group.app',
+          'aws_lb_target_group',
+          ['delete'],
+          { name: 'app-tg', port: 80, protocol: 'HTTP' }
+        );
+        const result = elbHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+        expect(result.reasoning).toContain('targets');
+      });
+    });
+
+    describe('aws_lb_listener', () => {
+      it('returns REVERSIBLE for listener deletion', () => {
+        const change = createChange(
+          'aws_lb_listener.https',
+          'aws_lb_listener',
+          ['delete'],
+          { arn: 'arn:aws:elasticloadbalancing:...:listener/...', port: 443 }
+        );
+        const result = elbHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_lb_listener_rule', () => {
+      it('returns REVERSIBLE for listener rule deletion', () => {
+        const change = createChange(
+          'aws_lb_listener_rule.api',
+          'aws_lb_listener_rule',
+          ['delete'],
+          { arn: 'arn:aws:elasticloadbalancing:...:rule/...', priority: 100 }
+        );
+        const result = elbHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+  });
+
+  describe('Neptune Handler', () => {
+    describe('aws_neptune_cluster', () => {
+      it('returns UNRECOVERABLE for cluster with skip_final_snapshot', () => {
+        const change = createChange(
+          'aws_neptune_cluster.graph',
+          'aws_neptune_cluster',
+          ['delete'],
+          { cluster_identifier: 'my-neptune', skip_final_snapshot: true, backup_retention_period: 0 }
+        );
+        const result = neptuneHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+      });
+
+      it('returns RECOVERABLE_FROM_BACKUP for cluster with final snapshot', () => {
+        const change = createChange(
+          'aws_neptune_cluster.graph',
+          'aws_neptune_cluster',
+          ['delete'],
+          { cluster_identifier: 'my-neptune', skip_final_snapshot: false, final_snapshot_identifier: 'neptune-final' }
+        );
+        const result = neptuneHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
+      });
+
+      it('returns RECOVERABLE_FROM_BACKUP for cluster with backup retention', () => {
+        const change = createChange(
+          'aws_neptune_cluster.graph',
+          'aws_neptune_cluster',
+          ['delete'],
+          { cluster_identifier: 'my-neptune', backup_retention_period: 7 }
+        );
+        const result = neptuneHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
+      });
+
+      it('returns REVERSIBLE for cluster updates', () => {
+        const change = createChange(
+          'aws_neptune_cluster.graph',
+          'aws_neptune_cluster',
+          ['update'],
+          { cluster_identifier: 'my-neptune', preferred_maintenance_window: 'mon:00:00-mon:01:00' },
+          { cluster_identifier: 'my-neptune', preferred_maintenance_window: 'tue:00:00-tue:01:00' }
+        );
+        const result = neptuneHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_neptune_cluster_instance', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for instance deletion', () => {
+        const change = createChange(
+          'aws_neptune_cluster_instance.reader',
+          'aws_neptune_cluster_instance',
+          ['delete'],
+          { identifier: 'neptune-instance-1', cluster_identifier: 'my-neptune' }
+        );
+        const result = neptuneHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+      });
+    });
+
+    describe('aws_neptune_cluster_snapshot', () => {
+      it('returns UNRECOVERABLE for snapshot deletion', () => {
+        const change = createChange(
+          'aws_neptune_cluster_snapshot.backup',
+          'aws_neptune_cluster_snapshot',
+          ['delete'],
+          { db_cluster_snapshot_identifier: 'my-snapshot' }
+        );
+        const result = neptuneHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+      });
+    });
+
+    describe('aws_neptune_parameter_group', () => {
+      it('returns REVERSIBLE for parameter group deletion', () => {
+        const change = createChange(
+          'aws_neptune_parameter_group.main',
+          'aws_neptune_parameter_group',
+          ['delete'],
+          { name: 'my-params', family: 'neptune1' }
+        );
+        const result = neptuneHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+  });
+
+  describe('Route53 Handler', () => {
+    describe('aws_route53_zone', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for zone deletion', () => {
+        const change = createChange(
+          'aws_route53_zone.main',
+          'aws_route53_zone',
+          ['delete'],
+          { name: 'example.com', zone_id: 'Z12345678' }
+        );
+        const result = route53Handler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+        expect(result.reasoning).toContain('NS');
+      });
+
+      it('returns REVERSIBLE for zone updates', () => {
+        const change = createChange(
+          'aws_route53_zone.main',
+          'aws_route53_zone',
+          ['update'],
+          { name: 'example.com', comment: 'old' },
+          { name: 'example.com', comment: 'new' }
+        );
+        const result = route53Handler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_route53_record', () => {
+      it('returns REVERSIBLE for record deletion', () => {
+        const change = createChange(
+          'aws_route53_record.www',
+          'aws_route53_record',
+          ['delete'],
+          { name: 'www.example.com', type: 'A', ttl: 300 }
+        );
+        const result = route53Handler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+
+      it('returns REVERSIBLE for record updates', () => {
+        const change = createChange(
+          'aws_route53_record.www',
+          'aws_route53_record',
+          ['update'],
+          { name: 'www.example.com', type: 'A', ttl: 300 },
+          { name: 'www.example.com', type: 'A', ttl: 600 }
+        );
+        const result = route53Handler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_route53_health_check', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for health check deletion', () => {
+        const change = createChange(
+          'aws_route53_health_check.main',
+          'aws_route53_health_check',
+          ['delete'],
+          { id: 'hc-12345678', fqdn: 'example.com', type: 'HTTPS' }
+        );
+        const result = route53Handler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+      });
+    });
+  });
+
+  describe('Security Groups Handler', () => {
+    describe('aws_security_group', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for security group deletion', () => {
+        const change = createChange(
+          'aws_security_group.web',
+          'aws_security_group',
+          ['delete'],
+          { id: 'sg-12345678', name: 'web-sg', vpc_id: 'vpc-123' }
+        );
+        const result = securityGroupHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+      });
+
+      it('mentions dependent resources when security group has dependents', () => {
+        const change = createChange(
+          'aws_security_group.web',
+          'aws_security_group',
+          ['delete'],
+          { id: 'sg-12345678', name: 'web-sg' }
+        );
+        const state = createState([
+          { address: 'aws_security_group.web', type: 'aws_security_group', values: { id: 'sg-12345678' } },
+          { address: 'aws_instance.web', type: 'aws_instance', values: { vpc_security_group_ids: ['sg-12345678'] } },
+        ]);
+        const result = securityGroupHandler.getRecoverability(change, state);
+
+        expect(result.reasoning).toContain('1');
+      });
+
+      it('returns REVERSIBLE for security group updates', () => {
+        const change = createChange(
+          'aws_security_group.web',
+          'aws_security_group',
+          ['update'],
+          { id: 'sg-12345678', description: 'old' },
+          { id: 'sg-12345678', description: 'new' }
+        );
+        const result = securityGroupHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_security_group_rule', () => {
+      it('returns REVERSIBLE for rule deletion', () => {
+        const change = createChange(
+          'aws_security_group_rule.https',
+          'aws_security_group_rule',
+          ['delete'],
+          { security_group_id: 'sg-12345678', type: 'ingress', from_port: 443, to_port: 443 }
+        );
+        const result = securityGroupHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_vpc_security_group_ingress_rule', () => {
+      it('returns REVERSIBLE for ingress rule deletion', () => {
+        const change = createChange(
+          'aws_vpc_security_group_ingress_rule.https',
+          'aws_vpc_security_group_ingress_rule',
+          ['delete'],
+          { security_group_id: 'sg-12345678', from_port: 443, to_port: 443 }
+        );
+        const result = securityGroupHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_vpc_security_group_egress_rule', () => {
+      it('returns REVERSIBLE for egress rule deletion', () => {
+        const change = createChange(
+          'aws_vpc_security_group_egress_rule.all',
+          'aws_vpc_security_group_egress_rule',
+          ['delete'],
+          { security_group_id: 'sg-12345678', ip_protocol: '-1' }
+        );
+        const result = securityGroupHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
       });
     });
   });
