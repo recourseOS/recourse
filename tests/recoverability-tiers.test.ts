@@ -4,6 +4,7 @@ import { s3Handler } from '../src/resources/aws/s3.js';
 import { rdsHandler } from '../src/resources/aws/rds.js';
 import { dynamodbHandler } from '../src/resources/aws/dynamodb.js';
 import { iamHandler } from '../src/resources/aws/iam.js';
+import { ec2Handler } from '../src/resources/aws/ec2.js';
 import type { ResourceChange, TerraformState } from '../src/resources/types.js';
 
 // Helper to create a resource change
@@ -482,6 +483,162 @@ describe('Recoverability Tiers', () => {
 
         expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
         expect(result.reasoning).toContain('protection');
+      });
+    });
+  });
+
+  describe('EC2 Handler', () => {
+    describe('aws_instance', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for basic instance deletion', () => {
+        const change = createChange(
+          'aws_instance.web',
+          'aws_instance',
+          ['delete'],
+          { id: 'i-1234567890abcdef0', ami: 'ami-12345678' }
+        );
+        const result = ec2Handler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+        expect(result.reasoning).toContain('AMI');
+      });
+
+      it('returns RECOVERABLE_FROM_BACKUP when root EBS has delete_on_termination=false', () => {
+        const change = createChange(
+          'aws_instance.web',
+          'aws_instance',
+          ['delete'],
+          {
+            id: 'i-1234567890abcdef0',
+            ami: 'ami-12345678',
+            root_block_device: [{ delete_on_termination: false, volume_id: 'vol-123' }],
+          }
+        );
+        const result = ec2Handler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
+        expect(result.reasoning).toContain('preserved');
+      });
+
+      it('returns RECOVERABLE_FROM_BACKUP when additional EBS has delete_on_termination=false', () => {
+        const change = createChange(
+          'aws_instance.web',
+          'aws_instance',
+          ['delete'],
+          {
+            id: 'i-1234567890abcdef0',
+            ami: 'ami-12345678',
+            root_block_device: [{ delete_on_termination: true }],
+            ebs_block_device: [
+              { delete_on_termination: true, volume_id: 'vol-111' },
+              { delete_on_termination: false, volume_id: 'vol-222' },
+            ],
+          }
+        );
+        const result = ec2Handler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
+      });
+
+      it('returns UNRECOVERABLE when instance has ephemeral storage', () => {
+        const change = createChange(
+          'aws_instance.web',
+          'aws_instance',
+          ['delete'],
+          {
+            id: 'i-1234567890abcdef0',
+            ami: 'ami-12345678',
+            ephemeral_block_device: [{ device_name: '/dev/sdb', virtual_name: 'ephemeral0' }],
+          }
+        );
+        const result = ec2Handler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+        expect(result.reasoning).toContain('ephemeral');
+      });
+
+      it('returns REVERSIBLE for in-place configuration updates', () => {
+        const change = createChange(
+          'aws_instance.web',
+          'aws_instance',
+          ['update'],
+          { id: 'i-1234567890abcdef0', tags: { Name: 'old' } },
+          { id: 'i-1234567890abcdef0', tags: { Name: 'new' } }
+        );
+        const result = ec2Handler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+
+      it('returns RECOVERABLE_WITH_EFFORT for instance type change (triggers replacement)', () => {
+        const change = createChange(
+          'aws_instance.web',
+          'aws_instance',
+          ['update'],
+          { id: 'i-1234567890abcdef0', instance_type: 't3.micro', ami: 'ami-12345678' },
+          { id: 'i-1234567890abcdef0', instance_type: 't3.large', ami: 'ami-12345678' }
+        );
+        const result = ec2Handler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+        expect(result.reasoning).toContain('replaced');
+      });
+    });
+
+    describe('aws_ami', () => {
+      it('returns UNRECOVERABLE for AMI deletion', () => {
+        const change = createChange(
+          'aws_ami.golden',
+          'aws_ami',
+          ['delete'],
+          { id: 'ami-12345678', name: 'golden-image-v1' }
+        );
+        const result = ec2Handler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+        expect(result.reasoning).toContain('permanent');
+      });
+
+      it('returns REVERSIBLE for AMI metadata updates', () => {
+        const change = createChange(
+          'aws_ami.golden',
+          'aws_ami',
+          ['update'],
+          { id: 'ami-12345678', description: 'old' },
+          { id: 'ami-12345678', description: 'new' }
+        );
+        const result = ec2Handler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_launch_template', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for launch template deletion', () => {
+        const change = createChange(
+          'aws_launch_template.main',
+          'aws_launch_template',
+          ['delete'],
+          { id: 'lt-12345678', name: 'my-template' }
+        );
+        const result = ec2Handler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+        expect(result.reasoning).toContain('configuration');
+      });
+    });
+
+    describe('aws_spot_instance_request', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for spot request deletion', () => {
+        const change = createChange(
+          'aws_spot_instance_request.worker',
+          'aws_spot_instance_request',
+          ['delete'],
+          { id: 'sir-12345678' }
+        );
+        const result = ec2Handler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+        expect(result.reasoning).toContain('ephemeral');
       });
     });
   });
