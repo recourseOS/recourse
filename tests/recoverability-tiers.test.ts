@@ -5,6 +5,8 @@ import { rdsHandler } from '../src/resources/aws/rds.js';
 import { dynamodbHandler } from '../src/resources/aws/dynamodb.js';
 import { iamHandler } from '../src/resources/aws/iam.js';
 import { ec2Handler } from '../src/resources/aws/ec2.js';
+import { vpcHandler } from '../src/resources/aws/vpc.js';
+import { ebsHandler } from '../src/resources/aws/ebs.js';
 import type { ResourceChange, TerraformState } from '../src/resources/types.js';
 
 // Helper to create a resource change
@@ -639,6 +641,215 @@ describe('Recoverability Tiers', () => {
 
         expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
         expect(result.reasoning).toContain('ephemeral');
+      });
+    });
+  });
+
+  describe('VPC Handler', () => {
+    describe('aws_vpc', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for VPC deletion', () => {
+        const change = createChange(
+          'aws_vpc.main',
+          'aws_vpc',
+          ['delete'],
+          { id: 'vpc-12345678', cidr_block: '10.0.0.0/16' }
+        );
+        const result = vpcHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+      });
+
+      it('mentions dependent count when VPC has dependents', () => {
+        const change = createChange(
+          'aws_vpc.main',
+          'aws_vpc',
+          ['delete'],
+          { id: 'vpc-12345678', cidr_block: '10.0.0.0/16' }
+        );
+        const state = createState([
+          { address: 'aws_vpc.main', type: 'aws_vpc', values: { id: 'vpc-12345678' } },
+          { address: 'aws_subnet.a', type: 'aws_subnet', values: { vpc_id: 'vpc-12345678' } },
+          { address: 'aws_subnet.b', type: 'aws_subnet', values: { vpc_id: 'vpc-12345678' } },
+        ]);
+        const result = vpcHandler.getRecoverability(change, state);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+        expect(result.reasoning).toContain('2');
+      });
+
+      it('returns REVERSIBLE for VPC updates', () => {
+        const change = createChange(
+          'aws_vpc.main',
+          'aws_vpc',
+          ['update'],
+          { id: 'vpc-12345678', tags: { Name: 'old' } },
+          { id: 'vpc-12345678', tags: { Name: 'new' } }
+        );
+        const result = vpcHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_subnet', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for subnet deletion', () => {
+        const change = createChange(
+          'aws_subnet.main',
+          'aws_subnet',
+          ['delete'],
+          { id: 'subnet-12345678', cidr_block: '10.0.1.0/24', availability_zone: 'us-east-1a' }
+        );
+        const result = vpcHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+      });
+
+      it('mentions resource count when subnet has resources', () => {
+        const change = createChange(
+          'aws_subnet.main',
+          'aws_subnet',
+          ['delete'],
+          { id: 'subnet-12345678', cidr_block: '10.0.1.0/24' }
+        );
+        const state = createState([
+          { address: 'aws_subnet.main', type: 'aws_subnet', values: { id: 'subnet-12345678' } },
+          { address: 'aws_instance.web', type: 'aws_instance', values: { subnet_id: 'subnet-12345678' } },
+        ]);
+        const result = vpcHandler.getRecoverability(change, state);
+
+        expect(result.reasoning).toContain('1');
+      });
+    });
+
+    describe('aws_eip', () => {
+      it('returns UNRECOVERABLE for EIP deletion', () => {
+        const change = createChange(
+          'aws_eip.nat',
+          'aws_eip',
+          ['delete'],
+          { id: 'eipalloc-12345678', public_ip: '54.123.45.67' }
+        );
+        const result = vpcHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+        expect(result.reasoning).toContain('released');
+      });
+
+      it('notes when EIP is associated', () => {
+        const change = createChange(
+          'aws_eip.nat',
+          'aws_eip',
+          ['delete'],
+          { id: 'eipalloc-12345678', public_ip: '54.123.45.67', association_id: 'eipassoc-123' }
+        );
+        const result = vpcHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+      });
+    });
+
+    describe('aws_nat_gateway', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for NAT gateway deletion', () => {
+        const change = createChange(
+          'aws_nat_gateway.main',
+          'aws_nat_gateway',
+          ['delete'],
+          { id: 'nat-12345678', subnet_id: 'subnet-123' }
+        );
+        const result = vpcHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+        expect(result.reasoning).toContain('connectivity');
+      });
+    });
+  });
+
+  describe('EBS Handler', () => {
+    describe('aws_ebs_volume', () => {
+      it('returns UNRECOVERABLE for volume deletion without snapshot', () => {
+        const change = createChange(
+          'aws_ebs_volume.data',
+          'aws_ebs_volume',
+          ['delete'],
+          { id: 'vol-12345678', size: 100, type: 'gp3', encrypted: true }
+        );
+        const result = ebsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+        expect(result.reasoning).toContain('permanently lost');
+      });
+
+      it('returns RECOVERABLE_FROM_BACKUP when volume has snapshot in state', () => {
+        const change = createChange(
+          'aws_ebs_volume.data',
+          'aws_ebs_volume',
+          ['delete'],
+          { id: 'vol-12345678', size: 100 }
+        );
+        const state = createState([
+          { address: 'aws_ebs_volume.data', type: 'aws_ebs_volume', values: { id: 'vol-12345678' } },
+          { address: 'aws_ebs_snapshot.backup', type: 'aws_ebs_snapshot', values: { volume_id: 'vol-12345678' } },
+        ]);
+        const result = ebsHandler.getRecoverability(change, state);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
+        expect(result.reasoning).toContain('snapshot');
+      });
+
+      it('returns REVERSIBLE for volume updates', () => {
+        const change = createChange(
+          'aws_ebs_volume.data',
+          'aws_ebs_volume',
+          ['update'],
+          { id: 'vol-12345678', size: 100, tags: { Name: 'old' } },
+          { id: 'vol-12345678', size: 100, tags: { Name: 'new' } }
+        );
+        const result = ebsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+
+      it('provides verification suggestions for volume without snapshot', () => {
+        const change = createChange(
+          'aws_ebs_volume.data',
+          'aws_ebs_volume',
+          ['delete'],
+          { id: 'vol-12345678', size: 100, availability_zone: 'us-east-1a' }
+        );
+        const result = ebsHandler.getRecoverability(change, null);
+
+        expect(result.verificationSuggestions).toBeDefined();
+        expect(result.verificationSuggestions!.length).toBeGreaterThan(0);
+      });
+    });
+
+    describe('aws_ebs_snapshot', () => {
+      it('returns UNRECOVERABLE for snapshot deletion', () => {
+        const change = createChange(
+          'aws_ebs_snapshot.backup',
+          'aws_ebs_snapshot',
+          ['delete'],
+          { id: 'snap-12345678', volume_id: 'vol-12345678', description: 'Daily backup' }
+        );
+        const result = ebsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+        expect(result.reasoning).toContain('backup');
+      });
+    });
+
+    describe('aws_volume_attachment', () => {
+      it('returns REVERSIBLE for attachment deletion', () => {
+        const change = createChange(
+          'aws_volume_attachment.data',
+          'aws_volume_attachment',
+          ['delete'],
+          { id: 'vai-12345678', volume_id: 'vol-123', instance_id: 'i-123' }
+        );
+        const result = ebsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+        expect(result.reasoning).toContain('re-attached');
       });
     });
   });
