@@ -16,6 +16,7 @@ recourseOS_idea.md
 docs-visual-screenshots/
 playwright-report/
 test-results/
+coverage/
 
 # Terraform
 .terraform/
