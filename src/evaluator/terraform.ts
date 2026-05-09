@@ -18,6 +18,12 @@ import type {
   EvidenceItem,
 } from '../core/index.js';
 import {
+  TraceBuilder,
+  buildVerificationInstructions,
+  type ReasoningTrace,
+  type VerificationInstructions,
+} from './trace.js';
+import {
   buildRequiredEvidence,
   getEvidenceRequirements,
   DEFAULT_UNKNOWN_REQUIREMENTS,
@@ -47,8 +53,21 @@ export function evaluateTerraformPlanConsequences(
   state: TerraformState | null,
   options: TerraformConsequenceOptions = {}
 ): ConsequenceReport {
+  // Initialize trace capture
+  const trace = new TraceBuilder();
+  trace.source('terraform-plan');
+  if (state) {
+    trace.source('terraform-state');
+  }
+
+  trace.step('parse_input', `Parsed Terraform plan with ${plan.resourceChanges?.length ?? 0} resource changes`);
+
   const blastRadiusReport = analyzeBlastRadius(plan, state, {
     useClassifier: options.useClassifier,
+  });
+
+  trace.step('analyze_blast_radius', `Analyzed ${blastRadiusReport.changes.length} changes`, {
+    decision: `total_changes=${blastRadiusReport.summary.totalChanges}, has_unrecoverable=${blastRadiusReport.summary.hasUnrecoverable}`,
   });
 
   const policyEvaluation = evaluateBlastRadiusReport(
@@ -122,6 +141,12 @@ export function evaluateTerraformPlanConsequences(
     effectiveState
   );
   const crossActionRisks = detectCrossActionRisks(crossActionContext, crossActionPatterns);
+
+  trace.step('cross_action_analysis', `Checked ${crossActionPatterns.length} cross-action patterns`, {
+    decision: crossActionRisks.length > 0
+      ? `found_risks=${crossActionRisks.map(r => r.patternName).join(',')}`
+      : 'no_risks_detected',
+  });
 
   // Get worst tier from cross-action risks (may upgrade plan-level summary)
   const crossActionWorstTier = getWorstCrossActionTier(crossActionRisks);
@@ -225,6 +250,30 @@ export function evaluateTerraformPlanConsequences(
       )
     : policyEvaluation;
 
+  // Record handlers invoked
+  for (const change of blastRadiusReport.changes) {
+    trace.handler(change.resource.type);
+  }
+
+  // Final trace step
+  trace.step('policy_evaluation', `Risk assessment: ${finalPolicyEvaluation.decision}`, {
+    decision: finalPolicyEvaluation.decision,
+    confidence: 1.0,
+  });
+
+  // Build verification instructions for worst-case resource
+  const worstChange = blastRadiusReport.changes.find(
+    c => c.recoverability.tier === worstRecoverability.tier
+  );
+  const verificationInstructions = worstChange
+    ? buildVerificationInstructions(
+        worstChange.resource.type,
+        worstChange.resource.before?.id as string | undefined,
+        worstRecoverability.tier,
+        worstChange.resource.before as Record<string, unknown> | undefined
+      )
+    : undefined;
+
   const report: ConsequenceReport = {
     mutations,
     summary: {
@@ -240,6 +289,9 @@ export function evaluateTerraformPlanConsequences(
       : finalPolicyEvaluation.reason,
     // Always include cross-action risks (empty array if none detected)
     crossActionRisks,
+    // Attestation richness fields
+    trace: trace.build(),
+    verification: verificationInstructions,
   };
 
   // Add verification protocol fields
