@@ -7,6 +7,12 @@ import { iamHandler } from '../src/resources/aws/iam.js';
 import { ec2Handler } from '../src/resources/aws/ec2.js';
 import { vpcHandler } from '../src/resources/aws/vpc.js';
 import { ebsHandler } from '../src/resources/aws/ebs.js';
+import { lambdaHandler } from '../src/resources/aws/lambda.js';
+import { kmsHandler } from '../src/resources/aws/kms.js';
+import { secretsManagerHandler } from '../src/resources/aws/secrets-manager.js';
+import { snsHandler } from '../src/resources/aws/sns.js';
+import { sqsHandler } from '../src/resources/aws/sqs.js';
+import { elasticacheHandler } from '../src/resources/aws/elasticache.js';
 import type { ResourceChange, TerraformState } from '../src/resources/types.js';
 
 // Helper to create a resource change
@@ -1010,6 +1016,386 @@ describe('Recoverability Tiers', () => {
       const result = rdsHandler.getRecoverability(change, null);
 
       expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+    });
+  });
+
+  describe('Lambda Handler', () => {
+    describe('aws_lambda_function', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for function deletion', () => {
+        const change = createChange(
+          'aws_lambda_function.api',
+          'aws_lambda_function',
+          ['delete'],
+          { function_name: 'my-api', package_type: 'Zip' }
+        );
+        const result = lambdaHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+      });
+
+      it('mentions container image for Image package type', () => {
+        const change = createChange(
+          'aws_lambda_function.api',
+          'aws_lambda_function',
+          ['delete'],
+          { function_name: 'my-api', package_type: 'Image', image_uri: '123456789.dkr.ecr.us-east-1.amazonaws.com/my-image:latest' }
+        );
+        const result = lambdaHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+        expect(result.reasoning).toContain('container');
+      });
+
+      it('returns REVERSIBLE for function updates', () => {
+        const change = createChange(
+          'aws_lambda_function.api',
+          'aws_lambda_function',
+          ['update'],
+          { function_name: 'my-api', memory_size: 128 },
+          { function_name: 'my-api', memory_size: 256 }
+        );
+        const result = lambdaHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_lambda_layer_version', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for layer deletion', () => {
+        const change = createChange(
+          'aws_lambda_layer_version.deps',
+          'aws_lambda_layer_version',
+          ['delete'],
+          { layer_name: 'my-deps', version: 5 }
+        );
+        const result = lambdaHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+      });
+    });
+  });
+
+  describe('KMS Handler', () => {
+    describe('aws_kms_key', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for key deletion with standard window', () => {
+        const change = createChange(
+          'aws_kms_key.main',
+          'aws_kms_key',
+          ['delete'],
+          { key_id: 'mrk-12345678', deletion_window_in_days: 30 }
+        );
+        const result = kmsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+        expect(result.reasoning).toContain('30 days');
+      });
+
+      it('returns UNRECOVERABLE for key with short deletion window and dependents', () => {
+        const change = createChange(
+          'aws_kms_key.main',
+          'aws_kms_key',
+          ['delete'],
+          { key_id: 'mrk-12345678', arn: 'arn:aws:kms:us-east-1:123456789:key/mrk-12345678', deletion_window_in_days: 5 }
+        );
+        const state = createState([
+          { address: 'aws_kms_key.main', type: 'aws_kms_key', values: { key_id: 'mrk-12345678' } },
+          { address: 'aws_s3_bucket.encrypted', type: 'aws_s3_bucket', values: { kms_key_id: 'mrk-12345678' } },
+        ]);
+        const result = kmsHandler.getRecoverability(change, state);
+
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+      });
+
+      it('returns REVERSIBLE for key updates', () => {
+        const change = createChange(
+          'aws_kms_key.main',
+          'aws_kms_key',
+          ['update'],
+          { key_id: 'mrk-12345678', description: 'old' },
+          { key_id: 'mrk-12345678', description: 'new' }
+        );
+        const result = kmsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_kms_alias', () => {
+      it('returns REVERSIBLE for alias deletion', () => {
+        const change = createChange(
+          'aws_kms_alias.main',
+          'aws_kms_alias',
+          ['delete'],
+          { name: 'alias/my-key' }
+        );
+        const result = kmsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+  });
+
+  describe('Secrets Manager Handler', () => {
+    describe('aws_secretsmanager_secret', () => {
+      it('returns UNRECOVERABLE for secret with force_delete', () => {
+        const change = createChange(
+          'aws_secretsmanager_secret.api_key',
+          'aws_secretsmanager_secret',
+          ['delete'],
+          { name: 'prod/api-key', force_delete_without_recovery: true }
+        );
+        const result = secretsManagerHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+      });
+
+      it('returns RECOVERABLE_WITH_EFFORT for secret with recovery window', () => {
+        const change = createChange(
+          'aws_secretsmanager_secret.api_key',
+          'aws_secretsmanager_secret',
+          ['delete'],
+          { name: 'prod/api-key', recovery_window_in_days: 30 }
+        );
+        const result = secretsManagerHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+        expect(result.reasoning).toContain('30-day');
+      });
+    });
+
+    describe('aws_secretsmanager_secret_version', () => {
+      it('returns UNRECOVERABLE for secret version deletion', () => {
+        const change = createChange(
+          'aws_secretsmanager_secret_version.v1',
+          'aws_secretsmanager_secret_version',
+          ['delete'],
+          { secret_id: 'arn:aws:secretsmanager:us-east-1:123456789:secret:my-secret' }
+        );
+        const result = secretsManagerHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+      });
+    });
+
+    describe('aws_secretsmanager_secret_rotation', () => {
+      it('returns REVERSIBLE for rotation config deletion', () => {
+        const change = createChange(
+          'aws_secretsmanager_secret_rotation.main',
+          'aws_secretsmanager_secret_rotation',
+          ['delete'],
+          { secret_id: 'my-secret' }
+        );
+        const result = secretsManagerHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+  });
+
+  describe('SNS Handler', () => {
+    describe('aws_sns_topic', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for topic deletion', () => {
+        const change = createChange(
+          'aws_sns_topic.alerts',
+          'aws_sns_topic',
+          ['delete'],
+          { name: 'prod-alerts', arn: 'arn:aws:sns:us-east-1:123456789:prod-alerts' }
+        );
+        const result = snsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+      });
+
+      it('mentions subscription count when topic has subscriptions', () => {
+        const change = createChange(
+          'aws_sns_topic.alerts',
+          'aws_sns_topic',
+          ['delete'],
+          { name: 'prod-alerts', arn: 'arn:aws:sns:us-east-1:123456789:prod-alerts' }
+        );
+        const state = createState([
+          { address: 'aws_sns_topic.alerts', type: 'aws_sns_topic', values: { arn: 'arn:aws:sns:us-east-1:123456789:prod-alerts' } },
+          { address: 'aws_sns_topic_subscription.email', type: 'aws_sns_topic_subscription', values: { topic_arn: 'arn:aws:sns:us-east-1:123456789:prod-alerts' } },
+        ]);
+        const result = snsHandler.getRecoverability(change, state);
+
+        expect(result.reasoning).toContain('1');
+      });
+
+      it('returns REVERSIBLE for topic updates', () => {
+        const change = createChange(
+          'aws_sns_topic.alerts',
+          'aws_sns_topic',
+          ['update'],
+          { name: 'prod-alerts', display_name: 'old' },
+          { name: 'prod-alerts', display_name: 'new' }
+        );
+        const result = snsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_sns_topic_subscription', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for subscription deletion', () => {
+        const change = createChange(
+          'aws_sns_topic_subscription.email',
+          'aws_sns_topic_subscription',
+          ['delete'],
+          { protocol: 'email', endpoint: 'alerts@example.com' }
+        );
+        const result = snsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+      });
+
+      it('notes re-confirmation requirement for http/email protocols', () => {
+        const change = createChange(
+          'aws_sns_topic_subscription.webhook',
+          'aws_sns_topic_subscription',
+          ['delete'],
+          { protocol: 'https', endpoint: 'https://example.com/webhook' }
+        );
+        const result = snsHandler.getRecoverability(change, null);
+
+        expect(result.reasoning).toContain('confirmation');
+      });
+    });
+  });
+
+  describe('SQS Handler', () => {
+    describe('aws_sqs_queue', () => {
+      it('returns RECOVERABLE_WITH_EFFORT for empty queue deletion', () => {
+        const change = createChange(
+          'aws_sqs_queue.tasks',
+          'aws_sqs_queue',
+          ['delete'],
+          { name: 'task-queue', approximate_number_of_messages: 0 }
+        );
+        const result = sqsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+      });
+
+      it('returns UNRECOVERABLE for queue with messages', () => {
+        const change = createChange(
+          'aws_sqs_queue.tasks',
+          'aws_sqs_queue',
+          ['delete'],
+          { name: 'task-queue', approximate_number_of_messages: 150 }
+        );
+        const result = sqsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+        expect(result.reasoning).toContain('150');
+      });
+
+      it('returns REVERSIBLE for queue updates', () => {
+        const change = createChange(
+          'aws_sqs_queue.tasks',
+          'aws_sqs_queue',
+          ['update'],
+          { name: 'task-queue', visibility_timeout_seconds: 30 },
+          { name: 'task-queue', visibility_timeout_seconds: 60 }
+        );
+        const result = sqsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_sqs_queue_policy', () => {
+      it('returns REVERSIBLE for queue policy deletion', () => {
+        const change = createChange(
+          'aws_sqs_queue_policy.main',
+          'aws_sqs_queue_policy',
+          ['delete'],
+          { queue_url: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue' }
+        );
+        const result = sqsHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+  });
+
+  describe('ElastiCache Handler', () => {
+    describe('aws_elasticache_cluster', () => {
+      it('returns RECOVERABLE_FROM_BACKUP for cluster with final snapshot', () => {
+        const change = createChange(
+          'aws_elasticache_cluster.redis',
+          'aws_elasticache_cluster',
+          ['delete'],
+          { cluster_id: 'my-redis', engine: 'redis', final_snapshot_identifier: 'my-redis-final' }
+        );
+        const result = elasticacheHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
+      });
+
+      it('returns RECOVERABLE_FROM_BACKUP for cluster with snapshot retention', () => {
+        const change = createChange(
+          'aws_elasticache_cluster.redis',
+          'aws_elasticache_cluster',
+          ['delete'],
+          { cluster_id: 'my-redis', engine: 'redis', snapshot_retention_limit: 7 }
+        );
+        const result = elasticacheHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_FROM_BACKUP);
+      });
+
+      it('returns UNRECOVERABLE for Redis without backups', () => {
+        const change = createChange(
+          'aws_elasticache_cluster.redis',
+          'aws_elasticache_cluster',
+          ['delete'],
+          { cluster_id: 'my-redis', engine: 'redis', snapshot_retention_limit: 0 }
+        );
+        const result = elasticacheHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+      });
+
+      it('returns RECOVERABLE_WITH_EFFORT for Memcached (ephemeral)', () => {
+        const change = createChange(
+          'aws_elasticache_cluster.memcached',
+          'aws_elasticache_cluster',
+          ['delete'],
+          { cluster_id: 'my-cache', engine: 'memcached' }
+        );
+        const result = elasticacheHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.RECOVERABLE_WITH_EFFORT);
+        expect(result.reasoning).toContain('ephemeral');
+      });
+
+      it('returns REVERSIBLE for cluster updates', () => {
+        const change = createChange(
+          'aws_elasticache_cluster.redis',
+          'aws_elasticache_cluster',
+          ['update'],
+          { cluster_id: 'my-redis', node_type: 'cache.t3.micro' },
+          { cluster_id: 'my-redis', node_type: 'cache.t3.small' }
+        );
+        const result = elasticacheHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.REVERSIBLE);
+      });
+    });
+
+    describe('aws_elasticache_snapshot', () => {
+      it('returns UNRECOVERABLE for snapshot deletion', () => {
+        const change = createChange(
+          'aws_elasticache_snapshot.backup',
+          'aws_elasticache_snapshot',
+          ['delete'],
+          { snapshot_name: 'my-backup' }
+        );
+        const result = elasticacheHandler.getRecoverability(change, null);
+
+        expect(result.tier).toBe(RecoverabilityTier.UNRECOVERABLE);
+      });
     });
   });
 
