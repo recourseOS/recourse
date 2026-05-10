@@ -8,11 +8,12 @@ import {
 } from '../evaluator/index.js';
 import { getSupportedResourceTypes } from '../resources/index.js';
 import { toConsequenceJson } from '../output/consequence-json.js';
-import type { ConsequenceReport, EvidenceSubmission } from '../core/index.js';
+import type { ConsequenceReport, EvidenceSubmission, VerificationSuggestion } from '../core/index.js';
 import type { McpToolCall } from '../adapters/index.js';
 import type { AdapterContext } from '../adapters/types.js';
 import type { TerraformPlan, TerraformState } from '../resources/types.js';
 import { getAttestationService, type AttestationService } from '../attestation/service.js';
+import { interpretVerificationOutput, type MatchResult } from '../verification/index.js';
 
 const SCHEMA_VERSION = 'recourse.consequence.v1';
 
@@ -655,39 +656,108 @@ function evaluateWithEvidence(args: Record<string, unknown>): ConsequenceReport 
   };
 }
 
+/**
+ * Evidence evaluation result with pattern matching details.
+ */
+interface EvidenceEvaluationResult {
+  evidence_key: string;
+  agent_interpretation: EvidenceSubmission['agent_interpretation'];
+  pattern_interpretation?: MatchResult;
+  final_interpretation: EvidenceSubmission['agent_interpretation'];
+  confirms_recovery: boolean;
+  details: string;
+}
+
+/**
+ * Evaluate evidence using pattern matching when available.
+ */
+function evaluateEvidenceItem(
+  submission: EvidenceSubmission,
+  originalSuggestions: VerificationSuggestion[]
+): EvidenceEvaluationResult {
+  // Find matching verification suggestion by evidence_key
+  const suggestion = originalSuggestions.find(s => s.evidence_key === submission.evidence_key);
+
+  // If we have structured patterns, use them
+  if (suggestion?.expected_pattern && submission.raw_output) {
+    const patternResult = interpretVerificationOutput(
+      submission.raw_output,
+      submission.exit_code ?? 0,
+      suggestion.expected_pattern,
+      suggestion.failure_pattern
+    );
+
+    // Pattern matching provides more reliable interpretation
+    return {
+      evidence_key: submission.evidence_key,
+      agent_interpretation: submission.agent_interpretation,
+      pattern_interpretation: patternResult,
+      // Trust pattern matching over agent interpretation for structured output
+      final_interpretation: patternResult.interpretation,
+      confirms_recovery: patternResult.matches,
+      details: patternResult.reason,
+    };
+  }
+
+  // Fall back to agent interpretation
+  return {
+    evidence_key: submission.evidence_key,
+    agent_interpretation: submission.agent_interpretation,
+    final_interpretation: submission.agent_interpretation,
+    confirms_recovery: submission.agent_interpretation === 'matches_expected',
+    details: submission.agent_notes || 'Agent-provided interpretation',
+  };
+}
+
 function upgradeVerdictWithEvidence(
   baseReport: ConsequenceReport,
   evidence: EvidenceSubmission[]
 ): ConsequenceReport {
-  // Find evidence that matches expected signals
-  const confirmedEvidence = evidence.filter(e => e.agent_interpretation === 'matches_expected');
+  // Get original verification suggestions for pattern matching
+  const originalSuggestions = baseReport.verificationSuggestions || [];
+
+  // Evaluate all evidence with pattern matching
+  const evaluatedEvidence = evidence.map(e => evaluateEvidenceItem(e, originalSuggestions));
+
+  // Find evidence that confirms recovery paths
+  const confirmedEvidence = evaluatedEvidence.filter(e => e.confirms_recovery);
+  const failedEvidence = evaluatedEvidence.filter(e =>
+    e.final_interpretation === 'matches_failure' ||
+    e.final_interpretation === 'error'
+  );
 
   // Update mutations with the new evidence
   const updatedMutations = baseReport.mutations.map(mutation => {
-    // Check if any evidence applies to this mutation
+    // Check if any confirmed evidence applies to this mutation
     const relevantEvidence = confirmedEvidence.filter(e =>
       e.evidence_key.includes('snapshot') ||
       e.evidence_key.includes('backup') ||
       e.evidence_key.includes('replication') ||
-      e.evidence_key.includes('versioning')
+      e.evidence_key.includes('versioning') ||
+      e.evidence_key.includes('recovery')
     );
 
     if (relevantEvidence.length > 0 && mutation.recoverability.tier === 4) {
+      // Build detailed reasoning from evidence
+      const evidenceDetails = relevantEvidence
+        .map(e => `${e.evidence_key}: ${e.details}`)
+        .join('; ');
+
       // Upgrade from unrecoverable to recoverable-from-backup
       return {
         ...mutation,
         recoverability: {
           tier: 3,
           label: 'recoverable-from-backup',
-          reasoning: `External backup verified: ${relevantEvidence.map(e => e.evidence_key).join(', ')}`,
+          reasoning: `External backup verified: ${evidenceDetails}`,
         },
         evidence: [
           ...mutation.evidence,
           ...relevantEvidence.map(e => ({
             key: e.evidence_key,
-            value: e.parsed_evidence,
+            value: e.pattern_interpretation?.extractedValue,
             present: true,
-            description: e.agent_notes || 'Verified by agent',
+            description: e.details,
           })),
         ],
       };
@@ -698,10 +768,19 @@ function upgradeVerdictWithEvidence(
 
   // Determine new risk assessment based on updated recoverability
   const hasUnrecoverable = updatedMutations.some(m => m.recoverability.tier === 4);
-  const newAssessment = hasUnrecoverable ? baseReport.riskAssessment : 'warn';
-  const newReason = hasUnrecoverable
-    ? baseReport.assessmentReason
-    : 'External backup verified - proceed with caution';
+
+  // Build assessment reason with evidence summary
+  const verifiedCount = confirmedEvidence.length;
+  const failedCount = failedEvidence.length;
+  let newAssessment = baseReport.riskAssessment;
+  let newReason = baseReport.assessmentReason;
+
+  if (verifiedCount > 0 && !hasUnrecoverable) {
+    newAssessment = 'warn';
+    newReason = `${verifiedCount} recovery path(s) verified: ${confirmedEvidence.map(e => e.evidence_key).join(', ')}`;
+  } else if (failedCount > 0) {
+    newReason = `Evidence checked: ${failedCount} failed verification, ${verifiedCount} confirmed`;
+  }
 
   return {
     ...baseReport,
@@ -710,6 +789,11 @@ function upgradeVerdictWithEvidence(
     assessmentReason: newReason,
     verificationProtocolVersion: 'v1',
     verificationSuggestions: [], // Clear since verification was completed
+    // Include evaluation results for transparency
+    verificationStatus: {
+      status: verifiedCount > 0 ? 'suggestions_available' : 'no_suggestions_available',
+      reason: `Evaluated ${evidence.length} evidence item(s): ${verifiedCount} confirmed, ${failedCount} failed`,
+    },
     summary: {
       ...baseReport.summary,
       hasUnrecoverable,

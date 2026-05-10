@@ -120,6 +120,14 @@ const TEMPLATES: Record<VerificationCategory, TemplateGenerator> = {
         },
         expected_signal: 'Non-empty array with Status=available indicates manual snapshot exists',
         failure_signal: 'Empty array indicates no manual snapshots',
+        expected_pattern: {
+          type: 'json_array_not_empty',
+        },
+        failure_pattern: {
+          type: 'json_array_not_empty',
+          // Inverted logic - if array IS empty, it's a failure
+        },
+        example_output: '[{"Id": "prod-db-2024-01-15", "Status": "available"}]',
         verdict_impact: {
           current_tier: 'unrecoverable',
           potential_tier: 'recoverable-from-backup',
@@ -146,6 +154,10 @@ const TEMPLATES: Record<VerificationCategory, TemplateGenerator> = {
         },
         expected_signal: 'Non-empty array indicates automated backups exist',
         failure_signal: 'Empty array indicates no automated backups',
+        expected_pattern: {
+          type: 'json_array_not_empty',
+        },
+        example_output: '[{"Id": "prod-db", "Status": "active"}]',
         verdict_impact: {
           current_tier: 'unrecoverable',
           potential_tier: 'recoverable-from-backup',
@@ -211,6 +223,17 @@ const TEMPLATES: Record<VerificationCategory, TemplateGenerator> = {
         },
         expected_signal: 'PointInTimeRecoveryStatus=ENABLED indicates recovery is possible',
         failure_signal: 'PointInTimeRecoveryStatus=DISABLED indicates no point-in-time recovery',
+        expected_pattern: {
+          type: 'json_field_equals',
+          path: 'PointInTimeRecoveryStatus',
+          expected_value: 'ENABLED',
+        },
+        failure_pattern: {
+          type: 'json_field_equals',
+          path: 'PointInTimeRecoveryStatus',
+          expected_value: 'DISABLED',
+        },
+        example_output: '{"PointInTimeRecoveryStatus": "ENABLED", "EarliestRestorableDateTime": "2024-01-01T00:00:00Z"}',
         verdict_impact: {
           current_tier: 'unrecoverable',
           potential_tier: 'recoverable-from-backup',
@@ -237,6 +260,10 @@ const TEMPLATES: Record<VerificationCategory, TemplateGenerator> = {
         },
         expected_signal: 'Non-empty array with BackupStatus=AVAILABLE indicates backups exist',
         failure_signal: 'Empty array indicates no on-demand backups',
+        expected_pattern: {
+          type: 'json_array_not_empty',
+        },
+        example_output: '[{"Arn": "arn:aws:dynamodb:us-east-1:123456789012:table/MyTable/backup/01234567890123-abcdefgh", "Status": "AVAILABLE"}]',
         verdict_impact: {
           current_tier: 'unrecoverable',
           potential_tier: 'recoverable-from-backup',
@@ -401,6 +428,17 @@ const TEMPLATES: Record<VerificationCategory, TemplateGenerator> = {
         },
         expected_signal: 'Status=Enabled indicates versioning is active',
         failure_signal: 'Empty response or Status=Suspended indicates no versioning',
+        expected_pattern: {
+          type: 'json_field_equals',
+          path: 'Status',
+          expected_value: 'Enabled',
+        },
+        failure_pattern: {
+          type: 'json_field_equals',
+          path: 'Status',
+          expected_value: 'Suspended',
+        },
+        example_output: '{"Status": "Enabled", "MFADelete": "Disabled"}',
         verdict_impact: {
           current_tier: 'unrecoverable',
           potential_tier: 'recoverable-from-backup',
@@ -426,12 +464,43 @@ const TEMPLATES: Record<VerificationCategory, TemplateGenerator> = {
         },
         expected_signal: 'ReplicationConfiguration with rules indicates data is replicated',
         failure_signal: 'ReplicationConfigurationNotFoundError indicates no replication',
+        expected_pattern: {
+          type: 'json_field_exists',
+          path: 'ReplicationConfiguration.Rules',
+        },
+        example_output: '{"ReplicationConfiguration": {"Role": "arn:aws:iam::123456789012:role/replication-role", "Rules": [{"Status": "Enabled"}]}}',
         verdict_impact: {
           current_tier: 'unrecoverable',
           potential_tier: 'recoverable-from-backup',
           decision_change: { from: 'block', to: 'warn' },
         },
         priority: 'critical',
+      });
+
+      // Check object count (for impact assessment)
+      suggestions.push({
+        evidence_key: 'object_count',
+        description: 'Count objects in bucket to assess impact',
+        uncertainty: 'low',
+        verification: {
+          type: 'aws_cli',
+          argv: [
+            'aws', 's3api', 'list-objects-v2',
+            '--bucket', bucketName,
+            '--query', 'length(Contents)',
+            '--output', 'json',
+          ],
+          timeout_seconds: 60,
+          requires_permissions: ['s3:ListBucket'],
+        },
+        expected_signal: 'Returns object count (0 = empty bucket, safer to delete)',
+        failure_signal: 'N/A - this is informational',
+        example_output: '12847',
+        verdict_impact: {
+          current_tier: 'unrecoverable',
+          potential_tier: 'unrecoverable',
+        },
+        priority: 'informational',
       });
     }
 
