@@ -85,7 +85,10 @@ export interface BlastRadiusChange {
 
 export interface CascadeImpact {
   affectedResource: string;
+  resourceType: string;
   reason: string;
+  depth: number;  // 1 = direct dependent, 2+ = transitive
+  dependencyType: 'explicit' | 'implicit';
 }
 
 export interface BlastRadiusReport {
@@ -98,6 +101,10 @@ export interface BlastRadiusSummary {
   byTier: Record<RecoverabilityTier, number>;
   cascadeImpactCount: number;
   hasUnrecoverable: boolean;
+  // Enhanced cascade summary
+  cascadeByType?: Record<string, number>;  // e.g., { "aws_subnet": 3, "aws_instance": 14 }
+  maxCascadeDepth?: number;                // Maximum depth of cascade chain
+  cascadeSummary?: string;                 // Human-readable: "3 subnets, 14 EC2 instances, 1 RDS cluster"
 }
 
 // Import trace types

@@ -123,7 +123,7 @@ describe('Dependency Graph', () => {
       const dependents = findDependents(graph, 'aws_s3_bucket.main');
 
       expect(dependents).toHaveLength(2);
-      const addresses = dependents.map(d => d.address).sort();
+      const addresses = dependents.map(d => d.affectedResource).sort();
       expect(addresses).toEqual([
         'aws_s3_bucket_policy.main',
         'aws_s3_bucket_versioning.main',
@@ -141,7 +141,7 @@ describe('Dependency Graph', () => {
 
       // VPC → Subnet → Instance
       expect(dependents.length).toBeGreaterThanOrEqual(2);
-      const addresses = dependents.map(d => d.address);
+      const addresses = dependents.map(d => d.affectedResource);
       expect(addresses).toContain('aws_subnet.main');
       expect(addresses).toContain('aws_instance.web');
     });
@@ -158,7 +158,7 @@ describe('Dependency Graph', () => {
       const dependents = findDependents(graph, 'aws_vpc.a');
 
       // A affects B, C, and D
-      const addresses = new Set(dependents.map(d => d.address));
+      const addresses = new Set(dependents.map(d => d.affectedResource));
       expect(addresses.has('aws_subnet.b')).toBe(true);
       expect(addresses.has('aws_subnet.c')).toBe(true);
       expect(addresses.has('aws_instance.d')).toBe(true);
@@ -177,8 +177,8 @@ describe('Dependency Graph', () => {
       const dependentsB = findDependents(graph, 'aws_security_group.b');
 
       // Both should find each other but not infinitely recurse
-      expect(dependentsA.some(d => d.address === 'aws_security_group.b')).toBe(true);
-      expect(dependentsB.some(d => d.address === 'aws_security_group.a')).toBe(true);
+      expect(dependentsA.some(d => d.affectedResource === 'aws_security_group.b')).toBe(true);
+      expect(dependentsB.some(d => d.affectedResource === 'aws_security_group.a')).toBe(true);
     });
 
     it('handles deep nesting (5+ levels)', () => {
@@ -212,7 +212,7 @@ describe('Dependency Graph', () => {
       // Should find at least 10 dependents (may include implicit deps)
       expect(dependents.length).toBeGreaterThanOrEqual(10);
       // Verify all subnets are found
-      const addresses = new Set(dependents.map(d => d.address));
+      const addresses = new Set(dependents.map(d => d.affectedResource));
       for (let i = 0; i < 10; i++) {
         expect(addresses.has(`aws_subnet.subnet${i}`)).toBe(true);
       }
@@ -241,8 +241,8 @@ describe('Dependency Graph', () => {
       const affected = findAllAffectedResources(graph, ['aws_s3_bucket.a', 'aws_s3_bucket.b']);
 
       expect(affected.size).toBe(2);
-      expect(affected.get('aws_s3_bucket.a')?.[0].address).toBe('aws_s3_bucket_policy.a');
-      expect(affected.get('aws_s3_bucket.b')?.[0].address).toBe('aws_s3_bucket_policy.b');
+      expect(affected.get('aws_s3_bucket.a')?.[0].affectedResource).toBe('aws_s3_bucket_policy.a');
+      expect(affected.get('aws_s3_bucket.b')?.[0].affectedResource).toBe('aws_s3_bucket_policy.b');
     });
 
     it('excludes resources with no dependents from result', () => {
@@ -283,11 +283,11 @@ describe('Dependency Graph', () => {
       // Both should be in the map
       expect(affected.size).toBe(2);
       // A should have B and C as dependents
-      const aAffected = affected.get('aws_vpc.a')?.map(d => d.address);
+      const aAffected = affected.get('aws_vpc.a')?.map(d => d.affectedResource);
       expect(aAffected).toContain('aws_subnet.b');
       expect(aAffected).toContain('aws_instance.c');
       // B should have C as dependent
-      const bAffected = affected.get('aws_subnet.b')?.map(d => d.address);
+      const bAffected = affected.get('aws_subnet.b')?.map(d => d.affectedResource);
       expect(bAffected).toContain('aws_instance.c');
     });
   });
