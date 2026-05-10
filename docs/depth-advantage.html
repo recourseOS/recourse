@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>RecourseOS - Depth Advantage</title>
+<meta name="description" content="RecourseOS competes on consequence depth, not gateway breadth. Full blast radius analysis, cryptographic attestation, and structured verification." />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="site.css" />
+</head>
+<body>
+<div class="top-band">
+<nav class="container site-nav">
+  <a href="/" class="brand" aria-label="RecourseOS home">
+    <svg class="brand-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M50 5 L88.97 27.5 V72.5 L50 95 L11.03 72.5 V27.5 Z" fill="#06110e"/>
+      <path d="M50 9.8 L84.8 29.9 V70.1 L50 90.2 L15.2 70.1 V29.9 Z" stroke="#effbf3" stroke-width="5.6" stroke-linejoin="round"/>
+      <path d="M34 70 V30 H57.5 C67.2 30 74 36 74 44.6 C74 53.2 67.2 59.2 57.5 59.2 H34" stroke="#effbf3" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M55.5 59.5 L74 70.5" stroke="#effbf3" stroke-width="7" stroke-linecap="round"/>
+      <path d="M70 76.5 C82.3 76.5 90.5 68.3 90.5 56.2" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round"/>
+      <path d="M90.5 56.2 L90.5 74.4 L73 74.4" stroke="#63e6b8" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>
+      <span class="brand-name">Recourse<span class="os">OS</span></span>
+      <span class="brand-kicker">Consequence layer</span>
+    </span>
+  </a>
+  <div class="links">
+    <a href="/">home</a>
+    <a href="/docs.html">docs</a>
+    <a href="/console.html">console</a>
+    <a href="/about.html">about</a>
+    <a href="https://github.com/recourseOS/recourse" class="nav-cta">github</a>
+  </div>
+</nav>
+<header class="container doc-header">
+  <div class="eyebrow">strategy &middot; implemented</div>
+  <h1>Depth Advantage</h1>
+  <p class="lede">RecourseOS competes on consequence depth, not gateway breadth. We explain <em>why</em> an action is dangerous, <em>what</em> the blast radius is, and provide <em>cryptographic proof</em> of the evaluation.</p>
+</header>
+</div>
+<main class="container doc-shell">
+  <aside class="toc">
+    <div class="toc-title">On this page</div>
+    <a href="#positioning">Positioning</a>
+    <a href="#consequence-reasoning">Consequence Reasoning</a>
+    <a href="#cascade-analysis">Cascade Analysis</a>
+    <a href="#verification-loop">Verification Loop</a>
+    <a href="#attestation">Attestation Richness</a>
+    <a href="#cross-action">Cross-Action Detection</a>
+    <a href="#comparison">Comparison</a>
+  </aside>
+  <article>
+    <h2 id="positioning">Competitive Positioning</h2>
+    <p>While competitors offer shallow pattern matching ("block <code>rm -rf</code>"), RecourseOS provides:</p>
+    <ul>
+      <li><strong>Consequence depth:</strong> Full blast radius with concrete metrics (object counts, sizes, timestamps)</li>
+      <li><strong>5-tier recoverability:</strong> Not binary "safe/dangerous" but nuanced tiers with detailed reasoning</li>
+      <li><strong>Cryptographic attestation:</strong> Signed proofs with reasoning traces, not just audit logs</li>
+      <li><strong>Structured verification:</strong> Automatic output interpretation, not manual parsing</li>
+      <li><strong>Cascade analysis:</strong> Type-grouped dependency graphs with depth tracking</li>
+      <li><strong>Cross-action detection:</strong> Multi-change interaction patterns</li>
+    </ul>
+
+    <h2 id="consequence-reasoning">Consequence Reasoning Quality</h2>
+    <p>Generic verdicts don't help humans make decisions. RecourseOS provides concrete metrics:</p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0;">
+      <div style="background: rgba(255, 100, 100, 0.1); border: 1px solid rgba(255, 100, 100, 0.3); padding: 16px; border-radius: 6px;">
+        <strong style="color: #ff6b6b;">Before</strong>
+        <p style="margin: 8px 0 0 0; font-family: 'JetBrains Mono', monospace; font-size: 13px;">"Bucket deletion is destructive"</p>
+      </div>
+      <div style="background: rgba(99, 230, 184, 0.1); border: 1px solid rgba(99, 230, 184, 0.3); padding: 16px; border-radius: 6px;">
+        <strong style="color: #63e6b8;">After</strong>
+        <p style="margin: 8px 0 0 0; font-family: 'JetBrains Mono', monospace; font-size: 13px;">"S3 bucket 'production-data' (12,847 objects, 50 GB, last modified 2 hours ago) has no versioning, object lock, or replication; deletion is UNRECOVERABLE"</p>
+      </div>
+    </div>
+
+    <p><strong>For RDS instances:</strong></p>
+<pre><code>RDS instance 'analytics-db' (postgres) is recoverable:
+5 snapshots (latest: 4 hours ago), PITR available, 7-day automated backups</code></pre>
+
+    <p>Metrics gathered from live state include:</p>
+    <ul>
+      <li><strong>S3:</strong> <code>objectCount</code>, <code>totalSizeBytes</code>, <code>lastModified</code>, versioning status</li>
+      <li><strong>RDS:</strong> <code>snapshotCount</code>, <code>latestSnapshotTime</code>, engine type, backup retention, PITR status</li>
+      <li><strong>DynamoDB:</strong> PITR status, AWS Backup recovery points</li>
+      <li><strong>EBS:</strong> Snapshot count, cross-region copies, AWS Backup protection</li>
+    </ul>
+
+    <h2 id="cascade-analysis">Cascade Analysis</h2>
+    <p>A count of affected resources isn't actionable. RecourseOS groups by type and tracks dependency depth:</p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0;">
+      <div style="background: rgba(255, 100, 100, 0.1); border: 1px solid rgba(255, 100, 100, 0.3); padding: 16px; border-radius: 6px;">
+        <strong style="color: #ff6b6b;">Before</strong>
+        <p style="margin: 8px 0 0 0; font-family: 'JetBrains Mono', monospace; font-size: 13px;">"cascadeImpactCount: 7"</p>
+      </div>
+      <div style="background: rgba(99, 230, 184, 0.1); border: 1px solid rgba(99, 230, 184, 0.3); padding: 16px; border-radius: 6px;">
+        <strong style="color: #63e6b8;">After</strong>
+        <p style="margin: 8px 0 0 0; font-family: 'JetBrains Mono', monospace; font-size: 13px;">"3 subnets, 2 EC2 instances, 1 NAT gateway, 1 RDS instance (max depth: 2)"</p>
+      </div>
+    </div>
+
+    <p>The consequence report includes structured cascade data:</p>
+<pre><code>{
+  "cascadeSummary": "3 subnets, 2 EC2 instances, 1 NAT gateway, 1 RDS instance",
+  "maxCascadeDepth": 2,
+  "cascadeByType": {
+    "aws_subnet": 3,
+    "aws_instance": 2,
+    "aws_nat_gateway": 1,
+    "aws_db_instance": 1
+  }
+}</code></pre>
+
+    <h2 id="verification-loop">Verification Loop</h2>
+    <p>When RecourseOS can't determine recoverability from available state, it suggests verification commands. These include <strong>structured patterns</strong> for automatic output interpretation:</p>
+
+<pre><code>{
+  "evidence_key": "manual_snapshots_exist",
+  "description": "Check for manual RDS snapshots",
+  "verification": {
+    "type": "aws_cli",
+    "argv": ["aws", "rds", "describe-db-snapshots",
+             "--db-instance-identifier", "prod-db",
+             "--snapshot-type", "manual", "--output", "json"]
+  },
+  "expected_pattern": { "type": "json_array_not_empty" },
+  "failure_pattern": { "type": "regex", "regex": "^\\[\\]$" },
+  "example_output": "[{\"DBSnapshotIdentifier\": \"prod-db-2024-01-15\"}]"
+}</code></pre>
+
+    <p><strong>Pattern types:</strong></p>
+    <table>
+      <thead><tr><th>Type</th><th>Description</th><th>Use Case</th></tr></thead>
+      <tbody>
+        <tr><td><code>json_array_not_empty</code></td><td>Output is a non-empty JSON array</td><td>Check if snapshots exist</td></tr>
+        <tr><td><code>json_field_equals</code></td><td>JSON field equals expected value</td><td>Check if Status = "Enabled"</td></tr>
+        <tr><td><code>json_field_exists</code></td><td>JSON field exists and is non-null</td><td>Check if VersionId is present</td></tr>
+        <tr><td><code>regex</code></td><td>Regex matches raw output</td><td>Check for PITR: enabled</td></tr>
+        <tr><td><code>exit_code</code></td><td>Command exit code matches</td><td>Verify command succeeded</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Workflow:</strong></p>
+    <ol>
+      <li>RecourseOS returns verification suggestions with structured patterns</li>
+      <li>Agent runs command, captures exit code and raw output</li>
+      <li>Agent submits evidence via <code>recourse_evaluate_with_evidence</code></li>
+      <li>Pattern matcher auto-interprets output</li>
+      <li>Verdict upgraded if evidence confirms recovery paths</li>
+    </ol>
+
+    <h2 id="attestation">Attestation Richness</h2>
+    <p>Audit logs prove something happened. Attestations prove <em>what was evaluated and why</em>:</p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0;">
+      <div style="background: rgba(255, 100, 100, 0.1); border: 1px solid rgba(255, 100, 100, 0.3); padding: 16px; border-radius: 6px;">
+        <strong style="color: #ff6b6b;">Audit Log</strong>
+        <p style="margin: 8px 0 0 0; font-size: 13px;">Signed input/output pair</p>
+      </div>
+      <div style="background: rgba(99, 230, 184, 0.1); border: 1px solid rgba(99, 230, 184, 0.3); padding: 16px; border-radius: 6px;">
+        <strong style="color: #63e6b8;">RecourseOS Attestation</strong>
+        <p style="margin: 8px 0 0 0; font-size: 13px;">Full reasoning chain, independently verifiable</p>
+      </div>
+    </div>
+
+    <p>Attestations include a reasoning trace:</p>
+<pre><code>{
+  "trace": {
+    "steps": [
+      { "action": "parse_input", "result": "Parsed Terraform plan with 3 resource changes" },
+      { "action": "analyze_blast_radius", "result": "Analyzed 3 changes" },
+      { "action": "cross_action_analysis", "result": "Checked 8 cross-action patterns" },
+      { "action": "policy_evaluation", "result": "Risk assessment: block" }
+    ],
+    "handlers_invoked": ["aws_db_instance", "aws_s3_bucket"],
+    "state_sources": ["terraform-plan", "terraform-state"]
+  }
+}</code></pre>
+
+    <p>Third parties can verify attestations without RecourseOS access using the <a href="/go-sdk.html">Go SDK</a> or TypeScript implementation.</p>
+
+    <h2 id="cross-action">Cross-Action Detection</h2>
+    <p>Individual actions may be safe, but their combination can be unrecoverable. RecourseOS detects these patterns:</p>
+    <ul>
+      <li><strong>Backup + protected deleted:</strong> Deleting a snapshot and its source in the same plan</li>
+      <li><strong>Replica + primary deleted:</strong> Deleting a replica and its primary database together</li>
+      <li><strong>Protection disabled then deleted:</strong> Removing deletion protection and deleting in one plan</li>
+      <li><strong>Security group referenced:</strong> Deleting a security group while EC2 still uses it</li>
+      <li><strong>VPC cascade:</strong> Deleting a VPC while resources still depend on it</li>
+    </ul>
+    <p>See <a href="/cross-action-analysis.html">Cross-Action Analysis</a> for the full pattern catalog.</p>
+
+    <h2 id="comparison">Comparison Table</h2>
+    <table>
+      <thead><tr><th>Capability</th><th>Pattern Matchers</th><th>RecourseOS</th></tr></thead>
+      <tbody>
+        <tr><td>Pattern matching</td><td><code>rm -rf</code> &rarr; block</td><td>Yes, plus context</td></tr>
+        <tr><td>Consequence depth</td><td>None</td><td>Full blast radius with metrics</td></tr>
+        <tr><td>Recoverability tiers</td><td>Binary</td><td>5-tier + reasoning</td></tr>
+        <tr><td>Attestation</td><td>Audit logs</td><td>Cryptographic proof + trace</td></tr>
+        <tr><td>Evidence verification</td><td>None</td><td>Structured pattern matching</td></tr>
+        <tr><td>Cascade analysis</td><td>None</td><td>Type-grouped dependency graph</td></tr>
+        <tr><td>Cross-action detection</td><td>None</td><td>Multi-change patterns</td></tr>
+      </tbody>
+    </table>
+  </article>
+</main>
+<footer class="container">
+  <span>&copy; 2026 RecourseOS</span>
+  <span>
+    <a href="/changelog.html">changelog</a>
+    <a href="/brand.html">brand</a>
+    <a href="https://github.com/recourseOS/recourse">github</a>
+    <a href="https://www.npmjs.com/package/recourse-cli">npm</a>
+  </span>
+</footer>
+</body>
+</html>
