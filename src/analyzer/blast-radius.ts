@@ -11,7 +11,7 @@ import type {
 import { RecoverabilityTier } from '../resources/types.js';
 import { getRecoverability } from '../resources/index.js';
 import { getRecoverabilityDual } from '../classifier/dual-verdict.js';
-import { buildDependencyGraph, findDependents } from './dependencies.js';
+import { buildDependencyGraph, findDependents, buildCascadeSummary } from './dependencies.js';
 import { filterAllChanges } from '../parsers/plan.js';
 
 export interface AnalyzeOptions {
@@ -56,13 +56,7 @@ export function analyzeBlastRadius(
     // Find cascade impact for destructive changes
     let cascadeImpact: CascadeImpact[] = [];
     if (graph && change.actions.includes('delete')) {
-      const dependents = findDependents(graph, change.address);
-      cascadeImpact = dependents.map(dep => ({
-        affectedResource: dep.address,
-        reason: dep.referenceAttribute
-          ? `References ${dep.referenceAttribute}`
-          : `Depends on deleted resource`,
-      }));
+      cascadeImpact = findDependents(graph, change.address);
     }
 
     return {
@@ -92,6 +86,7 @@ function buildSummary(changes: BlastRadiusChange[]): BlastRadiusSummary {
 
   let cascadeImpactCount = 0;
   const seenCascade = new Set<string>();
+  const allCascadeImpacts: import('../resources/types.js').CascadeImpact[] = [];
 
   for (const change of changes) {
     byTier[change.recoverability.tier]++;
@@ -100,15 +95,22 @@ function buildSummary(changes: BlastRadiusChange[]): BlastRadiusSummary {
       if (!seenCascade.has(impact.affectedResource)) {
         seenCascade.add(impact.affectedResource);
         cascadeImpactCount++;
+        allCascadeImpacts.push(impact);
       }
     }
   }
+
+  // Build enhanced cascade summary
+  const cascadeSummaryData = buildCascadeSummary(allCascadeImpacts);
 
   return {
     totalChanges: changes.length,
     byTier,
     cascadeImpactCount,
     hasUnrecoverable: byTier[RecoverabilityTier.UNRECOVERABLE] > 0,
+    cascadeByType: cascadeImpactCount > 0 ? cascadeSummaryData.byType : undefined,
+    maxCascadeDepth: cascadeImpactCount > 0 ? cascadeSummaryData.maxDepth : undefined,
+    cascadeSummary: cascadeImpactCount > 0 ? cascadeSummaryData.humanReadable : undefined,
   };
 }
 

@@ -54,6 +54,10 @@ export {
 export type { ResourceContext } from './templates.js';
 export { generateVerificationSuggestions } from './templates.js';
 
+// Pattern matching
+export type { MatchResult } from './pattern-matcher.js';
+export { matchPattern, interpretVerificationOutput } from './pattern-matcher.js';
+
 // Main function: classify + generate
 import { classifyResourceType, defaultClassifier } from './classifier.js';
 import { generateVerificationSuggestions, type ResourceContext } from './templates.js';

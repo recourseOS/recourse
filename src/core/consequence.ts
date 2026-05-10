@@ -2,6 +2,7 @@ import type { RecoverabilityResult } from '../resources/types.js';
 import type { DependencyImpact, EvidenceItem, MissingEvidence, MutationIntent, VerificationSuggestion } from './mutation.js';
 import type { EvidenceRequirementLevel, EvidenceSufficiency } from './state-schema.js';
 import type { CrossActionRisk } from '../analyzer/cross-action.js';
+import type { ReasoningTrace, VerificationInstructions } from '../evaluator/trace.js';
 
 export type ConsequenceDecision = 'allow' | 'warn' | 'block' | 'escalate';
 
@@ -121,4 +122,17 @@ export interface ConsequenceReport {
    * Always present when cross-action analysis runs (explicit "we checked").
    */
   crossActionRisks?: CrossActionRisk[];
+
+  // Attestation Richness (v1.1)
+  /**
+   * Step-by-step reasoning trace showing how the evaluation was performed.
+   * Provides transparency and allows third-party verification.
+   */
+  trace?: ReasoningTrace;
+
+  /**
+   * Instructions for independently verifying this assessment.
+   * Includes CLI commands and API calls a verifier can run.
+   */
+  verification?: VerificationInstructions;
 }

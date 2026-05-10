@@ -612,7 +612,7 @@ describe('platform foundation', () => {
         };
       }
 
-      if (request.query === 'list-type=2&max-keys=1') {
+      if (request.query === 'list-type=2&max-keys=1000') {
         return {
           statusCode: 200,
           body: '<ListBucketResult />',

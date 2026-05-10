@@ -13,6 +13,10 @@ export interface JsonOutput {
     cascadeImpactCount: number;
     hasUnrecoverable: boolean;
     worstTier: string;
+    // Enhanced cascade analysis
+    cascadeByType?: Record<string, number>;
+    cascadeSummary?: string;
+    maxCascadeDepth?: number;
   };
   changes: Array<{
     address: string;
@@ -25,7 +29,10 @@ export interface JsonOutput {
     };
     cascadeImpact: Array<{
       affectedResource: string;
+      resourceType: string;
       reason: string;
+      depth: number;
+      dependencyType: 'explicit' | 'implicit';
     }>;
   }>;
 }
@@ -58,6 +65,10 @@ export function toJsonOutput(report: BlastRadiusReport): JsonOutput {
       cascadeImpactCount: summary.cascadeImpactCount,
       hasUnrecoverable: summary.hasUnrecoverable,
       worstTier: RecoverabilityLabels[worstTier],
+      // Enhanced cascade analysis
+      cascadeByType: summary.cascadeByType,
+      cascadeSummary: summary.cascadeSummary,
+      maxCascadeDepth: summary.maxCascadeDepth,
     },
     changes: changes.map(change => ({
       address: change.resource.address,
@@ -68,7 +79,13 @@ export function toJsonOutput(report: BlastRadiusReport): JsonOutput {
         label: change.recoverability.label,
         reasoning: change.recoverability.reasoning,
       },
-      cascadeImpact: change.cascadeImpact,
+      cascadeImpact: change.cascadeImpact.map(impact => ({
+        affectedResource: impact.affectedResource,
+        resourceType: impact.resourceType,
+        reason: impact.reason,
+        depth: impact.depth,
+        dependencyType: impact.dependencyType,
+      })),
     })),
   };
 }

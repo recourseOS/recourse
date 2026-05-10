@@ -26,7 +26,6 @@ This specification does not cover:
 
 - **Credential management.** The agent has its own credentials. Recourse does not provide, manage, or proxy credentials.
 - **Cross-account orchestration.** If verification requires assuming a role in another AWS account, the agent handles that context. Recourse suggests the command; the agent decides how to authenticate.
-- **Output parsing.** The `expected_signal` and `failure_signal` fields are human-readable hints. Structured parsing (regex, JMESPath) may be added in a future version.
 - **Verification execution.** Recourse suggests; agents execute. The engine never runs commands itself.
 
 ## Schema
@@ -83,9 +82,14 @@ export interface VerificationSuggestion {
   // How to resolve it
   verification: VerificationCommand;
 
-  // How to interpret results
+  // How to interpret results (human-readable hints)
   expected_signal: string;            // What indicates evidence is present
   failure_signal: string;             // What indicates evidence is absent
+
+  // Structured patterns for automatic output interpretation (optional)
+  expected_pattern?: OutputPattern;   // Auto-match pattern for success
+  failure_pattern?: OutputPattern;    // Auto-match pattern for failure
+  example_output?: string;            // Human-readable example of expected output
 
   // What changes if verified
   verdict_impact: {
@@ -102,6 +106,33 @@ export interface VerificationSuggestion {
   // - 'recommended': Would change tier (e.g., unrecoverable -> recoverable)
   // - 'informational': Would only improve confidence
   priority: 'critical' | 'recommended' | 'informational';
+}
+
+/**
+ * Structured pattern for automatic output interpretation.
+ * Enables agents to auto-match verification results without manual parsing.
+ */
+export interface OutputPattern {
+  // Pattern type determines evaluation strategy
+  type:
+    | 'json_array_not_empty'   // Output is a non-empty JSON array
+    | 'json_field_equals'      // JSON field equals expected value
+    | 'json_field_exists'      // JSON field exists and is non-null
+    | 'regex'                  // Regex matches raw output
+    | 'exit_code';             // Command exit code matches
+
+  // For json_* types: JSON path in dot notation
+  // Example: "Status", "DBSnapshots", "PointInTimeRecoveryDescription.PointInTimeRecoveryStatus"
+  path?: string;
+
+  // For json_field_equals: the expected value
+  expected_value?: unknown;
+
+  // For regex: the pattern to match
+  regex?: string;
+
+  // For exit_code: expected code (default 0)
+  expected_exit_code?: number;
 }
 ```
 
@@ -190,6 +221,111 @@ Returns consequence report with optional `verification_suggestions` array.
   }
 }
 ```
+
+## Automatic Output Interpretation
+
+When `expected_pattern` or `failure_pattern` is provided, agents can automatically interpret verification output without manual parsing.
+
+### Pattern Types
+
+| Type | Description | Example Use Case |
+|------|-------------|------------------|
+| `json_array_not_empty` | Output is a non-empty JSON array | Check if snapshots exist |
+| `json_field_equals` | JSON field equals expected value | Check if `Status` = `"Enabled"` |
+| `json_field_exists` | JSON field exists and is non-null | Check if `VersionId` is present |
+| `regex` | Regex matches raw output | Check for `PITR:\s*enabled` |
+| `exit_code` | Command exit code matches | Verify command succeeded |
+
+### Interpretation Flow
+
+```
+1. Agent runs verification command
+2. Capture exit_code and raw_output
+3. If exit_code != 0 and output contains "error"/"Error"/"AccessDenied":
+   → Return interpretation: "error"
+4. If expected_pattern provided:
+   → Match output against expected_pattern
+   → If matches: return interpretation: "matches_expected"
+5. If failure_pattern provided:
+   → Match output against failure_pattern
+   → If matches: return interpretation: "matches_failure"
+6. If expected_pattern provided but didn't match:
+   → Return interpretation: "matches_failure"
+7. Otherwise:
+   → Return interpretation: "ambiguous"
+```
+
+### Example: S3 Versioning Check
+
+```typescript
+{
+  evidence_key: 's3_versioning_enabled',
+  description: 'Check if S3 bucket has versioning enabled',
+  verification: {
+    type: 'aws_cli',
+    argv: ['aws', 's3api', 'get-bucket-versioning', '--bucket', 'my-bucket', '--output', 'json']
+  },
+  expected_signal: 'Status: Enabled indicates versioning is on',
+  failure_signal: 'Empty object {} indicates versioning is off',
+
+  // Structured patterns for automatic matching
+  expected_pattern: {
+    type: 'json_field_equals',
+    path: 'Status',
+    expected_value: 'Enabled'
+  },
+  failure_pattern: {
+    type: 'regex',
+    regex: '^\\{\\}$'  // Empty JSON object
+  },
+  example_output: '{"Status": "Enabled", "MFADelete": "Disabled"}'
+}
+```
+
+### Example: RDS Snapshots Check
+
+```typescript
+{
+  evidence_key: 'manual_snapshots_exist',
+  description: 'Check for manual RDS snapshots',
+  verification: {
+    type: 'aws_cli',
+    argv: ['aws', 'rds', 'describe-db-snapshots', '--db-instance-identifier', 'prod-db', '--snapshot-type', 'manual', '--output', 'json']
+  },
+  expected_signal: 'Non-empty array indicates snapshots exist',
+  failure_signal: 'Empty array indicates no snapshots',
+
+  // Structured pattern: just check if array is non-empty
+  expected_pattern: {
+    type: 'json_array_not_empty'
+  },
+  example_output: '[{"DBSnapshotIdentifier": "prod-db-2024-01-15", "Status": "available"}]'
+}
+```
+
+### Example: DynamoDB PITR Check
+
+```typescript
+{
+  evidence_key: 'dynamodb_pitr_enabled',
+  description: 'Check if DynamoDB table has Point-in-Time Recovery enabled',
+  verification: {
+    type: 'aws_cli',
+    argv: ['aws', 'dynamodb', 'describe-continuous-backups', '--table-name', 'users', '--output', 'json']
+  },
+  expected_signal: 'PointInTimeRecoveryStatus: ENABLED',
+  failure_signal: 'PointInTimeRecoveryStatus: DISABLED',
+
+  expected_pattern: {
+    type: 'json_field_equals',
+    path: 'ContinuousBackupsDescription.PointInTimeRecoveryDescription.PointInTimeRecoveryStatus',
+    expected_value: 'ENABLED'
+  },
+  example_output: '{"ContinuousBackupsDescription": {"PointInTimeRecoveryDescription": {"PointInTimeRecoveryStatus": "ENABLED"}}}'
+}
+```
+
+---
 
 ## Verification Catalog
 
@@ -614,14 +750,17 @@ Recourse incorporates the evidence and returns a confident verdict:
 
 1. **Attempt verification before escalating.** If you receive verification suggestions with `priority: critical`, run them before escalating to humans. This produces better verdicts with less human involvement.
 
-2. **Skip verification gracefully.** If you lack credentials or the command fails, submit evidence with `agent_interpretation: error`. The engine will use your escalation with the original verdict.
+2. **Use automatic pattern matching.** When `expected_pattern` is provided, use it to auto-interpret output instead of manual parsing. Submit both `raw_output` and your `agent_interpretation` based on pattern matching.
 
-3. **Trust the engine's interpretation.** Submit `raw_output` and let the engine validate. Your `agent_interpretation` is a hint, not authoritative.
+3. **Skip verification gracefully.** If you lack credentials or the command fails, submit evidence with `agent_interpretation: error`. The engine will use your escalation with the original verdict.
 
-4. **Respect timeouts.** Use `timeout_seconds` from the suggestion. Don't hang indefinitely on slow API calls.
+4. **Trust the engine's interpretation.** Submit `raw_output` and let the engine validate. Your `agent_interpretation` is a hint, not authoritative. The engine may re-interpret using the structured patterns.
 
-5. **Check permissions first.** If `requires_permissions` lists permissions you don't have, skip that verification and note it in `agent_notes`.
+5. **Respect timeouts.** Use `timeout_seconds` from the suggestion. Don't hang indefinitely on slow API calls.
+
+6. **Check permissions first.** If `requires_permissions` lists permissions you don't have, skip that verification and note it in `agent_notes`.
 
 ## Changelog
 
+- **v1.1** (2026-05-09): Added structured output patterns (`OutputPattern`) for automatic verification output interpretation. New pattern types: `json_array_not_empty`, `json_field_equals`, `json_field_exists`, `regex`, `exit_code`.
 - **v1** (2024-XX-XX): Initial protocol

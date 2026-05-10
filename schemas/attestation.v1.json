@@ -31,6 +31,8 @@
           "items": { "$ref": "#/$defs/mutation" }
         },
         "summary": { "$ref": "#/$defs/summary" },
+        "trace": { "$ref": "#/$defs/reasoningTrace" },
+        "verification": { "$ref": "#/$defs/verificationInstructions" },
         "version": {
           "type": "string",
           "description": "Output schema version"
@@ -195,6 +197,147 @@
         "description": {
           "type": "string",
           "description": "Human-readable description of the evidence"
+        }
+      }
+    },
+    "reasoningTrace": {
+      "type": "object",
+      "description": "Step-by-step reasoning chain for the evaluation",
+      "required": ["steps"],
+      "properties": {
+        "steps": {
+          "type": "array",
+          "description": "Ordered list of evaluation steps",
+          "items": { "$ref": "#/$defs/traceStep" }
+        },
+        "duration_ms": {
+          "type": "number",
+          "description": "Total evaluation time in milliseconds"
+        },
+        "handlers_invoked": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of handler names that were invoked"
+        },
+        "state_sources": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Sources of state used (terraform, aws-api, etc.)"
+        }
+      }
+    },
+    "traceStep": {
+      "type": "object",
+      "required": ["step", "action", "result"],
+      "properties": {
+        "step": {
+          "type": "integer",
+          "description": "Step number (1-indexed)"
+        },
+        "action": {
+          "type": "string",
+          "description": "What was done in this step",
+          "examples": ["parse_input", "route_to_handler", "check_backup_config", "assess_recoverability"]
+        },
+        "target": {
+          "type": "string",
+          "description": "Resource or component this step operated on"
+        },
+        "result": {
+          "type": "string",
+          "description": "Outcome of this step"
+        },
+        "evidence_gathered": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidence" },
+          "description": "Evidence collected during this step"
+        },
+        "decision": {
+          "type": "string",
+          "description": "Decision made based on this step (if any)"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence in this step's result"
+        }
+      }
+    },
+    "verificationInstructions": {
+      "type": "object",
+      "description": "Instructions for independently verifying this assessment",
+      "properties": {
+        "commands": {
+          "type": "array",
+          "description": "Commands a verifier can run to confirm the assessment",
+          "items": {
+            "type": "object",
+            "required": ["description", "command"],
+            "properties": {
+              "description": {
+                "type": "string",
+                "description": "What this command checks"
+              },
+              "command": {
+                "type": "string",
+                "description": "The command to run"
+              },
+              "expected_pattern": {
+                "type": "string",
+                "description": "Regex pattern expected in output to confirm assessment"
+              },
+              "confirms": {
+                "type": "string",
+                "description": "What aspect of the assessment this confirms"
+              }
+            }
+          }
+        },
+        "api_checks": {
+          "type": "array",
+          "description": "API calls a verifier can make",
+          "items": {
+            "type": "object",
+            "required": ["service", "operation"],
+            "properties": {
+              "service": {
+                "type": "string",
+                "description": "AWS/GCP/Azure service name"
+              },
+              "operation": {
+                "type": "string",
+                "description": "API operation name"
+              },
+              "parameters": {
+                "type": "object",
+                "description": "Parameters for the API call"
+              },
+              "expected_result": {
+                "type": "object",
+                "description": "Expected result structure"
+              }
+            }
+          }
+        },
+        "reproducibility": {
+          "type": "string",
+          "enum": ["deterministic", "state-dependent", "time-sensitive"],
+          "description": "Whether this assessment can be exactly reproduced"
+        },
+        "state_snapshot": {
+          "type": "object",
+          "description": "Snapshot of relevant state at evaluation time",
+          "properties": {
+            "captured_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "resources": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
         }
       }
     }

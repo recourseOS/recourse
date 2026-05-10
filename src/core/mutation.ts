@@ -121,6 +121,38 @@ export interface VerificationVerdictImpact {
   };
 }
 
+/**
+ * Structured pattern for matching verification output.
+ * Enables automatic interpretation of verification results.
+ */
+export interface OutputPattern {
+  /**
+   * Pattern type determines how to evaluate the output.
+   */
+  type: 'json_array_not_empty' | 'json_field_equals' | 'json_field_exists' | 'regex' | 'exit_code';
+
+  /**
+   * For json_* types: JSON path to evaluate (dot notation).
+   * Example: "DBSnapshots", "Status", "PointInTimeRecoveryDescription.PointInTimeRecoveryStatus"
+   */
+  path?: string;
+
+  /**
+   * For json_field_equals: expected value.
+   */
+  expected_value?: unknown;
+
+  /**
+   * For regex: pattern to match against raw output.
+   */
+  regex?: string;
+
+  /**
+   * For exit_code: expected exit code (default 0).
+   */
+  expected_exit_code?: number;
+}
+
 export interface VerificationSuggestion {
   evidence_key: string;
   description: string;
@@ -131,6 +163,24 @@ export interface VerificationSuggestion {
   verdict_impact: VerificationVerdictImpact;
   // Derived from verdict_impact for agent convenience
   priority: VerificationPriority;
+
+  /**
+   * Structured pattern for automatic output interpretation.
+   * If provided, agents can auto-match output without manual interpretation.
+   */
+  expected_pattern?: OutputPattern;
+
+  /**
+   * Structured pattern for failure detection.
+   * If matched, indicates evidence does NOT confirm recovery.
+   */
+  failure_pattern?: OutputPattern;
+
+  /**
+   * Human-readable example of expected output.
+   * Helps agents understand what they're looking for.
+   */
+  example_output?: string;
 }
 
 // Evidence submission from agent

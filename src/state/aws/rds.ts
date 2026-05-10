@@ -77,13 +77,14 @@ export function analyzeRdsInstanceDeletionEvidence(
 ): RdsEvidenceAnalysis {
   const evidenceItems = toEvidenceItems(evidence);
   const missingEvidence = toMissingEvidence(evidence.missingEvidence ?? []);
+  const protections = buildProtectionSummary(evidence);
 
   if (evidence.deletionProtection === true) {
     return {
       recoverability: {
         tier: RecoverabilityTier.REVERSIBLE,
         label: RecoverabilityLabels[RecoverabilityTier.REVERSIBLE],
-        reasoning: 'RDS deletion protection is enabled; delete attempts should be blocked by AWS until protection is disabled',
+        reasoning: `RDS instance '${evidence.dbInstanceIdentifier}'${protections} has deletion protection enabled; delete attempts will be blocked by AWS`,
         source: 'rules',
         confidence: 0.95,
       },
@@ -97,11 +98,28 @@ export function analyzeRdsInstanceDeletionEvidence(
     || Boolean(evidence.latestRestorableTime)
     || (evidence.snapshotCount ?? 0) > 0
   ) {
+    // Build specific recovery info
+    const recoveryOptions: string[] = [];
+    if ((evidence.snapshotCount ?? 0) > 0) {
+      const snapInfo = `${evidence.snapshotCount} snapshot${evidence.snapshotCount !== 1 ? 's' : ''}`;
+      if (evidence.latestSnapshotTime) {
+        recoveryOptions.push(`${snapInfo} (latest: ${formatTimeAgo(evidence.latestSnapshotTime)})`);
+      } else {
+        recoveryOptions.push(snapInfo);
+      }
+    }
+    if (evidence.latestRestorableTime) {
+      recoveryOptions.push(`PITR available`);
+    }
+    if ((evidence.backupRetentionPeriod ?? 0) > 0) {
+      recoveryOptions.push(`${evidence.backupRetentionPeriod}-day automated backups`);
+    }
+
     return {
       recoverability: {
         tier: RecoverabilityTier.RECOVERABLE_FROM_BACKUP,
         label: RecoverabilityLabels[RecoverabilityTier.RECOVERABLE_FROM_BACKUP],
-        reasoning: 'RDS backups, point-in-time restore, or snapshots are available for this instance',
+        reasoning: `RDS instance '${evidence.dbInstanceIdentifier}'${evidence.engine ? ` (${evidence.engine})` : ''} is recoverable: ${recoveryOptions.join(', ')}`,
         source: 'rules',
         confidence: 0.9,
       },
@@ -115,7 +133,7 @@ export function analyzeRdsInstanceDeletionEvidence(
       recoverability: {
         tier: RecoverabilityTier.NEEDS_REVIEW,
         label: RecoverabilityLabels[RecoverabilityTier.NEEDS_REVIEW],
-        reasoning: 'RDS deletion cannot be classified safely without complete instance and snapshot evidence',
+        reasoning: `RDS instance '${evidence.dbInstanceIdentifier}' deletion cannot be classified safely without complete instance and snapshot evidence`,
         source: 'rules',
         confidence: 0.45,
       },
@@ -128,7 +146,7 @@ export function analyzeRdsInstanceDeletionEvidence(
     recoverability: {
       tier: RecoverabilityTier.UNRECOVERABLE,
       label: RecoverabilityLabels[RecoverabilityTier.UNRECOVERABLE],
-      reasoning: 'RDS instance has no deletion protection, backup retention, latest restorable time, or snapshots',
+      reasoning: `RDS instance '${evidence.dbInstanceIdentifier}'${evidence.engine ? ` (${evidence.engine})` : ''} has no deletion protection, no automated backups, no PITR, and no snapshots; deletion is UNRECOVERABLE`,
       source: 'rules',
       confidence: 0.9,
     },
@@ -197,8 +215,63 @@ function isUnavailable(statusCode: number): boolean {
   return statusCode === 0 || statusCode === 403 || statusCode >= 500;
 }
 
+/**
+ * Format time ago (e.g., "2 hours ago", "3 days ago")
+ */
+function formatTimeAgo(isoDate: string): string {
+  const date = new Date(isoDate);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+  if (diffDays < 30) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+  return `on ${date.toISOString().split('T')[0]}`;
+}
+
+/**
+ * Build a protection summary string for reasoning
+ */
+function buildProtectionSummary(evidence: RdsInstanceEvidence): string {
+  const parts: string[] = [];
+
+  if (evidence.engine) {
+    parts.push(evidence.engine);
+  }
+
+  if ((evidence.backupRetentionPeriod ?? 0) > 0) {
+    parts.push(`${evidence.backupRetentionPeriod}-day backup retention`);
+  }
+
+  if ((evidence.snapshotCount ?? 0) > 0) {
+    const snapInfo = `${evidence.snapshotCount} snapshot${evidence.snapshotCount !== 1 ? 's' : ''}`;
+    if (evidence.latestSnapshotTime) {
+      parts.push(`${snapInfo}, latest ${formatTimeAgo(evidence.latestSnapshotTime)}`);
+    } else {
+      parts.push(snapInfo);
+    }
+  }
+
+  if (evidence.latestRestorableTime) {
+    parts.push(`PITR available to ${formatTimeAgo(evidence.latestRestorableTime)}`);
+  }
+
+  if (evidence.multiAz) {
+    parts.push('Multi-AZ');
+  }
+
+  if ((evidence.readReplicas?.length ?? 0) > 0) {
+    parts.push(`${evidence.readReplicas!.length} read replica${evidence.readReplicas!.length !== 1 ? 's' : ''}`);
+  }
+
+  return parts.length > 0 ? ` (${parts.join(', ')})` : '';
+}
+
 function toEvidenceItems(evidence: RdsInstanceEvidence): EvidenceItem[] {
-  return [
+  const items: EvidenceItem[] = [
     {
       key: 'rds.instance',
       value: evidence.dbInstanceIdentifier,
@@ -206,15 +279,21 @@ function toEvidenceItems(evidence: RdsInstanceEvidence): EvidenceItem[] {
       description: 'RDS instance targeted by the mutation',
     },
     {
+      key: 'rds.engine',
+      value: evidence.engine,
+      present: Boolean(evidence.engine),
+      description: 'RDS database engine type',
+    },
+    {
       key: 'rds.deletion_protection',
       value: evidence.deletionProtection,
-      present: evidence.deletionProtection === true,
+      present: evidence.deletionProtection !== undefined,
       description: 'RDS deletion protection setting',
     },
     {
       key: 'rds.backup_retention_period',
       value: evidence.backupRetentionPeriod,
-      present: (evidence.backupRetentionPeriod ?? 0) > 0,
+      present: evidence.backupRetentionPeriod !== undefined,
       description: 'RDS automated backup retention period in days',
     },
     {
@@ -226,13 +305,19 @@ function toEvidenceItems(evidence: RdsInstanceEvidence): EvidenceItem[] {
     {
       key: 'rds.snapshot_count',
       value: evidence.snapshotCount,
-      present: (evidence.snapshotCount ?? 0) > 0,
-      description: 'RDS snapshots associated with the DB instance',
+      present: evidence.snapshotCount !== undefined,
+      description: 'Number of manual snapshots for this DB instance',
+    },
+    {
+      key: 'rds.latest_snapshot_time',
+      value: evidence.latestSnapshotTime,
+      present: Boolean(evidence.latestSnapshotTime),
+      description: 'Most recent snapshot creation timestamp',
     },
     {
       key: 'rds.multi_az',
       value: evidence.multiAz,
-      present: evidence.multiAz === true,
+      present: evidence.multiAz !== undefined,
       description: 'RDS Multi-AZ deployment setting',
     },
     {
@@ -242,6 +327,8 @@ function toEvidenceItems(evidence: RdsInstanceEvidence): EvidenceItem[] {
       description: 'RDS read replicas attached to the DB instance',
     },
   ];
+
+  return items;
 }
 
 function toMissingEvidence(keys: string[]): MissingEvidence[] {
