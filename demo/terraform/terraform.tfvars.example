@@ -1,8 +1,0 @@
-# Copy this to terraform.tfvars and customize
-
-aws_region  = "us-west-2"
-environment = "demo"
-app_name    = "widgetco"
-
-# Change this to a secure password
-db_password = "WidgetCo-Demo-2026!"
