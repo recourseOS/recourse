@@ -13,6 +13,7 @@ import {
   buildRequiredEvidence,
   getEvidenceRequirements,
   DEFAULT_UNKNOWN_REQUIREMENTS,
+  EvaluationTimer,
 } from '../core/index.js';
 import {
   RecoverabilityLabels,
@@ -62,7 +63,13 @@ export function evaluateMcpToolCallConsequences(
   call: McpToolCall,
   options: McpConsequenceOptions = {}
 ): ConsequenceReport {
+  const timer = new EvaluationTimer('mcpEvaluation');
+  timer.startPhase('parse');
+
   const intent = mcpToolCallToMutation(call, options.adapterContext);
+  timer.endPhase('parse');
+
+  timer.startPhase('analysis');
   const s3Analysis = getS3Analysis(intent, options.awsEvidence?.s3Buckets);
   const rdsAnalysis = getRdsAnalysis(intent, options.awsEvidence?.rdsInstances);
   const dynamoDbAnalysis = getDynamoDbAnalysis(intent, options.awsEvidence?.dynamoDbTables);
@@ -105,6 +112,9 @@ export function evaluateMcpToolCallConsequences(
   // Build required evidence for the consequence report
   const requiredEvidence = buildRequiredEvidenceForIntent(intent, mutation.evidence);
 
+  timer.endPhase('analysis');
+  const timing = timer.finish();
+
   return {
     mutations: [mutation],
     summary: {
@@ -117,6 +127,7 @@ export function evaluateMcpToolCallConsequences(
     riskAssessment: policyEvaluation.decision,
     assessmentReason: policyEvaluation.reason,
     requiredEvidence,
+    timing,
   };
 }
 

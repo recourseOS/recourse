@@ -879,6 +879,9 @@ function error(id: JsonRpcRequest['id'], code: number, message: string): Record<
   };
 }
 
+// Maximum MCP frame size (10MB) to prevent DoS
+const MAX_FRAME_SIZE = 10 * 1024 * 1024;
+
 function readFrame(buffer: Buffer): { body: Buffer; remaining: Buffer } | null {
   const headerEnd = buffer.indexOf('\r\n\r\n');
   if (headerEnd === -1) return null;
@@ -890,6 +893,12 @@ function readFrame(buffer: Buffer): { body: Buffer; remaining: Buffer } | null {
   }
 
   const contentLength = Number(match[1]);
+
+  // Validate frame size to prevent memory exhaustion
+  if (contentLength > MAX_FRAME_SIZE) {
+    throw new Error(`MCP frame size ${contentLength} exceeds maximum allowed size of ${MAX_FRAME_SIZE} bytes`);
+  }
+
   const bodyStart = headerEnd + 4;
   const frameEnd = bodyStart + contentLength;
   if (buffer.length < frameEnd) return null;

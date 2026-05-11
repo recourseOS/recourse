@@ -95,10 +95,24 @@ export class AttestationService {
   constructor(config: AttestationServiceConfig = {}) {
     this.configDir = config.configDir ?? join(homedir(), '.recourse');
     this.instanceId = config.instanceId ?? 'recourse-local';
-    this.instanceBaseUrl = config.instanceBaseUrl ?? 'http://localhost:3001';
     this.evaluatorVersion = config.evaluatorVersion ?? '1.0.0';
     this.registry = createRegistry();
     this.attestationsDir = join(this.configDir, 'attestations');
+
+    // Resolve instance base URL with production validation
+    const envUrl = process.env.RECOURSE_INSTANCE_URL;
+    const defaultUrl = 'http://localhost:3001';
+    this.instanceBaseUrl = config.instanceBaseUrl ?? envUrl ?? defaultUrl;
+
+    // Warn if using localhost in production mode
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isLocalhost = this.instanceBaseUrl.includes('localhost') || this.instanceBaseUrl.includes('127.0.0.1');
+    if (isProduction && isLocalhost) {
+      console.warn(
+        '[WARN] Attestation service using localhost URL in production mode. ' +
+        'Set RECOURSE_INSTANCE_URL to a publicly accessible URL for valid attestations.'
+      );
+    }
   }
 
   /**
@@ -256,9 +270,10 @@ export class AttestationService {
         encoding: 'utf8',
         mode: 0o644,
       });
-    } catch {
-      // Silently fail - disk persistence is best-effort
-      // Memory storage is still available for this process
+    } catch (err) {
+      // Log persistence failures - audit trail should not silently disappear
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn(`[WARN] Failed to persist attestation ${id}: ${message}. Memory storage only.`);
     }
   }
 

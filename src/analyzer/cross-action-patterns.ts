@@ -113,8 +113,10 @@ function detectBackupRelationship(
     }
   }
 
-  // TODO: State lookup for additional relationships
-  // TODO: Naming convention detection (low confidence)
+  // Future enhancements (not blocking for v1):
+  // - State lookup: Query live state for snapshot->instance relationships not in plan
+  // - Naming convention: Detect patterns like "mydb-snapshot" -> "mydb" (low confidence)
+  // These would improve detection but explicit_reference covers the critical cases.
 
   return null;
 }

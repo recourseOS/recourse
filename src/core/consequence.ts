@@ -3,6 +3,7 @@ import type { DependencyImpact, EvidenceItem, MissingEvidence, MutationIntent, V
 import type { EvidenceRequirementLevel, EvidenceSufficiency } from './state-schema.js';
 import type { CrossActionRisk } from '../analyzer/cross-action.js';
 import type { ReasoningTrace, VerificationInstructions } from '../evaluator/trace.js';
+import type { EvaluationTiming } from './timing.js';
 
 export type ConsequenceDecision = 'allow' | 'warn' | 'block' | 'escalate';
 
@@ -135,4 +136,10 @@ export interface ConsequenceReport {
    * Includes CLI commands and API calls a verifier can run.
    */
   verification?: VerificationInstructions;
+
+  /**
+   * Performance timing metrics for this evaluation.
+   * Includes total time, phase breakdown, and SLA compliance.
+   */
+  timing?: EvaluationTiming;
 }

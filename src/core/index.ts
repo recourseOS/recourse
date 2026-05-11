@@ -85,3 +85,15 @@ export {
   checkEvidenceFailures,
   applyFailureMode,
 } from './failure-mode.js';
+
+// Performance timing
+export type {
+  EvaluationTiming,
+  SLATarget,
+} from './timing.js';
+
+export {
+  SLA_TARGETS,
+  EvaluationTimer,
+  formatTiming,
+} from './timing.js';

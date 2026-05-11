@@ -20,6 +20,34 @@ import {
 import { toConsequenceJson } from '../output/consequence-json.js';
 import { getAttestationService, type AttestationService } from '../attestation/service.js';
 
+// Valid risk level values
+export type RiskLevel = 'allow' | 'warn' | 'escalate' | 'block';
+const VALID_RISK_LEVELS: RiskLevel[] = ['allow', 'warn', 'escalate', 'block'];
+
+/**
+ * Parse and validate risk levels from a comma-separated string.
+ * Invalid values are filtered out with a warning.
+ */
+export function parseRiskLevels(input: string): RiskLevel[] {
+  const levels = input.split(',').map(s => s.trim().toLowerCase());
+  const valid: RiskLevel[] = [];
+  const invalid: string[] = [];
+
+  for (const level of levels) {
+    if (VALID_RISK_LEVELS.includes(level as RiskLevel)) {
+      valid.push(level as RiskLevel);
+    } else if (level.length > 0) {
+      invalid.push(level);
+    }
+  }
+
+  if (invalid.length > 0) {
+    console.warn(`[WARN] Invalid risk levels ignored: ${invalid.join(', ')}. Valid: ${VALID_RISK_LEVELS.join(', ')}`);
+  }
+
+  return valid.length > 0 ? valid : ['allow', 'warn']; // Default if all invalid
+}
+
 // Gateway configuration
 export interface GatewayConfig {
   // Upstream MCP servers to proxy
@@ -193,7 +221,9 @@ async function evaluateToolCall(
     attestation = attestationService.createAttestation(input, jsonReport);
   }
 
-  const allowed = config.allowedRiskLevels.includes(riskAssessment as any);
+  // Validate risk assessment is a known level before checking policy
+  const isValidLevel = VALID_RISK_LEVELS.includes(riskAssessment as RiskLevel);
+  const allowed = isValidLevel && config.allowedRiskLevels.includes(riskAssessment as RiskLevel);
 
   return { allowed, report: jsonReport, attestation };
 }
@@ -458,7 +488,7 @@ export function loadGatewayConfig(configPath?: string): GatewayConfig {
   }
 
   if (process.env.RECOURSE_ALLOWED_LEVELS) {
-    defaultConfig.allowedRiskLevels = process.env.RECOURSE_ALLOWED_LEVELS.split(',') as any;
+    defaultConfig.allowedRiskLevels = parseRiskLevels(process.env.RECOURSE_ALLOWED_LEVELS);
   }
 
   return defaultConfig;

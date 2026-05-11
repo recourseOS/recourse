@@ -2,7 +2,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'http';
 import { readFileSync, existsSync } from 'fs';
 import { join, extname } from 'path';
 import { fileURLToPath } from 'url';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { parsePlanJson } from '../parsers/plan.js';
 import {
   evaluateMcpToolCallConsequences,
@@ -153,7 +153,10 @@ export async function runHttpServer(options: HttpServerOptions = {}): Promise<vo
           });
           res.end(content);
           return;
-        } catch {
+        } catch (err) {
+          // Log the actual error for debugging (permission denied, etc.)
+          const message = err instanceof Error ? err.message : String(err);
+          console.error(`[ERROR] Failed to read ${fullPath}: ${message}`);
           // Fall through to 404
         }
       }
@@ -203,9 +206,15 @@ export async function runHttpServer(options: HttpServerOptions = {}): Promise<vo
 }
 
 function openUrl(url: string): void {
+  // Use execFile with array args to prevent command injection
   const cmd = process.platform === 'darwin' ? 'open' :
-              process.platform === 'win32' ? 'start' : 'xdg-open';
-  exec(`${cmd} ${url}`);
+              process.platform === 'win32' ? 'cmd' : 'xdg-open';
+  const args = process.platform === 'win32' ? ['/c', 'start', '', url] : [url];
+  execFile(cmd, args, (err) => {
+    if (err) {
+      console.error('Failed to open browser:', err.message);
+    }
+  });
 }
 
 function evaluate(request: EvaluateRequest) {
@@ -254,10 +263,23 @@ function evaluate(request: EvaluateRequest) {
   }
 }
 
+// Maximum request body size (10MB) to prevent DoS
+const MAX_BODY_SIZE = 10 * 1024 * 1024;
+
 function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
-    req.on('data', chunk => chunks.push(chunk));
+    let totalSize = 0;
+
+    req.on('data', (chunk: Buffer) => {
+      totalSize += chunk.length;
+      if (totalSize > MAX_BODY_SIZE) {
+        req.destroy();
+        reject(new Error(`Request body exceeds maximum size of ${MAX_BODY_SIZE} bytes`));
+        return;
+      }
+      chunks.push(chunk);
+    });
     req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
     req.on('error', reject);
   });
