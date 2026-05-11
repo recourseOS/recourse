@@ -72,3 +72,28 @@ export {
   getRegisteredResourceTypes,
   hasEvidenceRequirements,
 } from './evidence-requirements.js';
+
+// Failure mode handling
+export type {
+  FailureMode,
+  EvidenceFailureCheck,
+} from './failure-mode.js';
+
+export {
+  DEFAULT_FAILURE_MODE,
+  PRO_DEFAULT_FAILURE_MODE,
+  checkEvidenceFailures,
+  applyFailureMode,
+} from './failure-mode.js';
+
+// Performance timing
+export type {
+  EvaluationTiming,
+  SLATarget,
+} from './timing.js';
+
+export {
+  SLA_TARGETS,
+  EvaluationTimer,
+  formatTiming,
+} from './timing.js';

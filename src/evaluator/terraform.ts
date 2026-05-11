@@ -16,6 +16,14 @@ import type {
   VerificationStatusInfo,
   RequiredEvidence,
   EvidenceItem,
+  FailureMode,
+} from '../core/index.js';
+import {
+  checkEvidenceFailures,
+  applyFailureMode,
+  DEFAULT_FAILURE_MODE,
+  EvaluationTimer,
+  type EvaluationTiming,
 } from '../core/index.js';
 import {
   TraceBuilder,
@@ -53,6 +61,10 @@ export function evaluateTerraformPlanConsequences(
   state: TerraformState | null,
   options: TerraformConsequenceOptions = {}
 ): ConsequenceReport {
+  // Initialize timing
+  const timer = new EvaluationTimer('planEvaluation');
+  timer.startPhase('parse');
+
   // Initialize trace capture
   const trace = new TraceBuilder();
   trace.source('terraform-plan');
@@ -61,7 +73,9 @@ export function evaluateTerraformPlanConsequences(
   }
 
   trace.step('parse_input', `Parsed Terraform plan with ${plan.resourceChanges?.length ?? 0} resource changes`);
+  timer.endPhase('parse');
 
+  timer.startPhase('analysis');
   const blastRadiusReport = analyzeBlastRadius(plan, state, {
     useClassifier: options.useClassifier,
   });
@@ -69,7 +83,9 @@ export function evaluateTerraformPlanConsequences(
   trace.step('analyze_blast_radius', `Analyzed ${blastRadiusReport.changes.length} changes`, {
     decision: `total_changes=${blastRadiusReport.summary.totalChanges}, has_unrecoverable=${blastRadiusReport.summary.hasUnrecoverable}`,
   });
+  timer.endPhase('analysis');
 
+  timer.startPhase('policy');
   const policyEvaluation = evaluateBlastRadiusReport(
     blastRadiusReport,
     options.policy
@@ -274,6 +290,36 @@ export function evaluateTerraformPlanConsequences(
       )
     : undefined;
 
+  // Check for evidence failures and apply failure mode
+  const failureCheck = checkEvidenceFailures(mutations);
+  const effectiveFailureMode = options.policy?.failureMode ?? DEFAULT_FAILURE_MODE;
+
+  let finalDecision = finalPolicyEvaluation.decision;
+  let finalReason = hasUnrecoverableFromCrossAction
+    ? `${finalPolicyEvaluation.reason} (cross-action risk detected)`
+    : finalPolicyEvaluation.reason;
+
+  // Apply failure mode if there are evidence failures
+  if (failureCheck.hasFailures) {
+    const failureModeResult = applyFailureMode(
+      finalDecision,
+      finalReason,
+      failureCheck,
+      effectiveFailureMode
+    );
+    finalDecision = failureModeResult.decision;
+    finalReason = failureModeResult.reason;
+
+    trace.step('failure_mode_check', `Evidence failures detected, applying ${effectiveFailureMode} mode`, {
+      decision: `failed_resources=${failureCheck.failedResources.length}, mode=${effectiveFailureMode}, result=${finalDecision}`,
+    });
+  }
+
+  timer.endPhase('policy');
+
+  // Finalize timing
+  const timing = timer.finish();
+
   const report: ConsequenceReport = {
     mutations,
     summary: {
@@ -283,15 +329,15 @@ export function evaluateTerraformPlanConsequences(
       hasUnrecoverable,
       dependencyImpactCount: blastRadiusReport.summary.cascadeImpactCount,
     },
-    riskAssessment: finalPolicyEvaluation.decision,
-    assessmentReason: hasUnrecoverableFromCrossAction
-      ? `${finalPolicyEvaluation.reason} (cross-action risk detected)`
-      : finalPolicyEvaluation.reason,
+    riskAssessment: finalDecision,
+    assessmentReason: finalReason,
     // Always include cross-action risks (empty array if none detected)
     crossActionRisks,
     // Attestation richness fields
     trace: trace.build(),
     verification: verificationInstructions,
+    // Performance timing
+    timing,
   };
 
   // Add verification protocol fields

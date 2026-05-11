@@ -29,6 +29,7 @@ import {
 } from '../evaluator/index.js';
 import { toConsequenceJson } from '../output/consequence-json.js';
 import { getAttestationService, type AttestationService } from '../attestation/service.js';
+import { parseRiskLevels } from '../mcp/gateway.js';
 
 // Session request
 export interface SessionRequest {
@@ -492,10 +493,9 @@ export function createBrokerFromEnv(): SessionBroker {
 
   return new SessionBroker({
     brokerRoleArn: roleArn,
-    allowedRiskLevels: (process.env.RECOURSE_ALLOWED_LEVELS?.split(',') as any) ?? [
-      'allow',
-      'warn',
-    ],
+    allowedRiskLevels: process.env.RECOURSE_ALLOWED_LEVELS
+      ? parseRiskLevels(process.env.RECOURSE_ALLOWED_LEVELS)
+      : ['allow', 'warn'],
     defaultDurationSeconds: parseInt(process.env.RECOURSE_SESSION_DURATION ?? '900'),
     maxDurationSeconds: parseInt(process.env.RECOURSE_MAX_SESSION_DURATION ?? '3600'),
     attestation: process.env.RECOURSE_ATTESTATION !== 'false',

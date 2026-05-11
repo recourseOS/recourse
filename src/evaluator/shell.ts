@@ -6,6 +6,7 @@ import type {
   ConsequenceReport,
   MutationIntent,
 } from '../core/index.js';
+import { EvaluationTimer } from '../core/index.js';
 import {
   RecoverabilityLabels,
   RecoverabilityTier,
@@ -44,6 +45,9 @@ export function evaluateShellCommandConsequences(
   input: ShellCommandInput | string,
   options: ShellConsequenceOptions = {}
 ): ConsequenceReport {
+  const timer = new EvaluationTimer('shellEvaluation');
+  timer.startPhase('parse');
+
   const command = typeof input === 'string' ? input : input.command;
   const intent = shellCommandToMutation(command, {
     ...options.adapterContext,
@@ -52,7 +56,9 @@ export function evaluateShellCommandConsequences(
       cwd: typeof input === 'string' ? undefined : input.cwd,
     },
   });
+  timer.endPhase('parse');
 
+  timer.startPhase('analysis');
   const s3Analysis = getS3Analysis(intent, options.awsEvidence?.s3Buckets);
   const rdsAnalysis = getRdsAnalysis(intent, options.awsEvidence?.rdsInstances);
   const dynamoDbAnalysis = getDynamoDbAnalysis(intent, options.awsEvidence?.dynamoDbTables);
@@ -92,6 +98,9 @@ export function evaluateShellCommandConsequences(
     dependencyImpact: [],
   };
 
+  timer.endPhase('analysis');
+  const timing = timer.finish();
+
   return {
     mutations: [mutation],
     summary: {
@@ -103,6 +112,7 @@ export function evaluateShellCommandConsequences(
     },
     riskAssessment: policyEvaluation.decision,
     assessmentReason: policyEvaluation.reason,
+    timing,
   };
 }
 

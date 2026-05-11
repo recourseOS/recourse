@@ -1,20 +1,19 @@
 /**
  * Notification system for RecourseOS escalations.
  *
- * Supports:
+ * Currently supported:
  * - Slack webhooks (RECOURSE_SLACK_WEBHOOK)
  * - Discord webhooks (RECOURSE_DISCORD_WEBHOOK)
- * - PagerDuty Events API (PAGERDUTY_ROUTING_KEY)
- * - Opsgenie Alerts API (OPSGENIE_API_KEY)
+ *
+ * Planned (not yet implemented):
+ * - PagerDuty Events API
+ * - Opsgenie Alerts API
  *
  * Notifications are sent automatically when risk is 'escalate' or 'block'.
  */
 
 export { sendSlackNotification, createSlackNotifier, formatSlackMessage } from './slack.js';
 export { sendDiscordNotification, createDiscordNotifier, formatDiscordMessage } from './discord.js';
-// PagerDuty and Opsgenie temporarily disabled - type fixes needed
-// export { ... } from './pagerduty.js';
-// export { ... } from './opsgenie.js';
 
 export interface ConsequenceAlert {
   riskAssessment: 'allow' | 'warn' | 'escalate' | 'block';
@@ -68,9 +67,7 @@ export function createNotifier(): Notifier | null {
 export function hasNotifications(): boolean {
   return !!(
     process.env.RECOURSE_SLACK_WEBHOOK ||
-    process.env.RECOURSE_DISCORD_WEBHOOK ||
-    process.env.PAGERDUTY_ROUTING_KEY ||
-    process.env.OPSGENIE_API_KEY
+    process.env.RECOURSE_DISCORD_WEBHOOK
   );
 }
 

@@ -88,14 +88,27 @@ export async function startBrokerServer(
   });
 }
 
+// Maximum request body size (1MB) to prevent DoS
+const MAX_BODY_SIZE = 1024 * 1024;
+
 /**
- * Read request body
+ * Read request body with size limit
  */
 function readBody(req: http.IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
-    let body = '';
-    req.on('data', (chunk) => (body += chunk.toString()));
-    req.on('end', () => resolve(body));
+    const chunks: Buffer[] = [];
+    let totalSize = 0;
+
+    req.on('data', (chunk: Buffer) => {
+      totalSize += chunk.length;
+      if (totalSize > MAX_BODY_SIZE) {
+        req.destroy();
+        reject(new Error(`Request body exceeds maximum size of ${MAX_BODY_SIZE} bytes`));
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
     req.on('error', reject);
   });
 }

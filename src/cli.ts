@@ -15,6 +15,7 @@ import {
   evaluateTerraformPlanConsequences,
 } from './evaluator/index.js';
 import type { McpToolCall } from './adapters/index.js';
+import { parseRiskLevels } from './mcp/gateway.js';
 import {
   analyzeDynamoDbTableDeletionEvidence,
   analyzeIamRoleDeletionEvidence,
@@ -189,7 +190,7 @@ mcp
     }
 
     if (options.allow) {
-      config.allowedRiskLevels = options.allow.split(',') as any;
+      config.allowedRiskLevels = parseRiskLevels(options.allow);
     }
 
     if (options.verbose !== undefined) {
@@ -935,7 +936,23 @@ program
     }
   });
 
+/**
+ * Execute a shell command after RecourseOS evaluation.
+ *
+ * SECURITY NOTE: shell:true is intentional here because:
+ * 1. This is the `recourse exec` CLI command where user explicitly provides a command
+ * 2. Commands may include shell features (pipes, redirections, etc.)
+ * 3. The command is validated by RecourseOS before execution
+ *
+ * This is NOT used for programmatic/untrusted input.
+ */
 function executeCommand(command: string): void {
+  // Validate command is a non-empty string
+  if (typeof command !== 'string' || command.trim().length === 0) {
+    console.error('Invalid command: must be a non-empty string');
+    process.exit(1);
+  }
+
   const child = spawn(command, {
     shell: true,
     stdio: 'inherit',

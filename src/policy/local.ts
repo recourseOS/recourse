@@ -4,13 +4,20 @@ import {
   type BlastRadiusReport,
   type RecoverabilityResult,
 } from '../resources/types.js';
-import type { ConsequenceDecision } from '../core/index.js';
+import type { ConsequenceDecision, FailureMode } from '../core/index.js';
 
 export interface LocalPolicy {
   blockOn?: RecoverabilityTier;
   escalateOn?: RecoverabilityTier;
   warnOn?: RecoverabilityTier;
   requireReviewOnNeedsReview?: boolean;
+  /**
+   * How to handle evidence gathering failures (API errors, timeouts, etc.)
+   * - 'closed': Block action when evidence unavailable (safest, recommended for Pro)
+   * - 'review': Escalate to human review (default for OSS)
+   * - 'open': Allow action despite missing evidence (dangerous!)
+   */
+  failureMode?: FailureMode;
 }
 
 export interface PolicyEvaluation {
@@ -24,6 +31,7 @@ export const defaultLocalPolicy: Required<LocalPolicy> = {
   escalateOn: RecoverabilityTier.NEEDS_REVIEW,
   warnOn: RecoverabilityTier.RECOVERABLE_FROM_BACKUP,
   requireReviewOnNeedsReview: true,
+  failureMode: 'review', // Default: escalate to human when evidence unavailable
 };
 
 export function evaluateRecoverability(
