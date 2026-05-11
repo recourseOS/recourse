@@ -222,7 +222,7 @@ function evaluate(request: EvaluateRequest) {
         : JSON.stringify(request.input);
       const plan = parsePlanJson(planJson);
       return evaluateTerraformPlanConsequences(plan, null, {
-        useClassifier: request.options?.classifier ?? false,
+        useClassifier: request.options?.classifier ?? true,
         adapterContext,
       });
     }

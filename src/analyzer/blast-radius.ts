@@ -24,7 +24,7 @@ export function analyzeBlastRadius(
   state: TerraformState | null,
   options: AnalyzeOptions = {}
 ): BlastRadiusReport {
-  const { includeNonDestructive = true, useClassifier = false } = options;
+  const { includeNonDestructive = true, useClassifier = true } = options;
 
   // Get changes to analyze
   let changes: ResourceChange[];
