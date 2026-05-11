@@ -28,13 +28,125 @@ export type AwsTransport = (
   input: AwsRequestInput & { headers: Record<string, string>; body: string }
 ) => Promise<AwsHttpResponse>;
 
+export interface RetryOptions {
+  /** Maximum number of retry attempts (default: 3) */
+  maxRetries?: number;
+  /** Base delay in ms for exponential backoff (default: 100) */
+  baseDelayMs?: number;
+  /** Maximum delay in ms (default: 5000) */
+  maxDelayMs?: number;
+  /** Whether to retry on 5xx errors (default: true) */
+  retryOn5xx?: boolean;
+  /** Whether to retry on network errors (default: true) */
+  retryOnNetworkError?: boolean;
+}
+
+const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
+  maxRetries: 3,
+  baseDelayMs: 100,
+  maxDelayMs: 5000,
+  retryOn5xx: true,
+  retryOnNetworkError: true,
+};
+
+/**
+ * Sleep for a given number of milliseconds.
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Calculate delay with exponential backoff and jitter.
+ */
+function calculateBackoff(attempt: number, baseDelayMs: number, maxDelayMs: number): number {
+  const exponentialDelay = baseDelayMs * Math.pow(2, attempt);
+  const jitter = Math.random() * 0.3 * exponentialDelay; // 0-30% jitter
+  return Math.min(exponentialDelay + jitter, maxDelayMs);
+}
+
+/**
+ * Check if a response should be retried.
+ */
+function shouldRetry(
+  statusCode: number,
+  options: Required<RetryOptions>
+): boolean {
+  // Network error (statusCode 0)
+  if (statusCode === 0 && options.retryOnNetworkError) {
+    return true;
+  }
+  // 5xx server errors
+  if (statusCode >= 500 && options.retryOn5xx) {
+    return true;
+  }
+  // 429 Too Many Requests
+  if (statusCode === 429) {
+    return true;
+  }
+  return false;
+}
+
 export class AwsSignedClient {
+  private readonly retryOptions: Required<RetryOptions>;
+
   constructor(
     private readonly credentials: AwsCredentials,
-    private readonly transport: AwsTransport = defaultHttpsTransport
-  ) {}
+    private readonly transport: AwsTransport = defaultHttpsTransport,
+    retryOptions: RetryOptions = {}
+  ) {
+    this.retryOptions = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
+  }
 
   async request(input: AwsRequestInput): Promise<AwsHttpResponse> {
+    let lastError: Error | undefined;
+    let lastResponse: AwsHttpResponse | undefined;
+
+    for (let attempt = 0; attempt <= this.retryOptions.maxRetries; attempt++) {
+      try {
+        const response = await this.requestOnce(input);
+        lastResponse = response;
+
+        // Check if we should retry
+        if (attempt < this.retryOptions.maxRetries && shouldRetry(response.statusCode, this.retryOptions)) {
+          const delay = calculateBackoff(attempt, this.retryOptions.baseDelayMs, this.retryOptions.maxDelayMs);
+          await sleep(delay);
+          continue;
+        }
+
+        return response;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+
+        // Network error - retry if configured
+        if (attempt < this.retryOptions.maxRetries && this.retryOptions.retryOnNetworkError) {
+          const delay = calculateBackoff(attempt, this.retryOptions.baseDelayMs, this.retryOptions.maxDelayMs);
+          await sleep(delay);
+          continue;
+        }
+
+        // Return a response with statusCode 0 to indicate network failure
+        return {
+          statusCode: 0,
+          body: lastError.message,
+          headers: {},
+        };
+      }
+    }
+
+    // All retries exhausted
+    if (lastResponse) {
+      return lastResponse;
+    }
+
+    return {
+      statusCode: 0,
+      body: lastError?.message || 'Request failed after retries',
+      headers: {},
+    };
+  }
+
+  private async requestOnce(input: AwsRequestInput): Promise<AwsHttpResponse> {
     const body = input.body ?? '';
     const now = new Date();
     const amzDate = toAmzDate(now);

@@ -72,3 +72,16 @@ export {
   getRegisteredResourceTypes,
   hasEvidenceRequirements,
 } from './evidence-requirements.js';
+
+// Failure mode handling
+export type {
+  FailureMode,
+  EvidenceFailureCheck,
+} from './failure-mode.js';
+
+export {
+  DEFAULT_FAILURE_MODE,
+  PRO_DEFAULT_FAILURE_MODE,
+  checkEvidenceFailures,
+  applyFailureMode,
+} from './failure-mode.js';

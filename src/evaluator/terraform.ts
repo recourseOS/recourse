@@ -16,6 +16,12 @@ import type {
   VerificationStatusInfo,
   RequiredEvidence,
   EvidenceItem,
+  FailureMode,
+} from '../core/index.js';
+import {
+  checkEvidenceFailures,
+  applyFailureMode,
+  DEFAULT_FAILURE_MODE,
 } from '../core/index.js';
 import {
   TraceBuilder,
@@ -274,6 +280,31 @@ export function evaluateTerraformPlanConsequences(
       )
     : undefined;
 
+  // Check for evidence failures and apply failure mode
+  const failureCheck = checkEvidenceFailures(mutations);
+  const effectiveFailureMode = options.policy?.failureMode ?? DEFAULT_FAILURE_MODE;
+
+  let finalDecision = finalPolicyEvaluation.decision;
+  let finalReason = hasUnrecoverableFromCrossAction
+    ? `${finalPolicyEvaluation.reason} (cross-action risk detected)`
+    : finalPolicyEvaluation.reason;
+
+  // Apply failure mode if there are evidence failures
+  if (failureCheck.hasFailures) {
+    const failureModeResult = applyFailureMode(
+      finalDecision,
+      finalReason,
+      failureCheck,
+      effectiveFailureMode
+    );
+    finalDecision = failureModeResult.decision;
+    finalReason = failureModeResult.reason;
+
+    trace.step('failure_mode_check', `Evidence failures detected, applying ${effectiveFailureMode} mode`, {
+      decision: `failed_resources=${failureCheck.failedResources.length}, mode=${effectiveFailureMode}, result=${finalDecision}`,
+    });
+  }
+
   const report: ConsequenceReport = {
     mutations,
     summary: {
@@ -283,10 +314,8 @@ export function evaluateTerraformPlanConsequences(
       hasUnrecoverable,
       dependencyImpactCount: blastRadiusReport.summary.cascadeImpactCount,
     },
-    riskAssessment: finalPolicyEvaluation.decision,
-    assessmentReason: hasUnrecoverableFromCrossAction
-      ? `${finalPolicyEvaluation.reason} (cross-action risk detected)`
-      : finalPolicyEvaluation.reason,
+    riskAssessment: finalDecision,
+    assessmentReason: finalReason,
     // Always include cross-action risks (empty array if none detected)
     crossActionRisks,
     // Attestation richness fields
