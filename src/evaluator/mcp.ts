@@ -15,6 +15,8 @@ import {
   DEFAULT_UNKNOWN_REQUIREMENTS,
   EvaluationTimer,
 } from '../core/index.js';
+import { estimateMutationCost } from '../cost/estimator.js';
+import { getBillingClient } from '../cost/billing-client.js';
 import {
   RecoverabilityLabels,
   RecoverabilityTier,
@@ -115,6 +117,22 @@ export function evaluateMcpToolCallConsequences(
   timer.endPhase('analysis');
   const timing = timer.finish();
 
+  // Estimate cost impact
+  const costEstimate = estimateMutationCost(intent);
+
+  // Record resource to billing API for usage tracking
+  const billingClient = getBillingClient();
+  if (billingClient.isEnabled() && intent.target.id) {
+    const action = intent.action === 'delete' ? 'delete' : intent.action === 'create' ? 'create' : 'update';
+    billingClient.recordResource({
+      resourceId: intent.target.id,
+      resourceType: intent.target.type,
+      action,
+      estimatedMonthlyCost: costEstimate.monthlyCost,
+      agentId: options.adapterContext?.actorId,
+    });
+  }
+
   return {
     mutations: [mutation],
     summary: {
@@ -128,6 +146,7 @@ export function evaluateMcpToolCallConsequences(
     assessmentReason: policyEvaluation.reason,
     requiredEvidence,
     timing,
+    costEstimate: costEstimate.monthlyCost > 0 ? costEstimate : undefined,
   };
 }
 

@@ -1,4 +1,5 @@
 import type { Readable, Writable } from 'stream';
+import * as http from 'http';
 import { parsePlanJson } from '../parsers/plan.js';
 import { parseStateJson } from '../parsers/state.js';
 import {
@@ -15,9 +16,55 @@ import type { TerraformPlan, TerraformState } from '../resources/types.js';
 import { getAttestationService, type AttestationService } from '../attestation/service.js';
 import { interpretVerificationOutput, type MatchResult } from '../verification/index.js';
 
+// Desktop app notification port
+const DESKTOP_APP_PORT = 31415;
+
 const SCHEMA_VERSION = 'recourse.consequence.v1';
 
 let verbose = false;
+
+/**
+ * Notify the desktop app about an escalation that needs human approval.
+ * This is fire-and-forget - if the desktop app isn't running, we just log.
+ */
+function notifyDesktopApp(escalation: {
+  id: string;
+  source: string;
+  command: string;
+  riskLevel: string;
+  riskAssessment: string;
+  tier: number;
+  reasoning: string;
+  blastRadius: string[];
+}): void {
+  const postData = JSON.stringify(escalation);
+
+  const req = http.request({
+    hostname: '127.0.0.1',
+    port: DESKTOP_APP_PORT,
+    path: '/api/escalation',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(postData),
+    },
+    timeout: 1000,
+  }, (res) => {
+    if (verbose) {
+      log(`Desktop app notified: ${res.statusCode}`);
+    }
+  });
+
+  req.on('error', () => {
+    // Desktop app not running - that's fine, just log if verbose
+    if (verbose) {
+      log('Desktop app not available for escalation notification');
+    }
+  });
+
+  req.write(postData);
+  req.end();
+}
 let attestationService: AttestationService | null = null;
 
 function log(message: string): void {
@@ -510,7 +557,23 @@ async function callTool(params: unknown): Promise<Record<string, unknown>> {
       const mutation = report.mutations[0];
       const target = mutation?.intent.target.id || 'terraform plan';
       const tier = mutation?.recoverability?.label || 'unknown';
+      const tierNum = mutation?.recoverability?.tier || 0;
       logDecision('terraform', target, report.riskAssessment, tier);
+
+      // Notify desktop app for escalations
+      if (report.riskAssessment === 'escalate' || report.riskAssessment === 'block') {
+        notifyDesktopApp({
+          id: crypto.randomUUID(),
+          source: 'Terraform',
+          command: `terraform apply (${report.mutations.length} changes)`,
+          riskLevel: report.riskAssessment === 'block' ? 'critical' : 'high',
+          riskAssessment: report.riskAssessment,
+          tier: tierNum,
+          reasoning: report.assessmentReason || tier,
+          blastRadius: report.mutations.map(m => m.intent.target.id),
+        });
+      }
+
       // Include input for attestation: source + original input
       const attestInput = { source: 'terraform', plan: args.plan, state: args.state };
       return toolResult(withSchemaVersion(report, attestInput));
@@ -522,7 +585,23 @@ async function callTool(params: unknown): Promise<Record<string, unknown>> {
         cmd = args.command.length > 50 ? args.command.slice(0, 47) + '...' : args.command;
       }
       const tier = report.mutations[0]?.recoverability?.label || 'unknown';
+      const tierNum = report.mutations[0]?.recoverability?.tier || 0;
       logDecision('shell', cmd, report.riskAssessment, tier);
+
+      // Notify desktop app for escalations
+      if (report.riskAssessment === 'escalate' || report.riskAssessment === 'block') {
+        notifyDesktopApp({
+          id: crypto.randomUUID(),
+          source: 'Claude Code',
+          command: typeof args.command === 'string' ? args.command : 'unknown',
+          riskLevel: report.riskAssessment === 'block' ? 'critical' : 'high',
+          riskAssessment: report.riskAssessment,
+          tier: tierNum,
+          reasoning: report.assessmentReason || tier,
+          blastRadius: report.mutations.map(m => m.intent.target.id),
+        });
+      }
+
       const attestInput = { source: 'shell', command: args.command, cwd: args.cwd };
       return toolResult(withSchemaVersion(report, attestInput));
     }

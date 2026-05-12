@@ -4,6 +4,7 @@ import type { EvidenceRequirementLevel, EvidenceSufficiency } from './state-sche
 import type { CrossActionRisk } from '../analyzer/cross-action.js';
 import type { ReasoningTrace, VerificationInstructions } from '../evaluator/trace.js';
 import type { EvaluationTiming } from './timing.js';
+import type { CostEstimate } from '../cost/estimator.js';
 
 export type ConsequenceDecision = 'allow' | 'warn' | 'block' | 'escalate';
 
@@ -142,4 +143,10 @@ export interface ConsequenceReport {
    * Includes total time, phase breakdown, and SLA compliance.
    */
   timing?: EvaluationTiming;
+
+  /**
+   * Cost estimate for this plan/mutation.
+   * Estimated monthly cloud spend impact.
+   */
+  costEstimate?: CostEstimate;
 }

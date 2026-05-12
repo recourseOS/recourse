@@ -1,0 +1,38 @@
+{
+  "name": "@recourse/runtime-router",
+  "version": "0.1.0",
+  "description": "RecourseOS consequence gate for runtime routers",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "recourse",
+    "runtime-router",
+    "agent",
+    "safety",
+    "consequence",
+    "verification"
+  ],
+  "author": "RecourseOS",
+  "license": "MIT",
+  "peerDependencies": {
+    "recourse-cli": "^0.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
