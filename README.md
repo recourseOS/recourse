@@ -250,13 +250,74 @@ recourse tui --source shell --input 'aws s3 rm s3://prod-audit-logs --recursive'
 recourse tui --source terraform --input plan.json --classifier
 ```
 
-### MCP Server
+### MCP Server (Advisory Mode)
 
 ```bash
 recourse mcp serve
 ```
 
 See [docs/mcp-setup.md](docs/mcp-setup.md) for full setup and [docs/agent-interface.md](docs/agent-interface.md) for the schema reference.
+
+## Enforcement Gateway
+
+> The agent proposes. The gateway enforces. RecourseOS verifies consequences.
+
+For production use with AI agents, the **Enforcement Gateway** provides in-line enforcement that agents cannot bypass.
+
+### Trust Boundary
+
+```
+The agent does NOT receive raw Terraform, Kubernetes, shell, or cloud credentials.
+The agent receives ONLY gateway tools.
+The gateway owns execution credentials and applies policy, consequence evaluation,
+approval checks, and audit logging before any mutation is executed.
+```
+
+### Agent Tools vs Human Control Plane
+
+| Agent-Callable (via MCP) | Human-Only (control plane) |
+|--------------------------|----------------------------|
+| `gateway_request_approval` | `approve` |
+| `gateway_check_approval` | `reject` |
+| `gateway_terraform_plan` | `break_glass` |
+| `gateway_terraform_apply` | `policy_override` |
+
+The agent can request and check approvals. Only humans can grant them.
+
+### Quick Start
+
+```bash
+# Start the gateway
+recourse gateway serve -e prod
+
+# Verify enforcement configuration
+recourse gateway doctor -e prod
+```
+
+Configure Claude Code/Cursor:
+
+```json
+{
+  "mcpServers": {
+    "recourse-gateway": {
+      "command": "npx",
+      "args": ["-y", "recourse-cli@latest", "gateway", "serve", "-e", "prod"]
+    }
+  }
+}
+```
+
+### Enforcement Guarantees
+
+| Guarantee | Mechanism |
+|-----------|-----------|
+| No credential leakage | Agent never sees raw credentials |
+| Plan integrity | Apply only works with verified plan hash |
+| Temporal bounds | Plans and approvals expire (1h / 24h) |
+| Audit completeness | All attempts recorded, including blocks |
+| Approval isolation | Agents cannot approve their own requests |
+
+See [docs/enforcement-gateway.md](docs/enforcement-gateway.md) for the full architecture.
 
 ### Shell Wrapper
 

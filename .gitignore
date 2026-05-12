@@ -35,3 +35,9 @@ __pycache__/
 docs/_next/
 RecourseOS-Advanced-Website/
 demo/
+
+# Compiled files (should only be in dist/)
+src/**/*.js
+src/**/*.js.map
+src/**/*.d.ts
+src/**/*.d.ts.map

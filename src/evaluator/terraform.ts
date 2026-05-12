@@ -18,6 +18,8 @@ import type {
   EvidenceItem,
   FailureMode,
 } from '../core/index.js';
+import { estimateTerraformCost, type CostEstimate, type CostBreakdown } from '../cost/estimator.js';
+import { getBillingClient } from '../cost/billing-client.js';
 import {
   checkEvidenceFailures,
   applyFailureMode,
@@ -320,6 +322,60 @@ export function evaluateTerraformPlanConsequences(
   // Finalize timing
   const timing = timer.finish();
 
+  // Estimate cost impact for all changes
+  let totalMonthlyCost = 0;
+  const costBreakdown: CostBreakdown[] = [];
+  let worstConfidence: CostEstimate['confidence'] = 'high';
+
+  for (const change of blastRadiusReport.changes) {
+    const estimate = estimateTerraformCost(change.resource);
+    if (estimate.monthlyCost > 0) {
+      totalMonthlyCost += estimate.direction === 'decrease'
+        ? -estimate.monthlyCost
+        : estimate.monthlyCost;
+
+      costBreakdown.push({
+        component: change.resource.address,
+        monthlyCost: estimate.monthlyCost,
+      });
+    }
+    // Track worst confidence
+    if (estimate.confidence === 'low') {
+      worstConfidence = 'low';
+    } else if (estimate.confidence === 'medium' && worstConfidence !== 'low') {
+      worstConfidence = 'medium';
+    }
+  }
+
+  const costEstimate: CostEstimate = {
+    monthlyCost: Math.round(Math.abs(totalMonthlyCost) * 100) / 100,
+    direction: totalMonthlyCost > 0 ? 'increase' : totalMonthlyCost < 0 ? 'decrease' : 'unchanged',
+    confidence: worstConfidence,
+    breakdown: costBreakdown.length > 0 ? costBreakdown : undefined,
+  };
+
+  // Record resources to billing API for usage tracking
+  const billingClient = getBillingClient();
+  if (billingClient.isEnabled()) {
+    for (const change of blastRadiusReport.changes) {
+      const estimate = estimateTerraformCost(change.resource);
+      // Determine action from Terraform actions array
+      let action: 'create' | 'update' | 'delete' = 'update';
+      if (change.resource.actions.includes('delete') && !change.resource.actions.includes('create')) {
+        action = 'delete';
+      } else if (change.resource.actions.includes('create') && !change.resource.actions.includes('delete')) {
+        action = 'create';
+      }
+      billingClient.recordResource({
+        resourceId: change.resource.address,
+        resourceType: change.resource.type,
+        action,
+        estimatedMonthlyCost: estimate.monthlyCost,
+        agentId: options.adapterContext?.actorId,
+      });
+    }
+  }
+
   const report: ConsequenceReport = {
     mutations,
     summary: {
@@ -338,6 +394,8 @@ export function evaluateTerraformPlanConsequences(
     verification: verificationInstructions,
     // Performance timing
     timing,
+    // Cost estimation
+    costEstimate: costEstimate.monthlyCost > 0 ? costEstimate : undefined,
   };
 
   // Add verification protocol fields

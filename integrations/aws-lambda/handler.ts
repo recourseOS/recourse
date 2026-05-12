@@ -8,6 +8,9 @@
 import { analyzeBlastRadius } from '../../src/analyzer/blast-radius.js';
 import { parsePlanJson } from '../../src/parsers/plan.js';
 import { parseStateJson } from '../../src/parsers/state.js';
+import { evaluateShellCommandConsequences } from '../../src/evaluator/shell.js';
+import { evaluateMcpToolCallConsequences } from '../../src/evaluator/mcp.js';
+import { RecoverabilityTier } from '../../src/resources/types.js';
 
 // API Gateway event types
 interface APIGatewayEvent {
@@ -129,78 +132,45 @@ function evaluateTerraform(req: EvaluateTerraformRequest): EvaluationResponse {
 }
 
 /**
- * Evaluate a shell command
+ * Evaluate a shell command using core evaluator
  */
 function evaluateShell(req: EvaluateShellRequest): EvaluationResponse {
-  const cmd = req.command.toLowerCase();
+  const report = evaluateShellCommandConsequences(
+    { command: req.command, cwd: req.cwd },
+    {
+      adapterContext: {
+        actorId: req.actor,
+        environment: req.environment,
+        owner: req.owner,
+      },
+    }
+  );
 
-  // High-risk patterns
-  const highRisk = [
-    'rm -rf',
-    '--recursive',
-    'drop database',
-    'drop table',
-    'truncate',
-    '--skip-final-snapshot',
-    'force_destroy',
-    'delete-db-instance',
-    'delete-db-cluster',
-  ];
-
-  // Medium-risk patterns
-  const mediumRisk = [
-    'delete',
-    'remove',
-    'terminate',
-    'destroy',
-    'drop',
-    'kubectl delete',
-    'docker rm',
-    'docker rmi',
-  ];
-
-  let riskAssessment: RiskAssessment;
-  let tier: number;
-  let label: string;
-  let reasoning: string;
-
-  if (highRisk.some(p => cmd.includes(p))) {
-    riskAssessment = 'block';
-    tier = 4;
-    label = 'unrecoverable';
-    reasoning = 'Command matches high-risk destructive patterns';
-  } else if (mediumRisk.some(p => cmd.includes(p))) {
-    riskAssessment = 'escalate';
-    tier = 3;
-    label = 'needs-review';
-    reasoning = 'Command appears destructive, requires confirmation';
-  } else {
-    riskAssessment = 'allow';
-    tier = 1;
-    label = 'reversible';
-    reasoning = 'No destructive patterns detected';
-  }
+  const worstTier = report.summary.worstRecoverability.tier;
+  const tierLabel = report.summary.worstRecoverability.label;
 
   return {
-    riskAssessment,
+    riskAssessment: report.riskAssessment,
     summary: {
-      totalChanges: 1,
-      reversible: tier === 1 ? 1 : 0,
-      recoverableWithEffort: 0,
-      recoverableFromBackup: 0,
-      needsReview: tier === 3 ? 1 : 0,
-      unrecoverable: tier === 4 ? 1 : 0,
-      hasUnrecoverable: tier === 4,
-      worstTier: label,
+      totalChanges: report.summary.totalMutations,
+      reversible: worstTier === RecoverabilityTier.REVERSIBLE ? 1 : 0,
+      recoverableWithEffort: worstTier === RecoverabilityTier.RECOVERABLE_WITH_EFFORT ? 1 : 0,
+      recoverableFromBackup: worstTier === RecoverabilityTier.RECOVERABLE_FROM_BACKUP ? 1 : 0,
+      needsReview: report.summary.needsReview ? 1 : 0,
+      unrecoverable: report.summary.hasUnrecoverable ? 1 : 0,
+      hasUnrecoverable: report.summary.hasUnrecoverable,
+      worstTier: tierLabel,
     },
-    changes: [
-      {
-        address: req.command,
-        action: 'execute',
-        resourceType: 'shell_command',
-        recoverability: { tier, label, reasoning },
+    changes: report.mutations.map(m => ({
+      address: m.intent.target.id || req.command,
+      action: m.intent.action,
+      resourceType: m.intent.target.type,
+      recoverability: {
+        tier: m.recoverability.tier,
+        label: m.recoverability.label,
+        reasoning: m.recoverability.reason,
       },
-    ],
+    })),
     metadata: {
       evaluatedAt: new Date().toISOString(),
       actor: req.actor,
@@ -211,28 +181,26 @@ function evaluateShell(req: EvaluateShellRequest): EvaluationResponse {
 }
 
 /**
- * Evaluate an MCP tool call
+ * Evaluate an MCP tool call using core evaluator
  */
 function evaluateMcp(req: EvaluateMcpRequest): EvaluationResponse {
-  const toolLower = req.tool.toLowerCase();
-  const destructivePatterns = ['delete', 'remove', 'destroy', 'terminate', 'drop'];
+  const report = evaluateMcpToolCallConsequences(
+    {
+      server: req.server,
+      tool: req.tool,
+      arguments: req.arguments,
+    },
+    {
+      adapterContext: {
+        actorId: req.actor,
+        environment: req.environment,
+        owner: req.owner,
+      },
+    }
+  );
 
-  let riskAssessment: RiskAssessment;
-  let tier: number;
-  let label: string;
-  let reasoning: string;
-
-  if (destructivePatterns.some(p => toolLower.includes(p))) {
-    riskAssessment = 'escalate';
-    tier = 3;
-    label = 'needs-review';
-    reasoning = `Tool "${req.tool}" appears destructive`;
-  } else {
-    riskAssessment = 'allow';
-    tier = 1;
-    label = 'reversible';
-    reasoning = 'No destructive patterns detected';
-  }
+  const worstTier = report.summary.worstRecoverability.tier;
+  const tierLabel = report.summary.worstRecoverability.label;
 
   const target =
     req.arguments.bucket ||
@@ -241,25 +209,27 @@ function evaluateMcp(req: EvaluateMcpRequest): EvaluationResponse {
     JSON.stringify(req.arguments);
 
   return {
-    riskAssessment,
+    riskAssessment: report.riskAssessment,
     summary: {
-      totalChanges: 1,
-      reversible: tier === 1 ? 1 : 0,
-      recoverableWithEffort: 0,
-      recoverableFromBackup: 0,
-      needsReview: tier === 3 ? 1 : 0,
-      unrecoverable: 0,
-      hasUnrecoverable: false,
-      worstTier: label,
+      totalChanges: report.summary.totalMutations,
+      reversible: worstTier === RecoverabilityTier.REVERSIBLE ? 1 : 0,
+      recoverableWithEffort: worstTier === RecoverabilityTier.RECOVERABLE_WITH_EFFORT ? 1 : 0,
+      recoverableFromBackup: worstTier === RecoverabilityTier.RECOVERABLE_FROM_BACKUP ? 1 : 0,
+      needsReview: report.summary.needsReview ? 1 : 0,
+      unrecoverable: report.summary.hasUnrecoverable ? 1 : 0,
+      hasUnrecoverable: report.summary.hasUnrecoverable,
+      worstTier: tierLabel,
     },
-    changes: [
-      {
-        address: `${req.server}:${req.tool}(${target})`,
-        action: 'call',
-        resourceType: 'mcp_tool',
-        recoverability: { tier, label, reasoning },
+    changes: report.mutations.map(m => ({
+      address: m.intent.target.id || `${req.server}:${req.tool}(${target})`,
+      action: m.intent.action,
+      resourceType: m.intent.target.type,
+      recoverability: {
+        tier: m.recoverability.tier,
+        label: m.recoverability.label,
+        reasoning: m.recoverability.reason,
       },
-    ],
+    })),
     metadata: {
       evaluatedAt: new Date().toISOString(),
       actor: req.actor,

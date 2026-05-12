@@ -200,6 +200,42 @@ mcp
     await startGateway(config);
   });
 
+// Gateway command - enforcement layer for agents
+const gatewayCmd = program
+  .command('gateway')
+  .description('Agent enforcement gateway - wrapped tools that cannot be bypassed');
+
+gatewayCmd
+  .command('serve')
+  .description('Start the RecourseOS Gateway MCP server (enforcement mode)')
+  .option('-v, --verbose', 'Log gate decisions to stderr')
+  .option('-p, --policy <file>', 'Path to policy YAML file')
+  .option('-e, --environment <env>', 'Current environment (e.g., production, staging)')
+  .action(async (options: { verbose?: boolean; policy?: string; environment?: string }) => {
+    const { runGatewayMcpServer } = await import('./gateway/mcp-server.js');
+    await runGatewayMcpServer(process.stdin, process.stdout, {
+      verbose: options.verbose,
+      policyFile: options.policy,
+      environment: options.environment as 'dev' | 'staging' | 'prod' | undefined,
+    });
+  });
+
+gatewayCmd
+  .command('doctor')
+  .description('Verify gateway enforcement configuration and run self-tests')
+  .option('-e, --environment <env>', 'Environment to test (dev, staging, prod)', 'prod')
+  .option('-p, --policy <file>', 'Path to policy YAML file')
+  .option('--json', 'Output results as JSON')
+  .action(async (options: { environment: string; policy?: string; json?: boolean }) => {
+    const { runGatewayDoctor } = await import('./gateway/doctor.js');
+    const exitCode = await runGatewayDoctor({
+      environment: options.environment as 'dev' | 'staging' | 'prod',
+      policyFile: options.policy,
+      jsonOutput: options.json,
+    });
+    process.exit(exitCode);
+  });
+
 program
   .command('serve')
   .description('Start the RecourseOS playground for testing evaluations')
@@ -1107,6 +1143,215 @@ iam
     } catch (error: any) {
       console.error('Error:', error.message);
       process.exit(1);
+    }
+  });
+
+// Cost tracking commands
+import { getBillingClient } from './cost/index.js';
+
+const config = program
+  .command('config')
+  .description('Manage RecourseOS configuration');
+
+config
+  .command('set')
+  .description('Set a configuration value')
+  .argument('<key>', 'Configuration key (e.g., license_key)')
+  .argument('<value>', 'Configuration value')
+  .action(async (key: string, value: string) => {
+    const client = getBillingClient();
+
+    if (key === 'license_key') {
+      client.setLicenseKey(value);
+
+      // Validate the key
+      const info = await client.validateLicense();
+      if (info.valid) {
+        console.log(`License key set successfully.`);
+        console.log(`Organization: ${info.orgName}`);
+        console.log(`Features: ${info.features?.join(', ')}`);
+      } else {
+        console.error(`Warning: License key may be invalid (${info.error})`);
+        console.log('Key saved anyway. Will retry validation on next use.');
+      }
+    } else {
+      console.error(`Unknown configuration key: ${key}`);
+      process.exit(1);
+    }
+  });
+
+config
+  .command('get')
+  .description('Get a configuration value')
+  .argument('<key>', 'Configuration key')
+  .action((key: string) => {
+    const client = getBillingClient();
+
+    if (key === 'license_key') {
+      const licenseKey = client.getLicenseKey();
+      if (licenseKey) {
+        // Only show prefix for security
+        const masked = licenseKey.slice(0, 10) + '...' + licenseKey.slice(-4);
+        console.log(masked);
+      } else {
+        console.log('Not set');
+      }
+    } else {
+      console.error(`Unknown configuration key: ${key}`);
+      process.exit(1);
+    }
+  });
+
+config
+  .command('unset')
+  .description('Remove a configuration value')
+  .argument('<key>', 'Configuration key')
+  .action((key: string) => {
+    const client = getBillingClient();
+
+    if (key === 'license_key') {
+      client.clearLicenseKey();
+      console.log('License key removed.');
+    } else {
+      console.error(`Unknown configuration key: ${key}`);
+      process.exit(1);
+    }
+  });
+
+const budget = program
+  .command('budget')
+  .description('Manage agent spending budgets');
+
+budget
+  .command('set')
+  .description('Set budget for an agent')
+  .argument('<agent>', 'Agent ID')
+  .requiredOption('-l, --limit <amount>', 'Monthly spending limit in USD')
+  .option('-p, --period <period>', 'Budget period: day, week, month', 'month')
+  .option('-e, --on-exceed <action>', 'Action when exceeded: block, escalate, warn', 'block')
+  .action(async (agent: string, options: { limit: string; period: string; onExceed: string }) => {
+    const client = getBillingClient();
+
+    if (!client.isEnabled()) {
+      console.error('Cost tracking not enabled. Set a license key first:');
+      console.error('  recourse config set license_key <your-key>');
+      process.exit(1);
+    }
+
+    const success = await client.setBudget(agent, {
+      limit: parseFloat(options.limit),
+      period: options.period as 'day' | 'week' | 'month',
+      onExceed: options.onExceed as 'block' | 'escalate' | 'warn',
+    });
+
+    if (success) {
+      console.log(`Budget set for ${agent}:`);
+      console.log(`  Limit: $${options.limit}/${options.period}`);
+      console.log(`  On exceed: ${options.onExceed}`);
+    } else {
+      console.error('Failed to set budget.');
+      process.exit(1);
+    }
+  });
+
+budget
+  .command('list')
+  .description('List all agent budgets')
+  .action(async () => {
+    const client = getBillingClient();
+
+    if (!client.isEnabled()) {
+      console.error('Cost tracking not enabled. Set a license key first.');
+      process.exit(1);
+    }
+
+    const budgets = await client.getBudgets();
+
+    if (!budgets || Object.keys(budgets).length === 0) {
+      console.log('No budgets configured.');
+      return;
+    }
+
+    console.log('Agent Budgets:\n');
+    for (const [agentId, budget] of Object.entries(budgets)) {
+      const pct = Math.round((budget.currentSpend / budget.limit) * 100);
+      console.log(`${agentId}:`);
+      console.log(`  Limit: $${budget.limit}/${budget.period}`);
+      console.log(`  Spent: $${budget.currentSpend} (${pct}%)`);
+      console.log(`  On exceed: ${budget.onExceed}`);
+      console.log('');
+    }
+  });
+
+budget
+  .command('status')
+  .description('Check budget status')
+  .argument('[agent]', 'Agent ID (optional, shows all if not specified)')
+  .action(async (agent?: string) => {
+    const client = getBillingClient();
+
+    if (!client.isEnabled()) {
+      console.error('Cost tracking not enabled. Set a license key first.');
+      process.exit(1);
+    }
+
+    const budgets = await client.getBudgets();
+
+    if (!budgets) {
+      console.log('No budgets configured.');
+      return;
+    }
+
+    if (agent) {
+      const budget = budgets[agent];
+      if (!budget) {
+        console.log(`No budget set for ${agent}`);
+        return;
+      }
+      const pct = Math.round((budget.currentSpend / budget.limit) * 100);
+      const remaining = budget.limit - budget.currentSpend;
+      console.log(`${agent}: $${budget.currentSpend} / $${budget.limit} (${pct}%)`);
+      console.log(`Remaining: $${remaining.toFixed(2)}`);
+    } else {
+      for (const [agentId, budget] of Object.entries(budgets)) {
+        const pct = Math.round((budget.currentSpend / budget.limit) * 100);
+        console.log(`${agentId}: $${budget.currentSpend} / $${budget.limit} (${pct}%)`);
+      }
+    }
+  });
+
+program
+  .command('usage')
+  .description('Show current billing period usage')
+  .action(async () => {
+    const client = getBillingClient();
+
+    if (!client.isEnabled()) {
+      console.error('Cost tracking not enabled. Set a license key first:');
+      console.error('  recourse config set license_key <your-key>');
+      process.exit(1);
+    }
+
+    const usage = await client.getCurrentUsage();
+
+    if (!usage) {
+      console.error('Failed to fetch usage data.');
+      process.exit(1);
+    }
+
+    console.log('Current Billing Period\n');
+    console.log(`Period: ${new Date(usage.period_start as string).toLocaleDateString()} - ${new Date(usage.period_end as string).toLocaleDateString()}`);
+    console.log(`Managed resources: ${usage.managed_resources}`);
+    console.log(`Cloud spend: $${(usage.cloud_spend as number).toFixed(2)}/mo`);
+    console.log(`Free tier remaining: $${(usage.free_tier_remaining as number).toFixed(2)}`);
+    console.log(`Billing amount: $${(usage.billing_amount as number).toFixed(2)}`);
+
+    const byAgent = usage.by_agent as Record<string, { resources: number; monthly_cost: number }>;
+    if (byAgent && Object.keys(byAgent).length > 0) {
+      console.log('\nBy Agent:');
+      for (const [agentId, agentUsage] of Object.entries(byAgent)) {
+        console.log(`  ${agentId}: $${agentUsage.monthly_cost.toFixed(2)}/mo (${agentUsage.resources} resources)`);
+      }
     }
   });
 

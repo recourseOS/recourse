@@ -37,15 +37,16 @@ def _format_response(raw: dict) -> str:
 
     summary = raw.get("summary", {})
     has_unrecoverable = summary.get("hasUnrecoverable", False)
-    needs_review = summary.get("needsReview", 0)
-    tier = summary.get("worstTier", "unknown")
-    total = summary.get("totalChanges", 0)
+    needs_review = summary.get("needsReview", False)
+    worst_recov = summary.get("worstRecoverability", {})
+    tier = worst_recov.get("label", "unknown") if isinstance(worst_recov, dict) else "unknown"
+    total = summary.get("totalMutations", 0)
 
     # Determine risk level
     if has_unrecoverable:
         risk = "BLOCK"
         instruction = "Do NOT proceed. This action would cause unrecoverable data loss."
-    elif needs_review > 0:
+    elif needs_review:
         risk = "ESCALATE"
         instruction = "Ask the user to explicitly confirm before proceeding."
     elif tier in ("recoverable-from-backup", "recoverable-with-effort"):
@@ -55,13 +56,16 @@ def _format_response(raw: dict) -> str:
         risk = "ALLOW"
         instruction = "Safe to proceed."
 
-    # Build reasoning
-    changes = raw.get("changes", [])
+    # Build reasoning from mutations
+    mutations = raw.get("mutations", [])
     reasons = []
-    for c in changes:
-        rec = c.get("recoverability", {})
+    for m in mutations:
+        rec = m.get("recoverability", {})
+        intent = m.get("intent", {})
+        target = intent.get("target", {})
+        address = target.get("id") or target.get("type", "unknown")
         if rec.get("reasoning"):
-            reasons.append(f"- {c.get('address', 'unknown')}: {rec['reasoning']}")
+            reasons.append(f"- {address}: {rec['reasoning']}")
 
     lines = [
         f"**Risk Assessment: {risk}**",
@@ -126,43 +130,8 @@ def recourse_evaluate_shell(command: str) -> str:
     Returns:
         Risk assessment with recommended action
     """
-    cmd = command.lower()
-
-    # High-risk patterns
-    high_risk = [
-        "rm -rf", "--recursive", "drop database", "drop table",
-        "truncate", "--skip-final-snapshot", "force_destroy",
-        "delete-db-instance", "delete-db-cluster"
-    ]
-
-    # Medium-risk patterns
-    medium_risk = [
-        "delete", "remove", "terminate", "destroy", "drop",
-        "kubectl delete", "docker rm", "docker rmi"
-    ]
-
-    if any(p in cmd for p in high_risk):
-        return (
-            "**Risk Assessment: BLOCK**\n\n"
-            f"Command: `{command}`\n\n"
-            "This command matches high-risk destructive patterns.\n\n"
-            "**Action:** Do NOT execute without explicit user approval and verified backups."
-        )
-
-    if any(p in cmd for p in medium_risk):
-        return (
-            "**Risk Assessment: ESCALATE**\n\n"
-            f"Command: `{command}`\n\n"
-            "This command appears destructive.\n\n"
-            "**Action:** Ask the user to confirm before executing."
-        )
-
-    return (
-        "**Risk Assessment: ALLOW**\n\n"
-        f"Command: `{command}`\n\n"
-        "No destructive patterns detected.\n\n"
-        "**Action:** Safe to proceed with normal caution."
-    )
+    raw = _run_recourse_cli(["evaluate", "shell", command, "--format", "json"])
+    return _format_response(raw)
 
 
 def recourse_evaluate_mcp(server: str, tool: str, arguments: dict) -> str:
@@ -179,31 +148,9 @@ def recourse_evaluate_mcp(server: str, tool: str, arguments: dict) -> str:
     Returns:
         Risk assessment with recommended action
     """
-    tool_lower = tool.lower()
-
-    if any(p in tool_lower for p in ["delete", "remove", "destroy", "terminate", "drop"]):
-        target = (
-            arguments.get("bucket") or
-            arguments.get("name") or
-            arguments.get("identifier") or
-            str(arguments)
-        )
-        return (
-            "**Risk Assessment: ESCALATE**\n\n"
-            f"Server: `{server}`\n"
-            f"Tool: `{tool}`\n"
-            f"Target: `{target}`\n\n"
-            "This tool call appears destructive.\n\n"
-            "**Action:** Ask the user to confirm before invoking."
-        )
-
-    return (
-        "**Risk Assessment: ALLOW**\n\n"
-        f"Server: `{server}`\n"
-        f"Tool: `{tool}`\n\n"
-        "No destructive patterns detected.\n\n"
-        "**Action:** Safe to proceed."
-    )
+    mcp_input = json.dumps({"server": server, "tool": tool, "arguments": arguments})
+    raw = _run_recourse_cli(["evaluate", "mcp", mcp_input, "--format", "json"])
+    return _format_response(raw)
 
 
 def get_recourse_tools() -> list[FunctionTool]:

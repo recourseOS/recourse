@@ -85,6 +85,51 @@ const SHELL_PATTERNS: ShellPattern[] = [
     service: 'postgres',
     id: (_match, command) => command,
   },
+  // Terraform patterns
+  {
+    pattern: /^\s*terraform\s+destroy(?:\s|$)/,
+    action: 'delete',
+    type: 'terraform_infrastructure',
+    service: 'terraform',
+    id: (_match, command) => command,
+  },
+  {
+    pattern: /^\s*terraform\s+apply\s+.*-destroy/,
+    action: 'delete',
+    type: 'terraform_infrastructure',
+    service: 'terraform',
+    id: (_match, command) => command,
+  },
+  {
+    pattern: /^\s*terraform\s+apply\s+-auto-approve/,
+    action: 'update',
+    type: 'terraform_infrastructure',
+    service: 'terraform',
+    id: (_match, command) => command,
+  },
+  // Pulumi patterns
+  {
+    pattern: /^\s*pulumi\s+destroy(?:\s|$)/,
+    action: 'delete',
+    type: 'pulumi_infrastructure',
+    service: 'pulumi',
+    id: (_match, command) => command,
+  },
+  // Docker patterns
+  {
+    pattern: /^\s*docker\s+system\s+prune\s+-a/,
+    action: 'delete',
+    type: 'docker_resources',
+    service: 'docker',
+    id: () => 'all-unused-resources',
+  },
+  {
+    pattern: /^\s*docker\s+rm\s+-f\s+\$\(docker\s+ps\s+-aq\)/,
+    action: 'delete',
+    type: 'docker_containers',
+    service: 'docker',
+    id: () => 'all-containers',
+  },
 ];
 
 export class ShellCommandAdapter implements ConsequenceAdapter<ShellCommandInput | string> {
